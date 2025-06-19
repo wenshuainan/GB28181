@@ -1,6 +1,6 @@
-#include "Proxy.h"
+#include "Agent.h"
 
-Proxy::Proxy()
+Agent::Agent()
 {
     registration = nullptr;
     play = nullptr;
@@ -9,7 +9,7 @@ Proxy::Proxy()
     requestTypes.push_back(new ControlReuest());
 }
 
-Proxy::~Proxy()
+Agent::~Agent()
 {
     for (auto i : requestTypes)
     {
@@ -17,22 +17,22 @@ Proxy::~Proxy()
     }
 }
 
-void Proxy::setProcess(Registration *registration)
+void Agent::setProcess(Registration *registration)
 {
     this->registration = registration;
 }
 
-void Proxy::setProcess(Play *play)
+void Agent::setProcess(Play *play)
 {
     this->play = play;
 }
 
-void Proxy::setProcess(Control *control)
+void Agent::setProcess(Control *control)
 {
     this->control = control;
 }
 
-bool Proxy::processControl(const PTZCmdRequest::Request& req)
+bool Agent::processControl(const PTZCmdRequest::Request& req)
 {
     if (control)
     {
@@ -44,6 +44,6 @@ bool Proxy::processControl(const PTZCmdRequest::Request& req)
     return false;
 }
 
-bool Proxy::processControl(const TeleBootRequest::Request& req)
+bool Agent::processControl(const TeleBootRequest::Request& req)
 {
 }

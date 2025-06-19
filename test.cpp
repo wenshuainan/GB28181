@@ -1,6 +1,6 @@
-#include "Proxy.h"
+#include "Agent.h"
 
 int main()
 {
-    Proxy proxy;
+    Agent agent;
 }

@@ -16,7 +16,7 @@
 #include "Process/9.13Upgrade.h"
 #include "Process/9.14Snapshot.h"
 
-class Proxy
+class Agent
 {
 private:
     Registration *registration;
@@ -27,8 +27,8 @@ private:
     std::vector<RequestType *> requestTypes;
 
 public:
-    Proxy();
-    ~Proxy();
+    Agent();
+    ~Agent();
 
 public:
     void setProcess(Registration *registration);
