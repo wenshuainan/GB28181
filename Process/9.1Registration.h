@@ -1,7 +1,7 @@
 #ifndef REGISTRATION_H
 #define REGISTRATION_H
 
-#include "MANSCDP/A.2.1GlobalTypes.h"
+#include "A.2.1GlobalTypes.h"
 
 class Registration
 {
@@ -9,7 +9,7 @@ protected:
     struct DevSIPInfo
     {
         std::string id;
-        std::string expire;
+        int expire;
         struct
         {
             std::string domain;

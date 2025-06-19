@@ -1,7 +1,7 @@
 #ifndef QUERY_H
 #define QUERY_H
 
-#include "MANSCDP/A.2.1GlobalTypes.h"
+#include "A.2.1GlobalTypes.h"
 
 /* A.2.4 查询命令 */
 

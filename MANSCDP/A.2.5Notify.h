@@ -1,7 +1,7 @@
 #ifndef NOTIFY_H
 #define NOTIFY_H
 
-#include "MANSCDP/A.2.1GlobalTypes.h"
+#include "A.2.1GlobalTypes.h"
 
 /* A.2.5 通知命令 */
 

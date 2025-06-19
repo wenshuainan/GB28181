@@ -1,13 +1,38 @@
 #ifndef RESPONSE_H
 #define RESPONSE_H
 
-#include "MANSCDP/A.2.1GlobalTypes.h"
+#include "A.2.1GlobalTypes.h"
 
 /* A.2.6 应答命令 */
+class ResponseCmdType;
 
 /*  A.2.6.1 应答命令消息体 */
+class ResponseCmd
+{
+private:
+    /* 〈! -- 查询请求的应答信息见 A.2.6.2~A.2.6.16-- */
+    std::vector<ResponseCmdType *> element;
+};
+
+class ResponseCmdType
+{};
 
 /*  A.2.6.2 设备控制应答 */
+class DeviceControlResponse : public ResponseCmdType
+{
+public:
+    struct Response
+    {
+        /* 〈! -- 命令类型:设备控制(必选)--〉 */
+        Type<std::string> CmdType;
+        /* 〈!-- 命令序列号(必选)--〉 */
+        SNType SN;
+        /* 〈!-- 目标设备/区域/系统编码(必选)--〉 */
+        deviceIDType DeviceID;
+        /* 〈!-- 执行结果标志(必选)--〉 */
+        resultType Result;
+    };
+};
 
 /*  A.2.6.3 报警通知应答 */
 
