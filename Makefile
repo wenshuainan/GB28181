@@ -22,7 +22,7 @@ INCLUDES += -I./Agent
 INCLUDES += -I./MANSCDP
 INCLUDES += -I./Process
 INCLUDES += -I./UserInterface
-INCLUDES += -I../tinyxml2
+INCLUDES += -I./tinyxml2
 
 CFLAGS := $(INCLUDES) -g -MMD
 
