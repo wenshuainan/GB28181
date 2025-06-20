@@ -59,7 +59,7 @@ public:
 
     integerType& operator=(const std::string& str)
     {
-        value = std::stoi(str);
+        value = std::stoi(str); // WARN: will crash if str is not number
         strValue = str;
         bValid = true;
 
@@ -71,7 +71,6 @@ class stringType
 {
 protected:
     std::string value;
-    int intValue;
     bool bValid; // 可选/必选
 
 public:
@@ -89,11 +88,6 @@ public:
         return value;
     }
 
-    int getInt() const
-    {
-        return intValue;
-    }
-
     const std::string& getStr() const
     {
         return value;
@@ -102,7 +96,6 @@ public:
     stringType& operator=(const stringType& other)
     {
         value = other.value;
-        intValue = other.intValue;
         bValid = other.bValid;
 
         return *this;
@@ -111,7 +104,6 @@ public:
     stringType& operator=(const std::string& str)
     {
         value = str;
-        intValue = std::stoi(str);
         bValid = true;
 
         return *this;
@@ -120,7 +112,6 @@ public:
     stringType& operator=(const int& num)
     {
         value = std::to_string(num);
-        intValue = num;
         bValid = true;
 
         return *this;

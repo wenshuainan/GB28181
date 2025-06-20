@@ -42,9 +42,10 @@ fi
 #	fi
 #fi
 
-if [ ! -f libGB28181.a ];then
-	make clean && make
-fi
+#if [ ! -f libGB28181.a ];then
+#	make clean && make
+#fi
+make
 
 #回到当前目录编译Demo
 cd -
