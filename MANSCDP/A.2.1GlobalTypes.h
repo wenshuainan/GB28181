@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "tinyxml2.h"
+#include "../../tinyxml2/tinyxml2.h"
 
 using namespace tinyxml2;
 
@@ -30,7 +30,7 @@ public:
         return bValid;
     }
 
-    T& operator=(const T& t)
+    Type& operator=(const T& t)
     {
         value = t;
         bValid = true;
@@ -43,7 +43,7 @@ public:
 typedef Type<std::string> deviceIDType;
 
 /* A.2.1.3 命令序列号类型 */
-class SNType : public Type<std::string>
+class SNType : public Type<int>
 {
 private:
     const int minInclusize = 1;
@@ -51,7 +51,7 @@ private:
 public:
     SNType& operator=(const std::string& str)
     {
-        value = str;
+        value = std::stoi(str);
         bValid = true;
 
         return *this;
@@ -59,7 +59,7 @@ public:
 
     SNType& operator=(const int& num)
     {
-        value = std::to_string(num);
+        value = num;
         bValid = true;
 
         return *this;
@@ -146,7 +146,7 @@ public:
 /* A.2.1.6 控制码类型 */
 class PTZCmdType : public Type<std::string>
 {
-private:
+public:
     const int length = 8;
 
     PTZCmdType& operator=(const std::string& str)

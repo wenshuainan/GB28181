@@ -22,9 +22,16 @@ bool ReuestControl::match(const std::string& name)
 
 bool ReuestControl::dispatch(XMLElement *xml)
 {
+    XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
+    if (!xmlCmdType)
+    {
+        return false;
+    }
+
+    std::string CmdType = xmlCmdType->GetText();
     for (auto& i : element)
     {
-        if (i->match(xml->FirstChildElement("CmdType")->GetText()))
+        if (i->match(CmdType))
         {
             return i->dispatch(xml);
         }
@@ -48,7 +55,29 @@ RequestDeviceControl::~RequestDeviceControl()
 
 bool RequestDeviceControl::deserialize(const XMLElement *xml, Request& request)
 {
-    return false;
+    const XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
+    if (!xmlCmdType)
+    {
+        return false;
+    }
+
+    const XMLElement *xmlSN = xml->FirstChildElement("SN");
+    if (!xmlSN)
+    {
+        return false;
+    }
+
+    const XMLElement *xmlDeviceID = xml->FirstChildElement("DeviceID");
+    if (!xmlDeviceID)
+    {
+        return false;
+    }
+
+    request.CmdType = xmlCmdType->GetText();
+    request.SN = xmlSN->GetText();
+    request.DeviceID = xmlDeviceID->GetText();
+
+    return true;
 }
 
 bool RequestDeviceControl::match(const std::string& name)
@@ -77,7 +106,35 @@ RequestPTZCmd::~RequestPTZCmd()
 
 bool RequestPTZCmd::deserialize(const XMLElement *xml, Request& request)
 {
-    return false;
+    if (!RequestDeviceControl::deserialize(xml, request))
+    {
+        return false;
+    }
+
+    const XMLElement *xmlPTZCmd = xml->FirstChildElement("PTZCmd");
+    if (xmlPTZCmd)
+    {
+        request.PTZCmd = xmlPTZCmd->GetText();
+    }
+
+    const XMLElement *xmlPTZCmdParams = xml->FirstChildElement("PTZCmdParams");
+    if (xmlPTZCmdParams)
+    {
+        const XMLElement *xmlPresetName = xmlPTZCmdParams->FirstChildElement("PresetName");
+        const XMLElement *xmlCruiseTrackName = xmlPTZCmdParams->FirstChildElement("CruiseTrackName");
+
+        if (xmlPresetName)
+        {
+            request.PTZCmdParams.PresetName = xmlPresetName->GetText();
+        }
+
+        if (xmlCruiseTrackName)
+        {
+            request.PTZCmdParams.CruiseTrackName = xmlCruiseTrackName->GetText();
+        }
+    }
+
+    return true;
 }
 
 bool RequestPTZCmd::match(XMLElement *xml)
