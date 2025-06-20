@@ -4,21 +4,17 @@
 #include "A.2.1GlobalTypes.h"
 
 /* A.2.6 应答命令 */
-class ResponseCmdType;
 
 /*  A.2.6.1 应答命令消息体 */
-class ResponseCmd
+class ResponseCmd : public ResponseCmdType
 {
 private:
     /* 〈! -- 查询请求的应答信息见 A.2.6.2~A.2.6.16-- */
-    std::vector<ResponseCmdType *> element;
+    std::vector<ResponseSpecCmdType *> element;
 };
 
-class ResponseCmdType
-{};
-
 /*  A.2.6.2 设备控制应答 */
-class DeviceControlResponse : public ResponseCmdType
+class ResponseDeviceControl : public ResponseSpecCmdType
 {
 public:
     struct Response

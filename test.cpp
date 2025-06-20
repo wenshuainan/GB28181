@@ -1,6 +1,13 @@
-#include "Agent.h"
+#include <stdio.h>
+#include <unistd.h>
+#include "UA.h"
 
 int main()
 {
-    Agent agent;
+    UA ua;
+
+    while (1)
+    {
+        sleep(1);
+    }
 }
