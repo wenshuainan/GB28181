@@ -1,5 +1,6 @@
 #include "MANSCDPAgent.h"
 #include "tinyxml2.h"
+#include "A.2.6Response.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
@@ -48,7 +49,12 @@ bool MANSCDPAgent::agentControl(const RequestPTZCmd::Request& req)
     {
         ResponseDeviceControl::Response res;
         control->process(req, res);
-        //序列化res && 发送
+        XMLDocument doc;
+        XMLElement *rootElement = doc.NewElement("Response");
+        doc.InsertEndChild(rootElement);
+        ResponseDeviceControl::serialize(res, rootElement);
+        doc.Print();
+        // return ua->send(xml);
     }
 
     return false;

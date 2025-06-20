@@ -27,7 +27,7 @@ public:
     struct Request
     {
         /* <! -- 命令类型：设备控制（必选） --> */
-        Type<std::string> CmdType;
+        stringType CmdType;
         /* <! -- 命令序列号（必选） --> */
         SNType SN;
         /* <! -- 目标设备编码（必选） --> */
@@ -61,9 +61,9 @@ public:
         struct
         {
             /* <!-- 预置位名称（PTZCmd 为设置预置位命令时可选） --> */
-            Type<std::string> PresetName;
+            stringType PresetName;
             /* <!-- 巡航轨迹名称（最长32字节，PTZCmd为巡航指令命令时可选） --> */
-            Type<std::string> CruiseTrackName;
+            stringType CruiseTrackName;
         } PTZCmdParams;
     };
 
@@ -90,7 +90,7 @@ public:
 
     struct Request : RequestDeviceControl::Request
     {
-        Type<EBoot> Boot;
+        integerType Boot;
     };
 
 public:
@@ -107,7 +107,7 @@ public:
         /* <!-- 录像控制命令（可选） --> */
         recordType RecordCmd;
         /* <!-- 码流类型：0-主码流，1-子码流，2-子码流2，以此类推（可选），缺省为0 --> */
-        Type<int> StreamNumber;
+        integerType StreamNumber;
     };
 };
 
@@ -140,7 +140,7 @@ public:
     struct Request
     {
         /* <! -- 命令类型：设备配置（必选） -> */
-        Type<std::string> CmdType;
+        stringType CmdType;
         /* <! -- 命令序列号（必选） -> */
         SNType SN;
         /* <! -- 目标设备编码（必选） -> */

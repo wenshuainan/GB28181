@@ -2,6 +2,7 @@
 #define RESPONSE_H
 
 #include "A.2.1GlobalTypes.h"
+#include "A.2.2CmdType.h"
 
 /* A.2.6 应答命令 */
 
@@ -20,7 +21,7 @@ public:
     struct Response
     {
         /* 〈! -- 命令类型:设备控制(必选)--〉 */
-        Type<std::string> CmdType;
+        stringType CmdType;
         /* 〈!-- 命令序列号(必选)--〉 */
         SNType SN;
         /* 〈!-- 目标设备/区域/系统编码(必选)--〉 */
@@ -28,6 +29,9 @@ public:
         /* 〈!-- 执行结果标志(必选)--〉 */
         resultType Result;
     };
+
+public:
+    static bool serialize(const Response& response, XMLElement *xml);
 };
 
 /*  A.2.6.3 报警通知应答 */

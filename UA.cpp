@@ -31,7 +31,7 @@ UA::~UA()
 bool UA::read(std::string& data)
 {
     std::string methodType;
-    std::string contentType;
+    std::string contentType = "Application/MANSCDP+Xml";
 
     for (auto agent : agents)
     {

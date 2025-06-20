@@ -19,7 +19,7 @@ else ()
 	aux_source_directory(./UserInterface/IPC SRC_USERINTERFACE)
 endif ()
 
-file(GLOB_RECURSE SRC_XML ../tinyxml2/tinyxml2.cpp)
+file(GLOB_RECURSE SRC_XML ./tinyxml2/tinyxml2.cpp)
 aux_source_directory(./MANSCDP SRC_MANSCDP)
 aux_source_directory(./Process SRC_PROCESS)
 aux_source_directory(./Agent SRC_AGENT)
