@@ -1,13 +1,13 @@
 #include "A.2.3Control.h"
 #include "MANSCDPAgent.h"
 
-ReuestControl::ReuestControl(MANSCDPAgent *agent) : RequestCmdType(agent)
+ControlReuest::ControlReuest(MANSCDPAgent *agent) : CmdTypeRequest(agent)
 {
-    element.push_back(new RequestDeviceControl(agent));
-    element.push_back(new RequestDeviceConfig(agent));
+    element.push_back(new DeviceControlRequest(agent));
+    element.push_back(new DeviceConfigRequest(agent));
 }
 
-ReuestControl::~ReuestControl()
+ControlReuest::~ControlReuest()
 {
     for (auto& i : element)
     {
@@ -15,12 +15,12 @@ ReuestControl::~ReuestControl()
     }
 }
 
-bool ReuestControl::match(const std::string& name)
+bool ControlReuest::match(const std::string& name)
 {
     return name == "Control";
 }
 
-bool ReuestControl::dispatch(XMLElement *xml)
+bool ControlReuest::dispatch(XMLElement *xml)
 {
     XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
     if (!xmlCmdType)
@@ -40,12 +40,12 @@ bool ReuestControl::dispatch(XMLElement *xml)
     return false;
 }
 
-RequestDeviceControl::RequestDeviceControl(MANSCDPAgent *agent) : RequestControlCmdType(agent)
+DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent) : CmdTypeControl(agent)
 {
-    element.push_back(new RequestPTZCmd(agent));
+    element.push_back(new PTZCmdRequest(agent));
 }
 
-RequestDeviceControl::~RequestDeviceControl()
+DeviceControlRequest::~DeviceControlRequest()
 {
     for (auto& i : element)
     {
@@ -53,7 +53,7 @@ RequestDeviceControl::~RequestDeviceControl()
     }
 }
 
-bool RequestDeviceControl::deserialize(const XMLElement *xml, Request& request)
+bool DeviceControlRequest::deserialize(const XMLElement *xml, Request& request)
 {
     const XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
     if (!xmlCmdType)
@@ -80,12 +80,12 @@ bool RequestDeviceControl::deserialize(const XMLElement *xml, Request& request)
     return true;
 }
 
-bool RequestDeviceControl::match(const std::string& name)
+bool DeviceControlRequest::match(const std::string& name)
 {
     return name == "DeviceControl";
 }
 
-bool RequestDeviceControl::dispatch(XMLElement *xml)
+bool DeviceControlRequest::dispatch(XMLElement *xml)
 {
     for (auto& i : element)
     {
@@ -98,15 +98,15 @@ bool RequestDeviceControl::dispatch(XMLElement *xml)
     return false;
 }
 
-RequestPTZCmd::RequestPTZCmd(MANSCDPAgent *agent) : RequestSpecCmdTypes(agent)
+PTZCmdRequest::PTZCmdRequest(MANSCDPAgent *agent) : CmdTypesSpecRequest(agent)
 {}
 
-RequestPTZCmd::~RequestPTZCmd()
+PTZCmdRequest::~PTZCmdRequest()
 {}
 
-bool RequestPTZCmd::deserialize(const XMLElement *xml, Request& request)
+bool PTZCmdRequest::deserialize(const XMLElement *xml, Request& request)
 {
-    if (!RequestDeviceControl::deserialize(xml, request))
+    if (!DeviceControlRequest::deserialize(xml, request))
     {
         return false;
     }
@@ -137,12 +137,12 @@ bool RequestPTZCmd::deserialize(const XMLElement *xml, Request& request)
     return true;
 }
 
-bool RequestPTZCmd::match(XMLElement *xml)
+bool PTZCmdRequest::match(XMLElement *xml)
 {
     return xml->FirstChildElement("PTZCmd") != nullptr;
 }
 
-bool RequestPTZCmd::dispatch(XMLElement *xml)
+bool PTZCmdRequest::dispatch(XMLElement *xml)
 {
     Request req;
 
@@ -154,18 +154,18 @@ bool RequestPTZCmd::dispatch(XMLElement *xml)
     return m_agent->agentControl(req);
 }
 
-RequestDeviceConfig::RequestDeviceConfig(MANSCDPAgent *agent) : RequestControlCmdType(agent)
+DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent) : CmdTypeControl(agent)
 {}
 
-RequestDeviceConfig::~RequestDeviceConfig()
+DeviceConfigRequest::~DeviceConfigRequest()
 {}
 
-bool RequestDeviceConfig::match(const std::string& name)
+bool DeviceConfigRequest::match(const std::string& name)
 {
     return name == "DeviceConfig";
 }
 
-bool RequestDeviceConfig::dispatch(XMLElement *xml)
+bool DeviceConfigRequest::dispatch(XMLElement *xml)
 {
     return false;
 }

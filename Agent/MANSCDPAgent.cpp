@@ -6,7 +6,7 @@ MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
     control = nullptr;
 
-    requests.push_back(new ReuestControl(this));
+    requests.push_back(new ControlReuest(this));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
@@ -43,16 +43,14 @@ bool MANSCDPAgent::agent(std::string& content)
     return false;
 }
 
-bool MANSCDPAgent::agentControl(const RequestPTZCmd::Request& req)
+bool MANSCDPAgent::agentControl(const PTZCmdRequest::Request& req)
 {
     if (control)
     {
-        ResponseDeviceControl::Response res;
+        DeviceControlResponse::Response res;
         control->process(req, res);
         XMLDocument doc;
-        XMLElement *rootElement = doc.NewElement("Response");
-        doc.InsertEndChild(rootElement);
-        ResponseDeviceControl::serialize(res, rootElement);
+        DeviceControlResponse::serialize(res, &doc);
         doc.Print();
         // return ua->send(xml);
     }
@@ -60,7 +58,7 @@ bool MANSCDPAgent::agentControl(const RequestPTZCmd::Request& req)
     return false;
 }
 
-bool MANSCDPAgent::agentControl(const RequestTeleBoot::Request& req)
+bool MANSCDPAgent::agentControl(const TeleBootRequest::Request& req)
 {
     return false;
 }

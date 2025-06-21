@@ -11,9 +11,9 @@ public:
     virtual ~Control() {}
 
 public:
-    virtual bool process(const RequestPTZCmd::Request& req, ResponseDeviceControl::Response& res) = 0;
-    virtual bool process(const RequestTeleBoot::Request& req, ResponseDeviceControl::Response& res) = 0;
-    virtual bool process(const RequestRecord::Request& req, ResponseDeviceControl::Response& res) = 0;
+    virtual bool process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res) = 0;
+    virtual bool process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res) = 0;
+    virtual bool process(const RecordRequest::Request& req, DeviceControlResponse::Response& res) = 0;
 };
 
 #endif

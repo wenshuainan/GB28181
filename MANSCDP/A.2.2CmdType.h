@@ -10,14 +10,14 @@ class MANSCDPAgent;
    〈elementref="tg:Query"/〉
    〈elementref="tg:Notify"/〉 
 */
-class RequestCmdType
+class CmdTypeRequest
 {
 protected:
     MANSCDPAgent *m_agent;
 
 public:
-    RequestCmdType(MANSCDPAgent *agent) : m_agent(agent) {}
-    virtual ~RequestCmdType() {}
+    CmdTypeRequest(MANSCDPAgent *agent) : m_agent(agent) {}
+    virtual ~CmdTypeRequest() {}
 
 public:
     virtual bool match(const std::string& name) = 0;
@@ -28,14 +28,14 @@ public:
     |-A.2.3.1 设备控制命令 DeviceControl
     |-A.2.3.2 设备配置命令 DeviceConfig
 */
-class RequestControlCmdType
+class CmdTypeControl
 {
 protected:
     MANSCDPAgent *m_agent;
 
 public:
-    RequestControlCmdType(MANSCDPAgent *agent) : m_agent(agent) {}
-    virtual ~RequestControlCmdType() {}
+    CmdTypeControl(MANSCDPAgent *agent) : m_agent(agent) {}
+    virtual ~CmdTypeControl() {}
 
 public:
     virtual bool match(const std::string& name) = 0;
@@ -48,14 +48,14 @@ public:
    TeleBoot
    ...
 */
-class RequestSpecCmdTypes
+class CmdTypesSpecRequest
 {
 protected:
     MANSCDPAgent *m_agent;
 
 public:
-    RequestSpecCmdTypes(MANSCDPAgent *agent) : m_agent(agent) {}
-    virtual ~RequestSpecCmdTypes() {}
+    CmdTypesSpecRequest(MANSCDPAgent *agent) : m_agent(agent) {}
+    virtual ~CmdTypesSpecRequest() {}
     
 public:
     virtual bool match(XMLElement *xml) = 0;
@@ -63,10 +63,10 @@ public:
 };
 
 /* A.2.2.2 应答命令结构头文件定义 */
-class ResponseCmdType
+class CmdTypeResponse
 {};
 
-class ResponseSpecCmdType
+class CmdTypeSpecResponse
 {};
 
 #endif

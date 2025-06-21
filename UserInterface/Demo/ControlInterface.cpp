@@ -7,7 +7,7 @@ ControlInterface::ControlInterface()
 ControlInterface::~ControlInterface()
 {}
 
-bool ControlInterface::process(const RequestPTZCmd::Request& req, ResponseDeviceControl::Response& res)
+bool ControlInterface::process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res)
 {
     std::cout << "ControlInterface::process" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
@@ -25,12 +25,12 @@ bool ControlInterface::process(const RequestPTZCmd::Request& req, ResponseDevice
     return true;
 }
 
-bool ControlInterface::process(const RequestTeleBoot::Request& req, ResponseDeviceControl::Response& res)
+bool ControlInterface::process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }
 
-bool ControlInterface::process(const RequestRecord::Request& req, ResponseDeviceControl::Response& res)
+bool ControlInterface::process(const RecordRequest::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }

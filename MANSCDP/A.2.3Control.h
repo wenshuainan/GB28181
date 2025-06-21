@@ -4,14 +4,14 @@
 #include "A.2.2CmdType.h"
 
 /* A.2.3 控制命令 */
-class ReuestControl : public RequestCmdType
+class ControlReuest : public CmdTypeRequest
 {
 private:
-    std::vector<RequestControlCmdType *> element;
+    std::vector<CmdTypeControl *> element;
 
 public:
-    ReuestControl(MANSCDPAgent *agent);
-    virtual ~ReuestControl();
+    ControlReuest(MANSCDPAgent *agent);
+    virtual ~ControlReuest();
 
 public:
     virtual bool match(const std::string& name);
@@ -21,7 +21,7 @@ public:
 /* A.2.3.1 设备控制命令 */
 
 /* A.2.3.1.1 设备控制命令消息体 */
-class RequestDeviceControl : public RequestControlCmdType
+class DeviceControlRequest : public CmdTypeControl
 {
 public:
     struct Request
@@ -37,11 +37,11 @@ public:
     };
 
 private:
-    std::vector<RequestSpecCmdTypes *> element;
+    std::vector<CmdTypesSpecRequest *> element;
 
 public:
-    RequestDeviceControl(MANSCDPAgent *agent);
-    virtual ~RequestDeviceControl();
+    DeviceControlRequest(MANSCDPAgent *agent);
+    virtual ~DeviceControlRequest();
     static bool deserialize(const XMLElement *xml, Request& request);
 
 public:
@@ -50,10 +50,10 @@ public:
 };
 
 /* A.2.3.1.2 摄像机云台控制命令 */
-class RequestPTZCmd : public RequestSpecCmdTypes
+class PTZCmdRequest : public CmdTypesSpecRequest
 {
 public:
-    struct Request : RequestDeviceControl::Request
+    struct Request : DeviceControlRequest::Request
     {
         /* <!-- 摄像机云台控制命令（可选，控制码应符合A.3的规定） --> */
         PTZCmdType PTZCmd;
@@ -68,8 +68,8 @@ public:
     };
 
 public:
-    RequestPTZCmd(MANSCDPAgent *agent);
-    virtual ~RequestPTZCmd();
+    PTZCmdRequest(MANSCDPAgent *agent);
+    virtual ~PTZCmdRequest();
 
 private:
     static bool deserialize(const XMLElement *xml, Request& request);
@@ -80,7 +80,7 @@ public:
 };
 
 /* A.2.3.1.3 远程启动控制命令 */
-class RequestTeleBoot : public RequestSpecCmdTypes
+class TeleBootRequest : public CmdTypesSpecRequest
 {
 public:
     enum EBoot
@@ -88,21 +88,21 @@ public:
         Boot
     };
 
-    struct Request : RequestDeviceControl::Request
+    struct Request : DeviceControlRequest::Request
     {
         integerType Boot;
     };
 
 public:
-    RequestTeleBoot(MANSCDPAgent *agent);
-    virtual ~RequestTeleBoot();
+    TeleBootRequest(MANSCDPAgent *agent);
+    virtual ~TeleBootRequest();
 };
 
 /* A.2.3.1.4 录像控制命令 */
-class RequestRecord : public RequestSpecCmdTypes
+class RecordRequest : public CmdTypesSpecRequest
 {
 public:
-    struct Request : RequestDeviceControl::Request
+    struct Request : DeviceControlRequest::Request
     {
         /* <!-- 录像控制命令（可选） --> */
         recordType RecordCmd;
@@ -134,7 +134,7 @@ public:
 /* A.2.3.2 设备配置命令 */
 
 /* A.2.3.2.1 设备配置命令消息体 */
-class RequestDeviceConfig : public RequestControlCmdType
+class DeviceConfigRequest : public CmdTypeControl
 {
 public:
     struct Request
@@ -148,8 +148,8 @@ public:
     };
     
 public:
-    RequestDeviceConfig(MANSCDPAgent *agent);
-    virtual ~RequestDeviceConfig();
+    DeviceConfigRequest(MANSCDPAgent *agent);
+    virtual ~DeviceConfigRequest();
 
 public:
     virtual bool match(const std::string& name);

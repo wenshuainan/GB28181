@@ -10,9 +10,9 @@ public:
     ~ControlInterface();
 
 public:
-    bool process(const RequestPTZCmd::Request& req, ResponseDeviceControl::Response& res);
-    bool process(const RequestTeleBoot::Request& req, ResponseDeviceControl::Response& res);
-    bool process(const RequestRecord::Request& req, ResponseDeviceControl::Response& res);
+    bool process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res);
+    bool process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res);
+    bool process(const RecordRequest::Request& req, DeviceControlResponse::Response& res);
 };
 
 #endif

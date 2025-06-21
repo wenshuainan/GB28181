@@ -17,7 +17,7 @@ private:
      * Control、Query、Notify
      * 遍历所有请求命令，匹配成功则调用其dispach方法处理
      */
-    std::vector<RequestCmdType *> requests;
+    std::vector<CmdTypeRequest *> requests;
 
 public:
     MANSCDPAgent(UA *ua);
@@ -29,8 +29,8 @@ public:
 
 public:
     /* 具体的请求类型处理方法 */
-    bool agentControl(const RequestPTZCmd::Request& req);
-    bool agentControl(const RequestTeleBoot::Request& req);
+    bool agentControl(const PTZCmdRequest::Request& req);
+    bool agentControl(const TeleBootRequest::Request& req);
 };
 
 #endif
