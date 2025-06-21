@@ -1,5 +1,5 @@
-#ifndef FRONT_DEVICE_CONTROL_H
-#define FRONT_DEVICE_CONTROL_H
+#ifndef A_3_FRONT_DEVICE_CONTROL_H
+#define A_3_FRONT_DEVICE_CONTROL_H
 
 /* A.3 前端设备控制协议 */
 

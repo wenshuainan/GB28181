@@ -1,5 +1,5 @@
-#ifndef REGISTRATION_H
-#define REGISTRATION_H
+#ifndef REGISTRATION_PROCESS_H
+#define REGISTRATION_PROCESS_H
 
 #include "A.2.1GlobalTypes.h"
 

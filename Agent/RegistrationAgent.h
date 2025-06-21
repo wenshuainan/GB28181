@@ -16,8 +16,8 @@ public:
     ~RegistrationAgent();
 
 public:
-    bool match(std::string& methodType, std::string& contentType);
-    bool agent(std::string& content);
+    bool match(const std::string& methodType, const std::string& contentType);
+    bool agent(const std::string& content);
 };
 
 #endif

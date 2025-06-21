@@ -1,5 +1,5 @@
-#ifndef PLAY_H
-#define PLAY_H
+#ifndef PLAY_PROCESS_H
+#define PLAY_PROCESS_H
 
 class Play
 {

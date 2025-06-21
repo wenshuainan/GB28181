@@ -1,5 +1,5 @@
-#ifndef DEVICE_CONTROL_H
-#define DEVICE_CONTROL_H
+#ifndef A_2_3_CONTROL_H
+#define A_2_3_CONTROL_H
 
 #include "A.2.2CmdType.h"
 

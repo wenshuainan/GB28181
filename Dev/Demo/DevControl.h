@@ -1,13 +1,13 @@
-#ifndef CONTROL_INTERFACE_H
-#define CONTROL_INTERFACE_H
+#ifndef DEV_CONTROL_H
+#define DEV_CONTROL_H
 
 #include "9.3Control.h"
 
-class ControlInterface : public Control
+class DevControl : public Control
 {
 public:
-    ControlInterface();
-    ~ControlInterface();
+    DevControl();
+    ~DevControl();
 
 public:
     bool process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res);

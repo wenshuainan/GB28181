@@ -1,5 +1,5 @@
-#ifndef QUERY_H
-#define QUERY_H
+#ifndef A_2_4_QUERY_H
+#define A_2_4_QUERY_H
 
 #include "A.2.1GlobalTypes.h"
 

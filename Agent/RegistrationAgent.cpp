@@ -6,12 +6,12 @@ RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 RegistrationAgent::~RegistrationAgent()
 {}
 
-bool RegistrationAgent::match(std::string& methodType, std::string& contentType)
+bool RegistrationAgent::match(const std::string& methodType, const std::string& contentType)
 {
     return methodType == "REGISTER";
 }
 
-bool RegistrationAgent::agent(std::string& content)
+bool RegistrationAgent::agent(const std::string& content)
 {
     return false;
 }

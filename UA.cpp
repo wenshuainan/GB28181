@@ -1,8 +1,10 @@
+#include <thread>
+#include <unistd.h>
 #include "UA.h"
 #include "MANSCDPAgent.h"
 #include "RegistrationAgent.h"
 #include "MediaAgent.h"
-#include "ControlInterface.h"
+#include "DevControl.h"
 
 UA::UA()
 {
@@ -12,7 +14,7 @@ UA::UA()
 
     if (manscdpAgent != nullptr)
     {
-        manscdpAgent->control = new ControlInterface();
+        manscdpAgent->control = new DevControl();
     }
 
     agents.push_back(registrationAgent);
@@ -28,23 +30,67 @@ UA::~UA()
     }
 }
 
-bool UA::read(std::string& data)
+void UA::threadProc()
 {
-    std::string methodType;
-    std::string contentType = "Application/MANSCDP+Xml";
+    adapter = SIPAdapter::create();
 
-    for (auto agent : agents)
+    while (bThreadRun)
     {
-        if (agent->match(methodType, contentType))
+        Header header;
+        std::string body;
+        if (adapter->recv(header, body))
         {
-            return agent->agent(data);
-        }
-    }
+            const std::string methodType = header.getRequestLine().getMethod();
+            const std::string contentType = header.getField("Content-type").getValue();
 
-    return false;
+            for (auto agent : agents)
+            {
+                if (agent->match(methodType, contentType))
+                {
+                    agent->agent(body);
+                }
+            }
+        }
+
+        sleep(30);
+    }
 }
 
-bool UA::write(std::string& data)
+bool UA::start()
 {
-    return false;
+    bThreadRun = true;
+    std::thread t(&UA::threadProc, this);
+    t.detach();
+    return true;
+}
+
+bool UA::stop()
+{
+    bThreadRun = false;
+    return true;
+}
+
+bool UA::sendRequest(const std::string& methodType, const std::string& contentType, const std::string& content)
+{
+    Header header;
+    header.setRequestLine(methodType, "sip:127.0.0.1:5060");
+    header.addField("Content-type", contentType);
+    header.addField("Content-length", std::to_string(content.length()));
+
+    return adapter->send(header, content);
+}
+
+bool UA::sendResponse(int code, const std::string& contentType, const std::string& content)
+{
+    Header header;
+    header.setStatusLine(code, "sip:127.0.0.1:5060");
+    header.addField("From", "sip:1000@192.168.1.101");
+    header.addField("To", "sip:1000@192.168.1.101");
+    header.addField("Call-ID", "2000");
+    header.addField("CSeq", "2 INVITE");
+    header.addField("Contact", "sip:1000@192.168.1.101");
+    header.addField("Content-type", contentType);
+    header.addField("Content-length", std::to_string(content.length()));
+
+    return adapter->send(header, content);
 }

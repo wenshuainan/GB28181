@@ -23,6 +23,7 @@ INCLUDES += -I./MANSCDP
 INCLUDES += -I./Process
 INCLUDES += -I./UserInterface
 INCLUDES += -I./tinyxml2
+INCLUDES += -I./SIP/Adapter
 
 CFLAGS := $(INCLUDES) -g -MMD
 

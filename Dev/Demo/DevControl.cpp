@@ -1,15 +1,15 @@
 #include <iostream>
-#include "ControlInterface.h"
+#include "DevControl.h"
 
-ControlInterface::ControlInterface()
+DevControl::DevControl()
 {}
 
-ControlInterface::~ControlInterface()
+DevControl::~DevControl()
 {}
 
-bool ControlInterface::process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res)
 {
-    std::cout << "ControlInterface::process" << std::endl;
+    std::cout << "DevControl::process" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
     std::cout << "SN:" << req.SN.getValue() << std::endl;
     std::cout << "DeviceID:" << req.DeviceID.getValue() << std::endl;
@@ -25,12 +25,12 @@ bool ControlInterface::process(const PTZCmdRequest::Request& req, DeviceControlR
     return true;
 }
 
-bool ControlInterface::process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }
 
-bool ControlInterface::process(const RecordRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const RecordRequest::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }

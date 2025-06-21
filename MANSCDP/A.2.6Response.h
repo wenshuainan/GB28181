@@ -1,5 +1,5 @@
-#ifndef RESPONSE_H
-#define RESPONSE_H
+#ifndef A_2_6_RESPONSE_H
+#define A_2_6_RESPONSE_H
 
 #include "A.2.1GlobalTypes.h"
 #include "A.2.2CmdType.h"

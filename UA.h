@@ -1,6 +1,7 @@
 #ifndef USER_AGENT_H
 #define USER_AGENT_H
 
+#include "Adapter.h"
 #include "Agent.h"
 #include "9.1Registration.h"
 #include "9.2Play.h"
@@ -21,14 +22,23 @@ class UA
 {
 private:
     std::vector<Agent *> agents;
+    SIPAdapter *adapter;
+    bool bThreadRun;
 
 public:
     UA();
     ~UA();
 
+private:
+    void threadProc();
+
 public:
-    bool read(std::string& data); //UTF8编码转换后处理
-    bool write(std::string& data); //GB10830编码转换后处理
+    bool start();
+    bool stop();
+
+public:
+    bool sendRequest(const std::string& methodType, const std::string& contentType, const std::string& content);
+    bool sendResponse(int code, const std::string& contentType = "", const std::string& content = "");
 };
 
 #endif

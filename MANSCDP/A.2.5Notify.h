@@ -1,5 +1,5 @@
-#ifndef NOTIFY_H
-#define NOTIFY_H
+#ifndef A_2_5_NOTIFY_H
+#define A_2_5_NOTIFY_H
 
 #include "A.2.1GlobalTypes.h"
 

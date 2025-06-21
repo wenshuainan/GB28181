@@ -1,5 +1,5 @@
-#ifndef CONTROL_H
-#define CONTROL_H
+#ifndef CONTROL_PROCESS_H
+#define CONTROL_PROCESS_H
 
 #include "A.2.3Control.h"
 #include "A.2.6Response.h"

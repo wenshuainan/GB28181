@@ -6,18 +6,7 @@ int main()
 {
     UA ua;
 
-    std::string data = "<Control> \
-                        <CmdType>DeviceControl</CmdType> \
-                        <SN>99</SN> \
-                        <DeviceID>123456</DeviceID> \
-                        <PTZCmd>66666666</PTZCmd> \
-                        <PTZCmdParams> \
-                        <PresetName>abc</PresetName> \
-                        <CruiseTrackName>def</CruiseTrackName> \
-                        </PTZCmdParams> \
-                        </Control>";
-
-    ua.read(data);
+    ua.start();
 
     while (1)
     {
