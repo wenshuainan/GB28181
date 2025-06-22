@@ -5,9 +5,6 @@
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
-    m_methodType = "MESSAGE";
-    m_contentType = "Application/MANSCDP+Xml";
-
     control = nullptr;
 
     requests.push_back(new ControlReuest(this));
@@ -21,12 +18,12 @@ MANSCDPAgent::~MANSCDPAgent()
     }
 }
 
-bool MANSCDPAgent::match(const std::string& methodType, const std::string& contentType)
+bool MANSCDPAgent::match(const std::string& method, const std::string& contentType)
 {
     return contentType == "Application/MANSCDP+xml";
 }
 
-bool MANSCDPAgent::agent(const std::string& content)
+bool MANSCDPAgent::agent(const Header& header, const std::string& content)
 {
     XMLDocument doc;
     
@@ -45,14 +42,6 @@ bool MANSCDPAgent::agent(const std::string& content)
     }
 
     return false;
-}
-
-bool MANSCDPAgent::send(int code, const XMLDocument &doc)
-{
-    XMLPrinter printer;
-    doc.Print(&printer);
-
-    return m_ua->sendResponse(code, m_contentType, printer.CStr());
 }
 
 bool MANSCDPAgent::agentControl(const PTZCmdRequest::Request& req)

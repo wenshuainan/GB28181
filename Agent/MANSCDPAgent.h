@@ -24,11 +24,9 @@ public:
     ~MANSCDPAgent();
 
 public:
-    bool match(const std::string& methodType, const std::string& contentType);
-    bool agent(const std::string& content);
-
-private:
-    bool send(int code, const XMLDocument &doc);
+    bool match(const std::string& method, const std::string& contentType);
+    bool match(const std::string& callID);
+    bool agent(const Header& header, const std::string& content);
 
 public:
     /* 具体的请求类型处理方法 */

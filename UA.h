@@ -20,6 +20,14 @@
 
 class UA
 {
+public:
+    struct Info
+    {
+        SIPAdapter::Info sipInfo;
+        int interval;
+        int expire;
+    };
+    
 private:
     std::vector<Agent *> agents;
     SIPAdapter *adapter;
@@ -33,12 +41,9 @@ private:
     void threadProc();
 
 public:
-    bool start();
+    bool start(const Info& info);
     bool stop();
-
-public:
-    bool sendRequest(const std::string& methodType, const std::string& contentType, const std::string& content);
-    bool sendResponse(int code, const std::string& contentType = "", const std::string& content = "");
+    SIPAdapter* getAdapter() { return adapter; }
 };
 
 #endif

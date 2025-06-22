@@ -40,19 +40,40 @@ void UA::threadProc()
         std::string body;
         if (adapter->recv(header, body))
         {
-            const std::string methodType = header.getRequestLine().getMethod();
-            const std::string contentType = header.getField("Content-type").getValue();
-
-            for (auto agent : agents)
+            Header::Type type = adapter->getType();
+            if (type == Header::Request)
             {
-                if (agent->match(methodType, contentType))
+                const std::string method = header.getMethod();
+                const std::string contentType = header.getField("Content-type").getValue();
+
+                for (auto agent : agents)
                 {
-                    agent->agent(body);
+                    if (agent->match(method, contentType))
+                    {
+                        agent->agent(header, body);
+                        break;
+                    }
                 }
+            }
+            else if (type == Header::Response)
+            {
+                const std::string callID = header.getField("Call-ID").getValue();
+
+                for (auto agent : agents)
+                {
+                    if (agent->match(callID))
+                    {
+                        agent->agent(header, body);
+                        break;
+                    }
+                }
+            }
+            else
+            {
             }
         }
 
-        sleep(30);
+        sleep(10);
     }
 }
 
@@ -68,29 +89,4 @@ bool UA::stop()
 {
     bThreadRun = false;
     return true;
-}
-
-bool UA::sendRequest(const std::string& methodType, const std::string& contentType, const std::string& content)
-{
-    Header header;
-    header.setRequestLine(methodType, "sip:127.0.0.1:5060");
-    header.addField("Content-type", contentType);
-    header.addField("Content-length", std::to_string(content.length()));
-
-    return adapter->send(header, content);
-}
-
-bool UA::sendResponse(int code, const std::string& contentType, const std::string& content)
-{
-    Header header;
-    header.setStatusLine(code, "sip:127.0.0.1:5060");
-    header.addField("From", "sip:1000@192.168.1.101");
-    header.addField("To", "sip:1000@192.168.1.101");
-    header.addField("Call-ID", "2000");
-    header.addField("CSeq", "2 INVITE");
-    header.addField("Contact", "sip:1000@192.168.1.101");
-    header.addField("Content-type", contentType);
-    header.addField("Content-length", std::to_string(content.length()));
-
-    return adapter->send(header, content);
 }

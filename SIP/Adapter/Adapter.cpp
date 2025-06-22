@@ -21,34 +21,6 @@ bool HeaderField::addParameter(std::string& name, std::string& value)
     return pair.second;
 }
 
-bool Header::setRequestLine(const RequestLine& requestLine)
-{
-    m_requestLine = requestLine;
-    m_type = Request;
-    return true;
-}
-
-bool Header::setRequestLine(const std::string& method, const std::string& requestUri)
-{
-    m_requestLine = RequestLine(method, requestUri);
-    m_type = Request;
-    return true;
-}
-
-bool Header::setStatusLine(const StatusLine& statusLine)
-{
-    m_statusLine = statusLine;
-    m_type = Response;
-    return true;
-}
-
-bool Header::setStatusLine(int code, const std::string& reasonPhrase)
-{
-    m_statusLine = StatusLine(code, reasonPhrase);
-    m_type = Response;
-    return true;
-}
-
 void Header::addField(const std::string& name, const std::vector<HeaderField>& fields)
 {
     m_fields.insert(std::pair<std::string, std::vector<HeaderField>>(name, fields));
@@ -77,6 +49,12 @@ const HeaderField& Header::getField(const std::string& name) const
         return empty;
     }
 }
+
+bool genReqHeader(const std::string& method, Header& req)
+{}
+
+bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& rsp)
+{}
 
 SIPAdapter* SIPAdapter::create()
 {

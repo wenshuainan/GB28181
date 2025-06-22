@@ -82,14 +82,12 @@ private:
 public:
     Header(){}
     ~Header() {}
-    bool setRequestLine(const RequestLine& requestLine);
-    bool setRequestLine(const std::string& method, const std::string& requestUri);
-    bool setStatusLine(const StatusLine& statusLine);
-    bool setStatusLine(int code, const std::string& reasonPhrase);
     void addField(const std::string& name, const std::vector<HeaderField>& fields);
     void addField(const std::string& name, const HeaderField& field);
     void addField(const std::string& name, const std::string& value);
-    const RequestLine& getRequestLine() const { return m_requestLine; }
+    Type getType() const { return m_type; }
+    const std::string& getMethod() const { return m_requestLine.getMethod(); }
+    int getCode() const { return m_statusLine.getCode(); }
     const StatusLine& getStatusLine() const { return m_statusLine; }
     const HeaderField& getField(const std::string& name) const;
 };
@@ -97,16 +95,47 @@ public:
 class SIPAdapter
 {
 public:
+    enum Transport
+    {
+        TRANSPORT_UDP,
+        TRANSPORT_TCP,
+        TRANSPORT_TLS
+    };
+
+    struct ClientInfo
+    {
+        std::string id;
+        std::string domain;
+    };
+
+    struct ServerInfo
+    {
+        std::string id;
+        std::string domain;
+        int port;
+        std::string passwd;
+    };
+
+    struct Info
+    {
+        ClientInfo client;
+        ServerInfo server;
+        Transport transport;
+    };
+    
+public:
     virtual bool init() = 0;
     virtual bool recv(Header& header, std::string& body) = 0;
     virtual bool send(const Header& header, const std::string& body) = 0;
+    virtual bool genReqHeader(const std::string& method, Header& req);
+    virtual bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& rsp);
 
 public:
     SIPAdapter() {}
     virtual ~SIPAdapter() {}
 
 public:
-    static SIPAdapter* create();
+    static SIPAdapter* create(const Info& info);
 };
 
 #endif

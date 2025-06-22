@@ -10,14 +10,26 @@ class RegistrationAgent : public Agent
 
 private:
     Registration *registration;
+    int lastRegistered;
+    int interval;
+    int expire;
+    bool bThreadRun;
 
 public:
     RegistrationAgent(UA *ua);
     ~RegistrationAgent();
 
 public:
-    bool match(const std::string& methodType, const std::string& contentType);
-    bool agent(const std::string& content);
+    bool match(const std::string& method, const std::string& contentType);
+    bool match(const std::string& callID);
+    bool agent(const Header& header, const std::string& content);
+
+private:
+    void stateProc();
+
+public:
+    bool start();
+    bool stop();
 };
 
 #endif
