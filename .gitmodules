@@ -1,3 +1,6 @@
 [submodule "tinyxml2"]
 	path = tinyxml2
 	url = https://github.com/leethomason/tinyxml2.git
+[submodule "SIP/Vendor/resiprocate"]
+	path = SIP/Vendor/resiprocate
+	url = https://github.com/resiprocate/resiprocate.git
