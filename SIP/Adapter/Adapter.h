@@ -36,6 +36,7 @@ public:
     }
     ~RequestLine() {}
     const std::string& getMethod() const { return m_method; }
+    const std::string& getRequestUri() const { return m_requestUri; }
 };
 
 class StatusLine
@@ -54,6 +55,7 @@ public:
     }
     ~StatusLine() {}
     int getCode() const { return m_code; }
+    const std::string& getReasonPhrase() const { return m_reasonPhrase; }
 };
 
 class HeaderField
@@ -90,7 +92,7 @@ private:
     std::multimap<std::string, std::vector<HeaderField>, CaseInsensitiveCompare> m_fields;
 
 public:
-    Header(){}
+    Header() {}
     ~Header() {}
     void setRequestLine(const std::string& method, const std::string& requestUri);
     void setStatusLine(int code, const std::string& reasonPhrase);
@@ -103,6 +105,7 @@ public:
     int getCode() const { return m_statusLine.getCode(); }
     const std::string& getReasonPhrase() const { return m_statusLine.getReasonPhrase(); }
     const std::string& getValue(const std::string& name) const;
+    const std::string& getParameterValue(const std::string& fieldName, const std::string& parameterName) const;
     const RequestLine& getRequestLine() const { return m_requestLine; }
     const StatusLine& getStatusLine() const { return m_statusLine; }
     const HeaderField& getField(const std::string& name) const;

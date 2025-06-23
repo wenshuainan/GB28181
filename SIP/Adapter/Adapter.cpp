@@ -48,12 +48,26 @@ void Header::addField(const std::string& name, const std::string& value)
     m_fields.insert(std::pair<std::string, std::vector<HeaderField>>(name, std::vector<HeaderField>({HeaderField(name, value)})));
 }
 
-const std::string& getValue(const std::string& name) const
+const std::string& Header::getValue(const std::string& name) const
 {
     auto it = m_fields.find(name);
     if (it != m_fields.end())
     {
         return it->second[0].getValue();
+    }
+    else
+    {
+        static std::string empty;
+        return empty;
+    }
+}
+
+const std::string& Header::getParameterValue(const std::string& fieldName, const std::string& parameterName) const
+{
+    auto it = m_fields.find(fieldName);
+    if (it != m_fields.end())
+    {
+        return it->second[0].getParameter(parameterName);
     }
     else
     {

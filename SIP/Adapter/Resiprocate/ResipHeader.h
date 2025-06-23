@@ -4,6 +4,6 @@
 #include "Adapter.h"
 
 class ResipHeader : public Header
-{}
+{};
 
 #endif
