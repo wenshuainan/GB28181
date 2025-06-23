@@ -1,6 +1,7 @@
 #ifndef MANSCDP_AGENT_H
 #define MANSCDP_AGENT_H
 
+#include <memory>
 #include "Agent.h"
 #include "Process/9.3Control.h"
 
@@ -10,6 +11,7 @@ class MANSCDPAgent : public Agent
 
 private:
     Control *control;
+    std::shared_ptr<const Header> reqHeader;
 
 private:
     /* 
@@ -24,9 +26,14 @@ public:
     ~MANSCDPAgent();
 
 public:
+    bool start();
+    bool stop();
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
     bool agent(const Header& header, const std::string& content);
+
+private:
+    bool sendResponse(int code, const XMLDocument& doc);
 
 public:
     /* 具体的请求类型处理方法 */

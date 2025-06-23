@@ -1,6 +1,7 @@
 #include <thread>
 #include <unistd.h>
 #include "RegistrationAgent.h"
+#include "UA.h"
 
 RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 {
@@ -32,7 +33,7 @@ bool RegistrationAgent::start()
     t.detach();
 
     Header header;
-    SIPAdapter *adapter = m_ua->getAdapter();
+    auto adapter = m_ua->getAdapter();
 
     adapter->genReqHeader("REGISTER", header);
     header.addField("Expires", "3600");
@@ -52,7 +53,7 @@ bool RegistrationAgent::start()
 bool RegistrationAgent::stop()
 {
     Header header;
-    SIPAdapter *adapter = m_ua->getAdapter();
+    auto adapter = m_ua->getAdapter();
 
     adapter->genReqHeader("REGISTER", header);
     header.addField("Expires", "0");

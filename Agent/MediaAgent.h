@@ -16,6 +16,8 @@ public:
     ~MediaAgent();
 
 public:
+    bool start();
+    bool stop();
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
     bool agent(const Header& header, const std::string& content);

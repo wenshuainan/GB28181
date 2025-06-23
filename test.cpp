@@ -6,7 +6,8 @@ int main()
 {
     UA ua;
 
-    ua.start();
+    UA::Info info;
+    ua.start(info);
 
     while (1)
     {

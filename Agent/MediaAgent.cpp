@@ -8,6 +8,16 @@ MediaAgent::MediaAgent(UA *ua) : Agent(ua)
 MediaAgent::~MediaAgent()
 {}
 
+bool MediaAgent::start()
+{
+    return true;
+}
+
+bool MediaAgent::stop()
+{
+    return true;
+}
+
 bool MediaAgent::match(const std::string& method, const std::string& contentType)
 {
     return contentType == "application/sdp";

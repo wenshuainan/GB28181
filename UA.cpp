@@ -21,7 +21,7 @@ void UA::threadProc()
         std::string body;
         if (adapter->recv(header, body))
         {
-            Header::Type type = adapter->getType();
+            auto type = header.getType();
             if (type == Header::Request)
             {
                 const std::string method = header.getMethod();
@@ -60,7 +60,8 @@ void UA::threadProc()
 
 bool UA::start(const Info& info)
 {
-    adapter = SIPAdapter::create();
+    SIPAdapter::Info sipInfo;
+    adapter = SIPAdapter::create(sipInfo);
     if (adapter == nullptr)
     {
         return false;

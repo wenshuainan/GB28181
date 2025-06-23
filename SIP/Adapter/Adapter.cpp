@@ -1,5 +1,5 @@
 #include "Adapter.h"
-#include "reSIProcate.h"
+#include "Resiprocate.h"
 
 const std::string& HeaderField::getParameter(const std::string& name) const
 {
@@ -19,6 +19,18 @@ bool HeaderField::addParameter(std::string& name, std::string& value)
 {
     auto pair = m_parameter.insert(std::pair<std::string, std::string>(name, value));
     return pair.second;
+}
+
+void Header::setRequestLine(const std::string& method, const std::string& requestUri)
+{
+    m_type = Request;
+    m_requestLine = RequestLine(method, requestUri);
+}
+
+void Header::setStatusLine(int code, const std::string& reasonPhrase)
+{
+    m_type = Response;
+    m_statusLine = StatusLine(code, reasonPhrase);
 }
 
 void Header::addField(const std::string& name, const std::vector<HeaderField>& fields)
@@ -52,6 +64,7 @@ const HeaderField& Header::getField(const std::string& name) const
 
 SIPAdapter* SIPAdapter::create(const Info& info)
 {
-    m_info = info;
-    return new reSIProcate();
+    SIPAdapter *adapter = new Resiprocate();
+    adapter->m_info = info;
+    return adapter;
 }

@@ -42,7 +42,11 @@ else ifeq ($(CROSS_PLATFORM), X86GCC7.5)
 	CPP := /usr/bin/g++
 	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer
+	
+	CFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
+	CPPFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
 	LDFLAGS += -fsanitize=address
+	LDFLAGS += -L./SIP/Vendor/resiprocate/cmake/output/lib -ldum -lresip -lresipares -lrutil
 endif
 
 .PHONY: all clean
