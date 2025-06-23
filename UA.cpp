@@ -5,35 +5,16 @@
 #include "RegistrationAgent.h"
 #include "MediaAgent.h"
 #include "DevControl.h"
+#include "DevRegistration.h"
 
 UA::UA()
-{
-    RegistrationAgent *registrationAgent = new RegistrationAgent(this);
-    MANSCDPAgent *manscdpAgent = new MANSCDPAgent(this);
-    MediaAgent *mediaAgent = new MediaAgent(this);
-
-    if (manscdpAgent != nullptr)
-    {
-        manscdpAgent->control = new DevControl();
-    }
-
-    agents.push_back(registrationAgent);
-    agents.push_back(manscdpAgent);
-    agents.push_back(mediaAgent);
-}
+{}
 
 UA::~UA()
-{
-    for (auto agent : agents)
-    {
-        delete agent;
-    }
-}
+{}
 
 void UA::threadProc()
 {
-    adapter = SIPAdapter::create();
-
     while (bThreadRun)
     {
         Header header;
@@ -77,16 +58,46 @@ void UA::threadProc()
     }
 }
 
-bool UA::start()
+bool UA::start(const Info& info)
 {
+    adapter = SIPAdapter::create();
+    if (adapter == nullptr)
+    {
+        return false;
+    }
+
+    RegistrationAgent *registrationAgent = new RegistrationAgent(this);
+    MANSCDPAgent *manscdpAgent = new MANSCDPAgent(this);
+    MediaAgent *mediaAgent = new MediaAgent(this);
+
+    if (manscdpAgent != nullptr)
+    {
+        manscdpAgent->control = new DevControl();
+    }
+    
+    if (registrationAgent != nullptr)
+    {
+        registrationAgent->registration = new DevRegistration();
+    }
+
+    agents.push_back(registrationAgent);
+    agents.push_back(manscdpAgent);
+    agents.push_back(mediaAgent);
+
     bThreadRun = true;
     std::thread t(&UA::threadProc, this);
     t.detach();
-    return true;
+
+    registrationAgent->start();
 }
 
 bool UA::stop()
 {
     bThreadRun = false;
     return true;
+
+    for (auto agent : agents)
+    {
+        delete agent;
+    }
 }

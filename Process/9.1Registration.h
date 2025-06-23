@@ -3,8 +3,12 @@
 
 #include "A.2.1GlobalTypes.h"
 
+class UA;
+
 class Registration
 {
+    friend class UA;
+
 public:
     enum Status
     {
@@ -26,14 +30,15 @@ protected:
     Status status;
     State state;
 
+private:
+    UA *ua;
+
 public:
     Registration() : status(OFFLINE), state(UNREGISTERED) {}
     ~Registration() {}
 
     virtual void promptState(State state, int sipCode, const std::string& sipReasonPhrase) = 0;
-
     virtual State getState() { return state; }
-
     virtual Status getStatus() { return status; }
 };
 

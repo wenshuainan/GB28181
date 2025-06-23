@@ -23,6 +23,11 @@ bool MANSCDPAgent::match(const std::string& method, const std::string& contentTy
     return contentType == "Application/MANSCDP+xml";
 }
 
+bool MANSCDPAgent::match(const std::string& callID)
+{
+    return m_callID == callID;
+}
+
 bool MANSCDPAgent::agent(const Header& header, const std::string& content)
 {
     XMLDocument doc;

@@ -50,13 +50,8 @@ const HeaderField& Header::getField(const std::string& name) const
     }
 }
 
-bool genReqHeader(const std::string& method, Header& req)
-{}
-
-bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& rsp)
-{}
-
-SIPAdapter* SIPAdapter::create()
+SIPAdapter* SIPAdapter::create(const Info& info)
 {
+    m_info = info;
     return new reSIProcate();
 }

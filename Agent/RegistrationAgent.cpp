@@ -15,9 +15,53 @@ bool RegistrationAgent::match(const std::string& method, const std::string& cont
     return method == "REGISTER";
 }
 
+bool RegistrationAgent::match(const std::string& callID)
+{
+    return m_callID == callID;
+}
+
 bool RegistrationAgent::agent(const Header& header, const std::string& content)
 {
     return false;
+}
+
+bool RegistrationAgent::start()
+{
+    bThreadRun = true;
+    std::thread t(&RegistrationAgent::stateProc, this);
+    t.detach();
+
+    Header header;
+    SIPAdapter *adapter = m_ua->getAdapter();
+
+    adapter->genReqHeader("REGISTER", header);
+    header.addField("Expires", "3600");
+    header.addField("Authorization", "Basic <KEY>");
+
+    if (adapter->send(header, ""))
+    {
+        m_callID = header.getField("Call-ID").getValue();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool RegistrationAgent::stop()
+{
+    Header header;
+    SIPAdapter *adapter = m_ua->getAdapter();
+
+    adapter->genReqHeader("REGISTER", header);
+    header.addField("Expires", "0");
+    header.addField("Authorization", "Basic <KEY>");
+
+    adapter->send(header, "");
+
+    bThreadRun = false;
+    return true;
 }
 
 void RegistrationAgent::stateProc()
@@ -48,19 +92,4 @@ void RegistrationAgent::stateProc()
         sleep(1);
         tick++;
     }
-}
-
-bool RegistrationAgent::start()
-{
-    bThreadRun = true;
-    std::thread t(&RegistrationAgent::stateProc, this);
-    t.detach();
-    
-    return true;
-}
-
-bool RegistrationAgent::stop()
-{
-    bThreadRun = false;
-    return true;
 }

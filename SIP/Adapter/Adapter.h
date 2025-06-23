@@ -122,13 +122,16 @@ public:
         ServerInfo server;
         Transport transport;
     };
+
+protected:
+    Info m_info;
     
 public:
     virtual bool init() = 0;
     virtual bool recv(Header& header, std::string& body) = 0;
     virtual bool send(const Header& header, const std::string& body) = 0;
-    virtual bool genReqHeader(const std::string& method, Header& req);
-    virtual bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& rsp);
+    virtual bool genReqHeader(const std::string& method, Header& req) = 0;
+    virtual bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& rsp) = 0;
 
 public:
     SIPAdapter() {}
