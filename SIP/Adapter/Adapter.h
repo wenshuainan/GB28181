@@ -99,7 +99,10 @@ public:
     void addField(const std::string& name, const std::string& value);
     Type getType() const { return m_type; }
     const std::string& getMethod() const { return m_requestLine.getMethod(); }
+    const std::string& getRequestUri() const { return m_requestLine.getRequestUri(); }
     int getCode() const { return m_statusLine.getCode(); }
+    const std::string& getReasonPhrase() const { return m_statusLine.getReasonPhrase(); }
+    const std::string& getValue(const std::string& name) const;
     const RequestLine& getRequestLine() const { return m_requestLine; }
     const StatusLine& getStatusLine() const { return m_statusLine; }
     const HeaderField& getField(const std::string& name) const;
@@ -118,12 +121,10 @@ public:
     struct ClientInfo
     {
         std::string id;
-        std::string domain;
     };
 
     struct ServerInfo
     {
-        std::string id;
         std::string domain;
         int port;
         std::string passwd;
@@ -143,7 +144,7 @@ public:
     virtual bool init() = 0;
     virtual bool recv(Header& header, std::string& body) = 0;
     virtual bool send(const Header& header, const std::string& body) = 0;
-    virtual bool genReqHeader(const std::string& method, Header& req) = 0;
+    virtual bool genReqHeader(const std::string& method, const std::string& requestUri, Header& req) = 0;
     virtual bool genResHeader(const Header& req, int code, const std::string& reasonPhrase, Header& res) = 0;
 
 public:

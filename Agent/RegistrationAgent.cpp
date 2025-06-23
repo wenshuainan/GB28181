@@ -35,9 +35,10 @@ bool RegistrationAgent::start()
     Header header;
     auto adapter = m_ua->getAdapter();
 
-    adapter->genReqHeader("REGISTER", header);
+    adapter->genReqHeader("REGISTER", "", header);
     header.addField("Expires", "3600");
     header.addField("Authorization", "Basic <KEY>");
+    header.addField("X-GB-Ver", "3.0");
 
     if (adapter->send(header, ""))
     {
@@ -55,7 +56,7 @@ bool RegistrationAgent::stop()
     Header header;
     auto adapter = m_ua->getAdapter();
 
-    adapter->genReqHeader("REGISTER", header);
+    adapter->genReqHeader("REGISTER", "", header);
     header.addField("Expires", "0");
     header.addField("Authorization", "Basic <KEY>");
 

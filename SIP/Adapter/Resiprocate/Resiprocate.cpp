@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Resiprocate.h"
 
-Resiprocate::Resiprocate()
+Resiprocate::Resiprocate(const SIPAdapter::Info& info) : userAgent(info)
 {}
 
 Resiprocate::~Resiprocate()
@@ -40,21 +40,29 @@ bool Resiprocate::recv(Header& header, std::string& body)
 bool Resiprocate::send(const Header& header, const std::string& body)
 {
     std::cout << "Resiprocate::send" << std::endl;
-    std::cout << header.getStatusLine().getCode() << std::endl;
-    std::cout << header.getField("From").getValue() << std::endl;
-    std::cout << header.getField("To").getValue() << std::endl;
-    std::cout << header.getField("Call-ID").getValue() << std::endl;
-    std::cout << header.getField("CSeq").getValue() << std::endl;
-    std::cout << header.getField("Contact").getValue() << std::endl;
-    std::cout << header.getField("Content-Type").getValue() << std::endl;
-    std::cout << header.getField("Content-Length").getValue() << std::endl;
+    if (header.getType() == Header::Request)
+    {
+        std::cout << "method: " << header.getMethod() << std::endl;
+        std::cout << "requestUri: " << header.getRequestLine().getRequestUri() << std::endl;
+    }
+    else
+    {
+        std::cout << "code: " << header.getCode() << std::endl;
+    }
+    std::cout << "From: " << header.getField("From").getValue() << std::endl;
+    std::cout << "To: " << header.getField("To").getValue() << std::endl;
+    std::cout << "Call-ID: " << header.getField("Call-ID").getValue() << std::endl;
+    std::cout << "CSeq: " << header.getField("CSeq").getValue() << std::endl;
+    std::cout << "Contact:" << header.getField("Contact").getValue() << std::endl;
+    std::cout << "Content-Type:" << header.getField("Content-Type").getValue() << std::endl;
+    std::cout << "Content-Length:" << header.getField("Content-Length").getValue() << std::endl;
 
     std::cout << body << std::endl;
 
     return true;
 }
 
-bool Resiprocate::genReqHeader(const std::string& method, Header& req)
+bool Resiprocate::genReqHeader(const std::string& method, const std::string& requestUri, Header& req)
 {
     std::cout << "Resiprocate::genReqHeader" << std::endl;
     req.setRequestLine(method, "sip:1000@192.168.1.100");

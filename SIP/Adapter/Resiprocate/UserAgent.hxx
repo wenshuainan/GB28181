@@ -27,7 +27,7 @@ class UserAgent : public CommandLineParser,
                   public InviteSessionHandler
 {
    public:
-      UserAgent(int argc, char** argv);
+      UserAgent(const SIPAdapter::Info& info);
       virtual ~UserAgent();
 
       virtual void startup();

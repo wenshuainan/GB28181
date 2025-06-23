@@ -46,7 +46,7 @@ else ifeq ($(CROSS_PLATFORM), X86GCC7.5)
 	CFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
 	CPPFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
 	LDFLAGS += -fsanitize=address
-	LDFLAGS += -L./SIP/Vendor/resiprocate/cmake/output/lib -ldum -lresip -lresipares -lrutil
+	LDFLAGS += -L./SIP/Vendor/resiprocate/cmake/output/lib -ldum -lresip -lrutil -lresipares -pthread
 endif
 
 .PHONY: all clean

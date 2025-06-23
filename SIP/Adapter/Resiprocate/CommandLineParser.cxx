@@ -121,6 +121,15 @@ CommandLineParser::CommandLineParser(int argc, char** argv)
 #endif
 }
 
+CommandLineParser::CommandLineParser(const SIPAdapter::Info& info)
+{
+   CommandLineParser(0, nullptr);
+   mAor.user() = info.client.id;
+   mAor.host() = info.server.domain;
+   mUdpPort = info.server.port; //server.transport=udp
+   mPassword = info.server.passwd;
+}
+
 resip::Uri 
 CommandLineParser::toUri(const char* input, const char* description)
 {

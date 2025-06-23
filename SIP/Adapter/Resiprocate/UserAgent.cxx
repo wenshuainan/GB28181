@@ -32,8 +32,8 @@ using namespace std;
 
 #define RESIPROCATE_SUBSYSTEM Subsystem::TEST
 
-UserAgent::UserAgent(int argc, char** argv) : 
-   CommandLineParser(argc, argv),
+UserAgent::UserAgent(const SIPAdapter::Info& info) : 
+   CommandLineParser(info),
    mProfile(std::make_shared<MasterProfile>()),
    mPollGrp(FdPollGrp::create()),
    mEventIntr(new EventThreadInterruptor(*mPollGrp)),
@@ -46,7 +46,7 @@ UserAgent::UserAgent(int argc, char** argv) :
    mDum(mStack),
    mStackThread(mStack, *mEventIntr, *mPollGrp)
 {
-   Log::initialize(mLogType, mLogLevel, argv[0]);
+   Log::initialize(mLogType, mLogLevel, "GB28181");
 
 #if defined(USE_SSL)
    if (mGenUserCert)
@@ -80,7 +80,7 @@ UserAgent::UserAgent(int argc, char** argv) :
    {
       mProfile->setOutboundProxy(Uri(mOutboundProxy));
    }
-   mProfile->setUserAgent("limpc/1.0");
+   mProfile->setUserAgent("GB28181/3.0");
    
    mDum.setMasterProfile(mProfile);
    mDum.setClientRegistrationHandler(this);
