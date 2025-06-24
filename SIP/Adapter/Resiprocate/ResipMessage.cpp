@@ -89,7 +89,10 @@ const std::string& SipGenericMessage::getFieldValue(const std::string& name) con
         }
         else if (name == "Call-ID")
         {
-            return m_adapter->instance->header(resip::h_CallId).getHeaderField().getBuffer();
+            // return m_adapter->instance->header(resip::h_CallId).getHeaderField().getBuffer();
+            std::string tmp = m_adapter->instance->header(resip::h_CallId).value().toString();
+            printf("<<<<<< call-id=[%s]\n", tmp.c_str());
+            return tmp;
         }
     }
 
@@ -167,5 +170,13 @@ void SipGenericMessage::setBody(const std::string& body)
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
         m_adapter->instance->setBody(body.c_str(), body.length());
+    }
+}
+
+void SipGenericMessage::print() const
+{
+    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    {
+        m_adapter->instance->encode(std::cout);
     }
 }

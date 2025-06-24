@@ -36,6 +36,7 @@ set(SRC_CUR UA.cpp)
 set(SRC_LIB ${SRC_XML} ${SRC_SIP_ADAPTER} ${SRC_SIP_VENDOR_ADAPTER} ${SRC_SIP_VENDOR} ${SRC_MANSCDP} ${SRC_PROCESS} ${SRC_AGENT} ${SRC_DEV} ${SRC_CUR})
 
 add_compile_options(
+		-g
         -pedantic-errors
         -Wall
         -Wclobbered

@@ -59,6 +59,12 @@ void UA::threadProc()
 
 bool UA::start(const Info& info)
 {
+    sipUA = SipUserAgent::create(info.sipInfo);
+    if (sipUA == nullptr)
+    {
+        return false;
+    }
+
     RegistrationAgent *registrationAgent = new RegistrationAgent(this);
     MANSCDPAgent *manscdpAgent = new MANSCDPAgent(this);
     MediaAgent *mediaAgent = new MediaAgent(this);
@@ -81,14 +87,9 @@ bool UA::start(const Info& info)
     std::thread t(&UA::threadProc, this);
     t.detach();
 
-    SipUserAgent::Info sipInfo;
-    sipUA = SipUserAgent::create(sipInfo);
-    if (sipUA == nullptr)
-    {
-        return false;
-    }
-
     registrationAgent->start();
+
+    return true;
 }
 
 bool UA::stop()

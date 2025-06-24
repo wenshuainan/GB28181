@@ -7,19 +7,19 @@ SipUserAgent* SipUserAgent::create(const SipUserAgent::Info& info)
 }
 
 ResipUserAgent::ResipUserAgent(const SipUserAgent::Info& info)
-    : UserAgent(info)
+    : BasicClientUserAgent(info)
 {}
 
 ResipUserAgent::~ResipUserAgent()
 {}
 
 bool ResipUserAgent::init()
-{
-    startup();
-}
+{}
 
 bool ResipUserAgent::recv(SipGenericMessage& message)
-{}
+{
+    return false;
+}
 
 bool ResipUserAgent::send(const SipGenericMessage& message)
 {
@@ -29,7 +29,7 @@ bool ResipUserAgent::send(const SipGenericMessage& message)
         return false;
     }
 
-    mDum.send(adapter->instance);
+    mDum->send(adapter->instance);
     return true;
 }
 
@@ -43,12 +43,12 @@ bool ResipUserAgent::genReqMessage(SipGenericMessage& req, const std::string& me
     if (method == "REGISTER")
     {
         SipMessageAdapter adapter;
-        adapter.instance = mDum.makeRegistration(resip::NameAddr(mAor), nullptr);
+        adapter.instance = mDum->makeRegistration(resip::NameAddr(mAor), nullptr);
         req.setAdapter(adapter);
     }
     else
     {
-        resip::Uri uri = resip::CommandLineParser::toUri(requestUri.c_str(), "");
+        resip::Uri uri = resip::BasicClientCmdLineParser::toUri(requestUri.c_str(), "");
         resip::NameAddr target(uri);
         resip::MethodTypes meth;
 
@@ -62,7 +62,7 @@ bool ResipUserAgent::genReqMessage(SipGenericMessage& req, const std::string& me
         }
 
         SipMessageAdapter adapter;
-        adapter.instance = mDum.makeOutOfDialogRequest(target, meth, nullptr);
+        adapter.instance = mDum->makeOutOfDialogRequest(target, meth, nullptr);
         req.setAdapter(adapter);
     }
 

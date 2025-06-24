@@ -14,6 +14,8 @@ private:
     int interval;
     int expire;
     bool bThreadRun;
+    std::string GBVerName;
+    std::string GBVerValue;
 
 public:
     RegistrationAgent(UA *ua);

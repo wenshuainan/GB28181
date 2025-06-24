@@ -6,6 +6,8 @@
 RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 {
     bThreadRun = false;
+    GBVerName = "X-GB-Ver";
+    GBVerValue = "3.0";
 }
 
 RegistrationAgent::~RegistrationAgent()
@@ -36,16 +38,22 @@ bool RegistrationAgent::start()
 
     SipGenericMessage message;
     sipUA->genReqMessage(message, "REGISTER", "");
-    message.addField("Expires", "3600");
-    message.addField("Authorization", "Basic <KEY>");
-    message.addField("X-GB-Ver", "3.0");
+    message.print();
+    // message.addField("Expires", "3600");
+    // message.addField("Authorization", "Basic <KEY>");
+    // message.addField("X-GB-Ver", "3.0");
+    message.addField(GBVerName, GBVerValue);
+    message.print();
 
-    if (sipUA->send(message))
+    // printf(">>>>>> callid=[%s]\n", message.getFieldValue("Call-ID").c_str());
+    message.getFieldValue("Call-ID");
+
+    /* if (sipUA->send(message))
     {
         m_callID = message.getFieldValue("Call-ID");
         return true;
     }
-    else
+    else */
     {
         return false;
     }

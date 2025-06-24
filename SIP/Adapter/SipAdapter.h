@@ -38,6 +38,7 @@ public:
     void addField(const std::string& name, const std::string& value);
     void addParameter(const std::string& fieldName, const std::string& parameterName, const std::string& value);
     void setBody(const std::string& body);
+    void print() const;
 };
 
 class SipUserAgent
@@ -53,12 +54,12 @@ public:
     struct ClientInfo
     {
         std::string id;
+        std::string passwd;
     };
 
     struct ServerInfo
     {
         std::string domain;
-        std::string passwd;
         Transport transport;
         int port;
     };

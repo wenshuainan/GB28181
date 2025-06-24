@@ -2,14 +2,14 @@
 #define RESIPROCATE_ADAPTER_H
 
 #include "SipAdapter.h"
-#include "UserAgent.hxx"
+#include "basicClientUserAgent.hxx"
 
 struct SipMessageAdapter
 {
     std::shared_ptr<resip::SipMessage> instance;
 };
 
-class ResipUserAgent : public SipUserAgent, public resip::UserAgent
+class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
 public:
     ResipUserAgent(const SipUserAgent::Info& info);
