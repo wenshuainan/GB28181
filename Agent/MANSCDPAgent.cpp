@@ -38,16 +38,16 @@ bool MANSCDPAgent::match(const std::string& callID)
     return m_callID == callID;
 }
 
-bool MANSCDPAgent::agent(const Header& header, const std::string& content)
+bool MANSCDPAgent::agent(const SipGenericMessage& message)
 {
-    auto type = header.getType();
+    auto type = message.getType();
 
-    if (type == Header::Type::Request)
+    if (type == SipGenericMessage::Type::Request)
     {
         XMLDocument doc;
-        reqHeader = std::make_shared<const Header>(header);
+        cacheMessage = std::make_shared<const SipGenericMessage>(message);
     
-        if (doc.Parse(content.c_str()) != XML_SUCCESS)
+        if (doc.Parse(message.getBody().c_str()) != XML_SUCCESS)
         {
             return false;
         }
@@ -70,15 +70,16 @@ bool MANSCDPAgent::agent(const Header& header, const std::string& content)
 
 bool MANSCDPAgent::sendResponse(int code, const XMLDocument& doc)
 {
-    Header header;
-    SIPAdapter *adapter = m_ua->getAdapter();
-    adapter->genResHeader(*reqHeader, code, "OK", header);
-    header.addField("Content-Type", "Application/MANSCDP+xml");
+    SipUserAgent *sipUA = m_ua->getSipUA();
+    SipGenericMessage message;
+    sipUA->genResMessage(message, *cacheMessage, code, "OK");
+    message.addField("Content-Type", "Application/MANSCDP+xml");
 
     XMLPrinter printer;
     doc.Print(&printer);
+    message.setBody(printer.CStr());
 
-    return adapter->send(header, printer.CStr());
+    return sipUA->send(message);
 }
 
 bool MANSCDPAgent::agentControl(const PTZCmdRequest::Request& req)

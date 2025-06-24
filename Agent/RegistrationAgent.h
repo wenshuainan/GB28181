@@ -22,7 +22,7 @@ public:
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
-    bool agent(const Header& header, const std::string& content);
+    bool agent(const SipGenericMessage& message);
     bool start();
     bool stop();
 

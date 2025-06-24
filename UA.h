@@ -1,7 +1,7 @@
 #ifndef USER_AGENT_H
 #define USER_AGENT_H
 
-#include "Adapter.h"
+#include "SipAdapter.h"
 #include "Agent.h"
 #include "9.1Registration.h"
 #include "9.2Play.h"
@@ -23,14 +23,14 @@ class UA
 public:
     struct Info
     {
-        SIPAdapter::Info sipInfo;
+        SipUserAgent::Info sipInfo;
         int interval;
         int expire;
     };
     
 private:
     std::vector<Agent *> agents;
-    SIPAdapter *adapter;
+    SipUserAgent *sipUA;
     bool bThreadRun;
 
 public:
@@ -43,7 +43,7 @@ private:
 public:
     bool start(const Info& info);
     bool stop();
-    SIPAdapter* getAdapter() { return adapter; }
+    SipUserAgent* getSipUA() { return sipUA; }
 };
 
 #endif

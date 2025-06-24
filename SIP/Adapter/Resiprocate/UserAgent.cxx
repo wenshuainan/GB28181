@@ -32,7 +32,7 @@ using namespace std;
 
 #define RESIPROCATE_SUBSYSTEM Subsystem::TEST
 
-UserAgent::UserAgent(const SIPAdapter::Info& info) : 
+UserAgent::UserAgent(const SipUserAgent::Info& info) : 
    CommandLineParser(info),
    mProfile(std::make_shared<MasterProfile>()),
    mPollGrp(FdPollGrp::create()),

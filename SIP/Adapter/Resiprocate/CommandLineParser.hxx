@@ -4,7 +4,7 @@
 #include <vector>
 #include "resip/stack/Uri.hxx"
 #include "rutil/Data.hxx"
-#include "Adapter.h"
+#include "SipAdapter.h"
 
 namespace resip
 {
@@ -13,7 +13,7 @@ class CommandLineParser
 {
    public:
       CommandLineParser(int argc, char** argv);
-      CommandLineParser(const SIPAdapter::Info& info);
+      CommandLineParser(const SipUserAgent::Info& info);
       static resip::Uri toUri(const char* input, const char* description);
       static std::vector<resip::Uri> toUriVector(const char* input, const char* description);
 

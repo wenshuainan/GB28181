@@ -2,7 +2,7 @@
 #define AGENT_H
 
 #include <string>
-#include "Adapter.h"
+#include "SipAdapter.h"
 
 class UA;
 
@@ -27,7 +27,7 @@ public:
     virtual bool match(const std::string& callID) = 0;
 
     /* UA调用agent将raw数据传给Agent，Agent解析成自己的格式后处理 */
-    virtual bool agent(const Header& header, const std::string& body) = 0;
+    virtual bool agent(const SipGenericMessage& message) = 0;
 };
 
 #endif

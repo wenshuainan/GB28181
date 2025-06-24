@@ -17,34 +17,33 @@ void UA::threadProc()
 {
     while (bThreadRun)
     {
-        Header header;
-        std::string body;
-        if (adapter->recv(header, body))
+        SipGenericMessage message;
+        if (sipUA->recv(message))
         {
-            auto type = header.getType();
-            if (type == Header::Request)
+            auto type = message.getType();
+            if (type == SipGenericMessage::Request)
             {
-                const std::string method = header.getMethod();
-                const std::string contentType = header.getField("Content-type").getValue();
+                const std::string method = message.getMethod();
+                const std::string contentType = message.getFieldValue("Content-Type");
 
                 for (auto agent : agents)
                 {
                     if (agent->match(method, contentType))
                     {
-                        agent->agent(header, body);
+                        agent->agent(message);
                         break;
                     }
                 }
             }
-            else if (type == Header::Response)
+            else if (type == SipGenericMessage::Response)
             {
-                const std::string callID = header.getField("Call-ID").getValue();
+                const std::string callID = message.getFieldValue("Call-ID");
 
                 for (auto agent : agents)
                 {
                     if (agent->match(callID))
                     {
-                        agent->agent(header, body);
+                        agent->agent(message);
                         break;
                     }
                 }
@@ -60,13 +59,6 @@ void UA::threadProc()
 
 bool UA::start(const Info& info)
 {
-    SIPAdapter::Info sipInfo;
-    adapter = SIPAdapter::create(sipInfo);
-    if (adapter == nullptr)
-    {
-        return false;
-    }
-
     RegistrationAgent *registrationAgent = new RegistrationAgent(this);
     MANSCDPAgent *manscdpAgent = new MANSCDPAgent(this);
     MediaAgent *mediaAgent = new MediaAgent(this);
@@ -88,6 +80,13 @@ bool UA::start(const Info& info)
     bThreadRun = true;
     std::thread t(&UA::threadProc, this);
     t.detach();
+
+    SipUserAgent::Info sipInfo;
+    sipUA = SipUserAgent::create(sipInfo);
+    if (sipUA == nullptr)
+    {
+        return false;
+    }
 
     registrationAgent->start();
 }

@@ -21,7 +21,7 @@ bool RegistrationAgent::match(const std::string& callID)
     return m_callID == callID;
 }
 
-bool RegistrationAgent::agent(const Header& header, const std::string& content)
+bool RegistrationAgent::agent(const SipGenericMessage& message)
 {
     return false;
 }
@@ -32,17 +32,17 @@ bool RegistrationAgent::start()
     std::thread t(&RegistrationAgent::stateProc, this);
     t.detach();
 
-    Header header;
-    auto adapter = m_ua->getAdapter();
+    auto sipUA = m_ua->getSipUA();
 
-    adapter->genReqHeader("REGISTER", "", header);
-    header.addField("Expires", "3600");
-    header.addField("Authorization", "Basic <KEY>");
-    header.addField("X-GB-Ver", "3.0");
+    SipGenericMessage message;
+    sipUA->genReqMessage(message, "REGISTER", "");
+    message.addField("Expires", "3600");
+    message.addField("Authorization", "Basic <KEY>");
+    message.addField("X-GB-Ver", "3.0");
 
-    if (adapter->send(header, ""))
+    if (sipUA->send(message))
     {
-        m_callID = header.getField("Call-ID").getValue();
+        m_callID = message.getFieldValue("Call-ID");
         return true;
     }
     else
@@ -53,14 +53,14 @@ bool RegistrationAgent::start()
 
 bool RegistrationAgent::stop()
 {
-    Header header;
-    auto adapter = m_ua->getAdapter();
+    auto sipUA = m_ua->getSipUA();
 
-    adapter->genReqHeader("REGISTER", "", header);
-    header.addField("Expires", "0");
-    header.addField("Authorization", "Basic <KEY>");
+    SipGenericMessage message;
+    sipUA->genReqMessage(message, "REGISTER", "");
+    message.addField("Expires", "0");
+    message.addField("Authorization", "Basic <KEY>");
 
-    adapter->send(header, "");
+    sipUA->send(message);
 
     bThreadRun = false;
     return true;

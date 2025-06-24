@@ -121,7 +121,7 @@ CommandLineParser::CommandLineParser(int argc, char** argv)
 #endif
 }
 
-CommandLineParser::CommandLineParser(const SIPAdapter::Info& info)
+CommandLineParser::CommandLineParser(const SipUserAgent::Info& info)
 {
    CommandLineParser(0, nullptr);
    mAor.user() = info.client.id;
