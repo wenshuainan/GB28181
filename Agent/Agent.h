@@ -10,7 +10,7 @@ class Agent
 {
 protected:
     UA *m_ua;
-    std::string m_callID;
+    std::string outCallID; // 外发请求的CallID，用于匹配Response
 
 public:
     Agent(UA *ua) : m_ua(ua) {}

@@ -19,7 +19,7 @@ using namespace std;
 BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 {
    const char* logType = "cout";
-   const char* logLevel = "INFO";
+   const char* logLevel = "DEBUG";
    char* tlsDomain = 0;
    char* certPath = 0;
    
@@ -137,6 +137,7 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(const SipUserAgent::Info& inf
 {
    mAor.user() = info.client.id;
    mPassword = info.client.passwd;
+   mRegisterDuration = info.client.expire;
    mAor.host() = info.server.domain;
    mUdpPort = info.server.port; // TODO: support other transports
 }

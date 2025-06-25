@@ -35,7 +35,7 @@ bool MANSCDPAgent::match(const std::string& method, const std::string& contentTy
 
 bool MANSCDPAgent::match(const std::string& callID)
 {
-    return m_callID == callID;
+    return outCallID == callID;
 }
 
 bool MANSCDPAgent::agent(const SipGenericMessage& message)
@@ -47,7 +47,7 @@ bool MANSCDPAgent::agent(const SipGenericMessage& message)
         XMLDocument doc;
         cacheMessage = std::make_shared<const SipGenericMessage>(message);
     
-        if (doc.Parse(message.getBody().c_str()) != XML_SUCCESS)
+        if (doc.Parse(message.getBody()) != XML_SUCCESS)
         {
             return false;
         }
@@ -70,16 +70,16 @@ bool MANSCDPAgent::agent(const SipGenericMessage& message)
 
 bool MANSCDPAgent::sendResponse(int code, const XMLDocument& doc)
 {
-    SipUserAgent *sipUA = m_ua->getSipUA();
+    SipUserAgent *sip = m_ua->getSip();
     SipGenericMessage message;
-    sipUA->genResMessage(message, *cacheMessage, code, "OK");
+    sip->genResMessage(message, *cacheMessage, code, "OK");
     message.addField("Content-Type", "Application/MANSCDP+xml");
 
     XMLPrinter printer;
     doc.Print(&printer);
     message.setBody(printer.CStr());
 
-    return sipUA->send(message);
+    return sip->send(message);
 }
 
 bool MANSCDPAgent::agentControl(const PTZCmdRequest::Request& req)

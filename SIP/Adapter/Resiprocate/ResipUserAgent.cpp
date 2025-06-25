@@ -1,4 +1,5 @@
 #include <iostream>
+#include <thread>
 #include "ResipUserAgent.h"
 
 SipUserAgent* SipUserAgent::create(const SipUserAgent::Info& info)
@@ -13,8 +14,24 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::Info& info)
 ResipUserAgent::~ResipUserAgent()
 {}
 
+void ResipUserAgent::threadProc()
+{
+    while (bInit)
+    {
+        process(1000);
+    }
+}
+
 bool ResipUserAgent::init()
-{}
+{
+    startup();
+
+    bInit = true;
+    std::thread t(&ResipUserAgent::threadProc, this);
+    t.detach();
+
+    return true;
+}
 
 bool ResipUserAgent::recv(SipGenericMessage& message)
 {
@@ -23,13 +40,17 @@ bool ResipUserAgent::recv(SipGenericMessage& message)
 
 bool ResipUserAgent::send(const SipGenericMessage& message)
 {
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     const std::shared_ptr<SipMessageAdapter> &adapter = message.getAdapter();
     if (adapter == nullptr || adapter->instance == nullptr)
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     mDum->send(adapter->instance);
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return true;
 }
 

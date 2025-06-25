@@ -10,12 +10,10 @@ class RegistrationAgent : public Agent
 
 private:
     Registration *registration;
-    int lastRegistered;
     int interval;
-    int expire;
-    bool bThreadRun;
     std::string GBVerName;
     std::string GBVerValue;
+    bool bThreadRun;
 
 public:
     RegistrationAgent(UA *ua);

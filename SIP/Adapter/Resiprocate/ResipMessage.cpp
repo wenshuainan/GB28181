@@ -1,3 +1,4 @@
+#include <strings.h>
 #include "SipAdapter.h"
 #include "resip/stack/SipMessage.hxx"
 #include "ResipUserAgent.h"
@@ -24,29 +25,27 @@ SipGenericMessage::Type SipGenericMessage::getType() const
     }
 }
 
-const std::string& SipGenericMessage::getMethod() const
+const char* SipGenericMessage::getMethod() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        return m_adapter->instance->methodStr().toString();
+        return m_adapter->instance->methodStr().c_str();
     }
     else
     {
-        static std::string empty;
-        return empty;
+        return "";
     }
 }
 
-const std::string& SipGenericMessage::getRequestUri() const
+const char* SipGenericMessage::getRequestUri() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        return m_adapter->instance->header(resip::h_RequestLine).uri().getAor().toString();
+        return m_adapter->instance->header(resip::h_RequestLine).uri().getAor().c_str();
     }
     else
     {
-        static std::string empty;
-        return empty;
+        return "";
     }
 }
 
@@ -62,48 +61,43 @@ int SipGenericMessage::getCode() const
     }
 }
 
-const std::string& SipGenericMessage::getReasonPhrase() const
+const char* SipGenericMessage::getReasonPhrase() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        return m_adapter->instance->header(resip::h_StatusLine).reason().toString();
+        return m_adapter->instance->header(resip::h_StatusLine).reason().c_str();
     }
     else
     {
-        static std::string empty;
-        return empty;
+        return "";
     }
 }
 
-const std::string& SipGenericMessage::getFieldValue(const std::string& name) const
+const char* SipGenericMessage::getFieldValue(const std::string& name) const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        if (name == "Content-Type")
+        if (strcasecmp(name.c_str(), "Content-Type") == 0)
         {
             return m_adapter->instance->header(resip::h_ContentType).getHeaderField().getBuffer();
         }
-        else if (name == "Content-Length")
+        else if (strcasecmp(name.c_str(), "Content-Length") == 0)
         {
-            return m_adapter->instance->header(resip::h_ContentLength).getHeaderField().getBuffer();
+            return m_adapter->instance->header(resip::h_ContentLength).comment().c_str();
         }
-        else if (name == "Call-ID")
+        else if (strcasecmp(name.c_str(), "Call-ID") == 0)
         {
-            // return m_adapter->instance->header(resip::h_CallId).getHeaderField().getBuffer();
-            std::string tmp = m_adapter->instance->header(resip::h_CallId).value().toString();
-            printf("<<<<<< call-id=[%s]\n", tmp.c_str());
-            return tmp;
+            return m_adapter->instance->header(resip::h_CallId).value().c_str();
         }
     }
 
-    static std::string empty;
-    return empty;
+    return "";
 }
 
-const std::string& SipGenericMessage::getParameterValue(const std::string& fieldName, const std::string& parameterName) const
+const char* SipGenericMessage::getParameterValue(const std::string& fieldName, const std::string& parameterName) const
 {}
 
-const std::string& SipGenericMessage::getBody() const
+const char* SipGenericMessage::getBody() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
@@ -111,8 +105,7 @@ const std::string& SipGenericMessage::getBody() const
     }
     else
     {
-        static std::string empty;
-        return empty;
+        return "";
     }
 }
 
@@ -138,22 +131,28 @@ void SipGenericMessage::addField(const std::string& name, const std::string& val
 
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        if (name == "Authorization")
+        resip::Headers::Type type = resip::Headers::UNKNOWN;
+
+        if (strcasecmp(headerName, "Authorization") == 0)
         {
-            m_adapter->instance->addHeader(resip::Headers::Authorization, headerName, headerLen, start, len);
+            type = resip::Headers::Authorization;
         }
-        else if (name == "Content-Type")
+        else if (strcasecmp(headerName, "Content-Type") == 0)
         {
-            m_adapter->instance->addHeader(resip::Headers::ContentType, headerName, headerLen, start, len);
+            type = resip::Headers::ContentType;
         }
-        else if (name == "Content-Length")
+        else if (strcasecmp(headerName, "Content-Length") == 0)
         {
-            m_adapter->instance->addHeader(resip::Headers::ContentLength, headerName, headerLen, start, len);
+            type = resip::Headers::ContentLength;
         }
         else
         {
-            m_adapter->instance->addHeader(resip::Headers::UNKNOWN, headerName, headerLen, start, len);
+            type = resip::Headers::UNKNOWN;
         }
+
+        /* 先移除现有的再添加 */
+        m_adapter->instance->remove(type);
+        m_adapter->instance->addHeader(type, headerName, headerLen, start, len);
     }
 }
 

@@ -18,7 +18,7 @@ void UA::threadProc()
     while (bThreadRun)
     {
         SipGenericMessage message;
-        if (sipUA->recv(message))
+        if (sip->recv(message))
         {
             auto type = message.getType();
             if (type == SipGenericMessage::Request)
@@ -59,35 +59,46 @@ void UA::threadProc()
 
 bool UA::start(const Info& info)
 {
-    sipUA = SipUserAgent::create(info.sipInfo);
-    if (sipUA == nullptr)
+    /* 创建register代理 */
+    RegistrationAgent *regAgent = new RegistrationAgent(this);
+    if (regAgent != nullptr)
+    {
+        regAgent->registration = new DevRegistration(); // 创建register设备处理对象
+        agents.push_back(regAgent);
+    }
+
+    /* 创建MANSCDP协议代理 */
+    MANSCDPAgent *cdpAgent = new MANSCDPAgent(this);
+    if (cdpAgent != nullptr)
+    {
+        cdpAgent->control = new DevControl(); // 创建MANSCDP设备处理对象
+        agents.push_back(cdpAgent);
+    }
+
+    /* 创建媒体代理 */
+    MediaAgent *mediaAgent = new MediaAgent(this);
+    if (mediaAgent != nullptr)
+    {
+        agents.push_back(mediaAgent);
+    }
+
+    /* 创建sip用户代理 */
+    sip = SipUserAgent::create(info.sipInfo);
+    if (sip == nullptr)
     {
         return false;
     }
 
-    RegistrationAgent *registrationAgent = new RegistrationAgent(this);
-    MANSCDPAgent *manscdpAgent = new MANSCDPAgent(this);
-    MediaAgent *mediaAgent = new MediaAgent(this);
-
-    if (manscdpAgent != nullptr)
-    {
-        manscdpAgent->control = new DevControl();
-    }
-    
-    if (registrationAgent != nullptr)
-    {
-        registrationAgent->registration = new DevRegistration();
-    }
-
-    agents.push_back(registrationAgent);
-    agents.push_back(manscdpAgent);
-    agents.push_back(mediaAgent);
-
+    /* 创建主线程 */
     bThreadRun = true;
     std::thread t(&UA::threadProc, this);
     t.detach();
 
-    registrationAgent->start();
+    /* 初始化sip用户代理 */
+    sip->init();
+
+    /* 发起注册 */
+    regAgent->start();
 
     return true;
 }

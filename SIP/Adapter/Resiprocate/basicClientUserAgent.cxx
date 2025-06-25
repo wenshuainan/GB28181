@@ -265,6 +265,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) :
    // here is only as unique as the hostname of this machine.  If someone runs two 
    // instances of this application on the same host for the same Aor, then things will 
    // break.  See RFC5626 section 4.1
+#if 0
    Data hostname = DnsUtil::getLocalHostName();
    Data instanceHash = hostname.md5().uppercase();
    assert(instanceHash.size() == 32);
@@ -281,6 +282,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) :
    instanceId += instanceHash.substr(20, 12);
    instanceId += ">";
    mProfile->setInstanceId(instanceId);  
+#endif
    if(mOutboundEnabled)
    {
       mProfile->setRegId(1);
@@ -334,6 +336,7 @@ BasicClientUserAgent::startup()
    mStack->run();
    mStackThread->run(); 
 
+#if 0
    if (mRegisterDuration)
    {
       InfoLog (<< "register for " << mAor);
@@ -358,6 +361,7 @@ BasicClientUserAgent::startup()
          newCall->initiateCall(mCallTarget, mProfile);
       }
    }
+#endif
 }
 
 void

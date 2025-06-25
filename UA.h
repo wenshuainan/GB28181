@@ -25,12 +25,11 @@ public:
     {
         SipUserAgent::Info sipInfo;
         int interval;
-        int expire;
     };
     
 private:
     std::vector<Agent *> agents;
-    SipUserAgent *sipUA;
+    SipUserAgent *sip;
     bool bThreadRun;
 
 public:
@@ -43,7 +42,7 @@ private:
 public:
     bool start(const Info& info);
     bool stop();
-    SipUserAgent* getSipUA() { return sipUA; }
+    SipUserAgent* getSip() { return sip; }
 };
 
 #endif

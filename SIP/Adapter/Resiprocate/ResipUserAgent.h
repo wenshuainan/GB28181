@@ -11,6 +11,9 @@ struct SipMessageAdapter
 
 class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
+private:
+    bool bInit;
+    
 public:
     ResipUserAgent(const SipUserAgent::Info& info);
     virtual ~ResipUserAgent();
@@ -27,6 +30,9 @@ public:
                         const resip::SipMessage& request, 
                         int responseCode, 
                         const resip::Data& reason = resip::Data::Empty) const;
+
+private:
+    void threadProc();
 };
 
 #endif
