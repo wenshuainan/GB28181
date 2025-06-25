@@ -6,8 +6,9 @@ CROSS_PLATFORM ?= GK7201V200
 CC  = gcc
 CPP = g++
 
+PROJECT_ROOT := ..
 TARGET := GB28181Demo
-
+SIP_OUTPUT := $(PROJECT_ROOT)/SIP/Vendor/resiprocate/cmake/output
 
 CSRCS += 
 CPPSRCS += test.cpp
@@ -17,36 +18,35 @@ OBJS += $(patsubst %.cpp, %.o, $(CPPSRCS))
 
 DEPS := $(OBJS:.o=.d)
 
-INCLUDES := -I.
-INCLUDES += -I./Agent
-INCLUDES += -I./MANSCDP
-INCLUDES += -I./Process
-INCLUDES += -I./UserInterface
-INCLUDES += -I./tinyxml2
-INCLUDES += -I./SIP/Adapter
+INCLUDES := -I$(PROJECT_ROOT)
+INCLUDES += -I$(PROJECT_ROOT)/Agent
+INCLUDES += -I$(PROJECT_ROOT)/MANSCDP
+INCLUDES += -I$(PROJECT_ROOT)/Process
+INCLUDES += -I$(PROJECT_ROOT)/UserInterface
+INCLUDES += -I$(PROJECT_ROOT)/tinyxml2
+INCLUDES += -I$(PROJECT_ROOT)/SIP/Adapter
 
 CFLAGS := $(INCLUDES) -g -MMD
 
 CPPFLAGS := $(CFLAGS)
 
-LDFLAGS := -L./Build/
+LDFLAGS := -L$(PROJECT_ROOT)/Build/
 LDFLAGS += -lGB28181
 
 #不同的硬件平台
 ifeq ($(CROSS_PLATFORM), GK7201V200)
 	CC  := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-gcc
 	CPP := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-g++
-	CPPFLAGS += -DDISPLAY_ST7789
 else ifeq ($(CROSS_PLATFORM), X86GCC7.5)
 	CC  := /usr/bin/gcc
 	CPP := /usr/bin/g++
 	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	
-	CFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
-	CPPFLAGS += -I./SIP/Vendor/resiprocate/cmake/output/include
+	CFLAGS += -I$(SIP_OUTPUT)/include
+	CPPFLAGS += -I$(SIP_OUTPUT)/sinclude
 	LDFLAGS += -fsanitize=address
-	LDFLAGS += -L./SIP/Vendor/resiprocate/cmake/output/lib -ldum -lresip -lrutil -lresipares -pthread
+	LDFLAGS += -L$(SIP_OUTPUT)/lib -ldum -lresip -lrutil -lresipares -pthread
 endif
 
 .PHONY: all clean

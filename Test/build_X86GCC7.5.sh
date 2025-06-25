@@ -5,7 +5,7 @@
 #2：./build_X86GCC7.5 clean		清除Demo目录的产物
 
 cross=X86GCC7.5
-lib_build=./Build
+lib_build=../Build
 
 #clean
 if [ $# -eq 1 ] && [ $1 = "clean" ];then
