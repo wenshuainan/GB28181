@@ -38,14 +38,14 @@ bool MANSCDPAgent::match(const std::string& callID)
     return outCallID == callID;
 }
 
-bool MANSCDPAgent::agent(const SipGenericMessage& message)
+bool MANSCDPAgent::agent(const SipMessageApp& message)
 {
     auto type = message.getType();
 
-    if (type == SipGenericMessage::Type::Request)
+    if (type == SipMessageApp::Type::Request)
     {
         XMLDocument doc;
-        cacheMessage = std::make_shared<const SipGenericMessage>(message);
+        cacheMessage = std::make_shared<const SipMessageApp>(message);
     
         if (doc.Parse(message.getBody()) != XML_SUCCESS)
         {
@@ -71,7 +71,7 @@ bool MANSCDPAgent::agent(const SipGenericMessage& message)
 bool MANSCDPAgent::sendResponse(int code, const XMLDocument& doc)
 {
     SipUserAgent *sip = m_ua->getSip();
-    SipGenericMessage message;
+    SipMessageApp message;
     sip->genResMessage(message, *cacheMessage, code, "OK");
     message.addField("Content-Type", "Application/MANSCDP+xml");
 

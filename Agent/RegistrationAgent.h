@@ -10,10 +10,8 @@ class RegistrationAgent : public Agent
 
 private:
     Registration *registration;
-    int interval;
     std::string GBVerName;
     std::string GBVerValue;
-    bool bThreadRun;
 
 public:
     RegistrationAgent(UA *ua);
@@ -22,12 +20,12 @@ public:
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
-    bool agent(const SipGenericMessage& message);
+    bool agent(const SipMessageApp& message);
     bool start();
     bool stop();
 
 private:
-    void stateProc();
+    void changeDevState(int code, const std::string& reasonPhrase);
 };
 
 #endif

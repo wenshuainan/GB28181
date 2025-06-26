@@ -9,11 +9,9 @@ public:
     enum State
     {
         UNREGISTERED,       // 未注册（已注销）
-        REGISTERING,        // 注册中
         REGISTER_FAILED,    // 注册失败
         REGISTERED,         // 注册成功
         REGISTER_EXPIRED,   // 注册过期
-        UNREGISTERING,      // 注销中
     };
 
 protected:
@@ -23,7 +21,7 @@ public:
     Registration() : state(UNREGISTERED) {}
     ~Registration() {}
 
-    virtual void processState(State state, int sipCode, const std::string& sipReasonPhrase) = 0;
+    virtual void processState(State state, const std::string& sipReasonPhrase) = 0;
     virtual State getState() { return state; }
 };
 

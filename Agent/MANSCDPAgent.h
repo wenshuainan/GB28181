@@ -11,7 +11,7 @@ class MANSCDPAgent : public Agent
 
 private:
     Control *control;
-    std::shared_ptr<const SipGenericMessage> cacheMessage;
+    std::shared_ptr<const SipMessageApp> cacheMessage;
 
 private:
     /* 
@@ -30,7 +30,7 @@ public:
     bool stop();
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
-    bool agent(const SipGenericMessage& message);
+    bool agent(const SipMessageApp& message);
 
 private:
     bool sendResponse(int code, const XMLDocument& doc);

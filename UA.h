@@ -18,26 +18,26 @@
 #include "9.13Upgrade.h"
 #include "9.14Snapshot.h"
 
+#define DEBUG_LOG std::cout << "GB28181: " << __FILE__ << ":" << __LINE__ << " "
+
 class UA
 {
 public:
     struct Info
     {
         SipUserAgent::Info sipInfo;
-        int interval;
     };
     
 private:
     std::vector<Agent *> agents;
     SipUserAgent *sip;
-    bool bThreadRun;
 
 public:
     UA();
     ~UA();
 
-private:
-    void threadProc();
+public:
+    bool postRecved(const SipMessageApp& message);
 
 public:
     bool start(const Info& info);

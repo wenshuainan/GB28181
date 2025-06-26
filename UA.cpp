@@ -1,4 +1,4 @@
-#include <thread>
+#include <iostream>
 #include <unistd.h>
 #include "UA.h"
 #include "MANSCDPAgent.h"
@@ -13,48 +13,47 @@ UA::UA()
 UA::~UA()
 {}
 
-void UA::threadProc()
+bool UA::postRecved(const SipMessageApp& message)
 {
-    while (bThreadRun)
+    auto type = message.getType();
+
+    if (type == SipMessageApp::Request)
     {
-        SipGenericMessage message;
-        if (sip->recv(message))
+        const std::string method = message.getMethod();
+        const std::string contentType = message.getContentType();
+        DEBUG_LOG << "Method: " << method << " Content-Type: " << contentType << std::endl;
+
+        for (auto agent : agents)
         {
-            auto type = message.getType();
-            if (type == SipGenericMessage::Request)
+            if (agent->match(method, contentType))
             {
-                const std::string method = message.getMethod();
-                const std::string contentType = message.getFieldValue("Content-Type");
-
-                for (auto agent : agents)
-                {
-                    if (agent->match(method, contentType))
-                    {
-                        agent->agent(message);
-                        break;
-                    }
-                }
-            }
-            else if (type == SipGenericMessage::Response)
-            {
-                const std::string callID = message.getFieldValue("Call-ID");
-
-                for (auto agent : agents)
-                {
-                    if (agent->match(callID))
-                    {
-                        agent->agent(message);
-                        break;
-                    }
-                }
-            }
-            else
-            {
+                return agent->agent(message);
             }
         }
 
-        sleep(10);
+        DEBUG_LOG << "Dismatched request body: " << std::endl << "===" << message.getBody() << "===" << std::endl;
     }
+    else if (type == SipMessageApp::Response)
+    {
+        const std::string callID = message.getCallID();
+        DEBUG_LOG << "Call-ID: " << callID << std::endl;
+
+        for (auto agent : agents)
+        {
+            if (agent->match(callID))
+            {
+                return agent->agent(message);
+            }
+        }
+
+        DEBUG_LOG << "Dismatched response" << std::endl;
+    }
+    else
+    {
+        DEBUG_LOG << "Unknown message type" << std::endl;
+    }
+
+    return false;
 }
 
 bool UA::start(const Info& info)
@@ -83,16 +82,11 @@ bool UA::start(const Info& info)
     }
 
     /* 创建sip用户代理 */
-    sip = SipUserAgent::create(info.sipInfo);
+    sip = SipUserAgent::create(this, info.sipInfo);
     if (sip == nullptr)
     {
         return false;
     }
-
-    /* 创建主线程 */
-    bThreadRun = true;
-    std::thread t(&UA::threadProc, this);
-    t.detach();
 
     /* 初始化sip用户代理 */
     sip->init();
@@ -105,11 +99,10 @@ bool UA::start(const Info& info)
 
 bool UA::stop()
 {
-    bThreadRun = false;
-    return true;
-
     for (auto agent : agents)
     {
         delete agent;
     }
+
+    return true;
 }

@@ -14,7 +14,7 @@ int main()
     info.sipInfo.client.id = "102";
     info.sipInfo.client.passwd = "102";
     info.sipInfo.client.expire = 86400;
-    info.interval = 60;
+    info.sipInfo.interval = 60;
 
     ua.start(info);
 

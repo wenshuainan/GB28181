@@ -1,12 +1,10 @@
-#include <thread>
+#include <iostream>
 #include <unistd.h>
 #include "RegistrationAgent.h"
 #include "UA.h"
 
 RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 {
-    interval = 60;
-    bThreadRun = false;
     GBVerName = "X-GB-Ver";
     GBVerValue = "3.0";
 }
@@ -24,30 +22,29 @@ bool RegistrationAgent::match(const std::string& callID)
     return outCallID == callID;
 }
 
-bool RegistrationAgent::agent(const SipGenericMessage& message)
+bool RegistrationAgent::agent(const SipMessageApp& message)
 {
-    return false;
+    changeDevState(message.getCode(), message.getReasonPhrase());
+    return true;
 }
 
 bool RegistrationAgent::start()
 {
-    bThreadRun = true;
-    std::thread t(&RegistrationAgent::stateProc, this);
-    t.detach();
-
     auto sip = m_ua->getSip();
 
-    SipGenericMessage message;
+    SipMessageApp message;
     sip->genReqMessage(message, "REGISTER");
     // message.print(); //debug
 
-    /* 添加扩展GB版本号头域（附录I） */
+    /* 添加GB版本号扩展头域（附录I） */
     message.addField(GBVerName, GBVerValue);
     // message.print(); //debug
 
     if (sip->send(message))
     {
-        outCallID = message.getFieldValue("Call-ID");
+        outCallID = message.getCallID();
+        DEBUG_LOG << "Call-ID: " << outCallID << std::endl;
+
         return true;
     }
     else
@@ -61,50 +58,49 @@ bool RegistrationAgent::stop()
 {
     auto sip = m_ua->getSip();
 
-    SipGenericMessage message;
+    SipMessageApp message;
     sip->genReqMessage(message, "REGISTER");
 
     message.addField("Expires", "0");
 
-    /* 添加扩展GB版本号头域（附录I） */
+    /* 添加GB版本号扩展头域（附录I） */
     message.addField(GBVerName, GBVerValue);
     message.print(); //debug
 
     if (sip->send(message))
     {
-        outCallID = message.getFieldValue("Call-ID");
+        outCallID = message.getCallID();
     }
 
-    bThreadRun = false;
     return true;
 }
 
-void RegistrationAgent::stateProc()
+void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
 {
-    unsigned long long tick = 0;
+    Registration::State newState;
+    Registration::State oldState = registration->getState();
 
-    while (bThreadRun)
+    switch (code)
     {
-        switch (registration->getState())
+    case 200:
+        if (oldState == Registration::REGISTERED)
         {
-        case Registration::UNREGISTERED:
-            break;
-        case Registration::REGISTERING:
-            break;
-        case Registration::REGISTER_FAILED:
-            break;
-        case Registration::REGISTERED:
-            break;
-        case Registration::REGISTER_EXPIRED:
-            break;
-        case Registration::UNREGISTERING:
-            break;
-        
-        default:
-            break;
+            newState = Registration::UNREGISTERED;
         }
-
-        sleep(1);
-        tick++;
+        else
+        {
+            newState = Registration::REGISTERED;
+        }
+        break;
+    case 403:
+        newState = Registration::REGISTER_FAILED;
+        break;
+    
+    default:
+        DEBUG_LOG << "Unkown code: " << code << std::endl;
+        newState = Registration::REGISTER_FAILED;
+        break;
     }
+
+    registration->processState(newState, reasonPhrase);
 }

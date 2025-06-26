@@ -19,7 +19,7 @@ using namespace std;
 BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 {
    const char* logType = "cout";
-   const char* logLevel = "DEBUG";
+   const char* logLevel = "STACK";
    char* tlsDomain = 0;
    char* certPath = 0;
    

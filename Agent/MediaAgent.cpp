@@ -28,7 +28,7 @@ bool MediaAgent::match(const std::string& callID)
     return outCallID == callID;
 }
 
-bool MediaAgent::agent(const SipGenericMessage& message)
+bool MediaAgent::agent(const SipMessageApp& message)
 {
     return false;
 }

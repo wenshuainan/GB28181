@@ -7,5 +7,5 @@ public:
     ~DevRegistration() {}
 
 public:
-    void processState(State state, int sipCode, const std::string& sipReasonPhrase);
+    void processState(State state, const std::string& sipReasonPhrase);
 };

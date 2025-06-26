@@ -1,31 +1,34 @@
 #include <strings.h>
 #include "SipAdapter.h"
 #include "resip/stack/SipMessage.hxx"
+#include "resip/stack/OctetContents.hxx"
+#include "resip/stack/SdpContents.hxx"
+#include "resip/stack/PlainContents.hxx"
 #include "ResipUserAgent.h"
 
-SipGenericMessage::SipGenericMessage()
+SipMessageApp::SipMessageApp()
     : m_adapter(std::make_shared<SipMessageAdapter>())
 {}
 
-SipGenericMessage::~SipGenericMessage()
+SipMessageApp::~SipMessageApp()
 {}
 
-const std::shared_ptr<SipMessageAdapter>& SipGenericMessage::getAdapter() const
+const std::shared_ptr<SipMessageAdapter>& SipMessageApp::getAdapter() const
 {
     return m_adapter;
 }
 
-SipGenericMessage::Type SipGenericMessage::getType() const
+SipMessageApp::Type SipMessageApp::getType() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
         return m_adapter->instance->isRequest() ?
-                SipGenericMessage::Type::Request
-                : SipGenericMessage::Type::Response;
+                SipMessageApp::Type::Request
+                : SipMessageApp::Type::Response;
     }
 }
 
-const char* SipGenericMessage::getMethod() const
+const char* SipMessageApp::getMethod() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
@@ -37,19 +40,7 @@ const char* SipGenericMessage::getMethod() const
     }
 }
 
-const char* SipGenericMessage::getRequestUri() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        return m_adapter->instance->header(resip::h_RequestLine).uri().getAor().c_str();
-    }
-    else
-    {
-        return "";
-    }
-}
-
-int SipGenericMessage::getCode() const
+int SipMessageApp::getCode() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
@@ -61,7 +52,7 @@ int SipGenericMessage::getCode() const
     }
 }
 
-const char* SipGenericMessage::getReasonPhrase() const
+const char* SipMessageApp::getReasonPhrase() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
@@ -73,35 +64,34 @@ const char* SipGenericMessage::getReasonPhrase() const
     }
 }
 
-const char* SipGenericMessage::getFieldValue(const std::string& name) const
+const char* SipMessageApp::getContentType() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        if (strcasecmp(name.c_str(), "Content-Type") == 0)
+        resip::Mime& type = m_adapter->instance->header(resip::h_ContentType);
+
+        if (type == resip::Mime("MANSCDP", "xml"))
         {
-            return m_adapter->instance->header(resip::h_ContentType).getHeaderField().getBuffer();
+            return "MANSCDP/xml";
         }
-        else if (strcasecmp(name.c_str(), "Content-Length") == 0)
+        else if (type == resip::Mime("application", "sdp"))
         {
-            return m_adapter->instance->header(resip::h_ContentLength).comment().c_str();
+            return "application/sdp";
         }
-        else if (strcasecmp(name.c_str(), "Call-ID") == 0)
+        else if (type == resip::Mime("text", "plain"))
         {
-            return m_adapter->instance->header(resip::h_CallId).value().c_str();
+            return "text/plain";
         }
     }
 
     return "";
 }
 
-const char* SipGenericMessage::getParameterValue(const std::string& fieldName, const std::string& parameterName) const
-{}
-
-const char* SipGenericMessage::getBody() const
+const char* SipMessageApp::getCallID() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        return m_adapter->instance->getRawBody().getBuffer();
+        return m_adapter->instance->header(resip::h_CallId).value().c_str();
     }
     else
     {
@@ -109,7 +99,43 @@ const char* SipGenericMessage::getBody() const
     }
 }
 
-void SipGenericMessage::setAdapter(const SipMessageAdapter& adapter)
+const char* SipMessageApp::getBody() const
+{
+    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    {
+        resip::Contents *contents = m_adapter->instance->getContents();
+        if (contents)
+        {
+            const resip::Mime& type = contents->getType();
+
+            if (type == resip::Mime("application", "octet-stream"))
+            {
+                resip::OctetContents *octet = dynamic_cast<resip::OctetContents*>(contents);
+                if (octet)
+                {
+                    return octet->octets().c_str();
+                }
+            }
+            else if (type == resip::Mime("application", "sdp"))
+            {
+            }
+            else if (type == resip::Mime("text", "plain"))
+            {
+                resip::PlainContents *plain = dynamic_cast<resip::PlainContents*>(contents);
+                if (plain)
+                {
+                    return plain->text().c_str();
+                }
+            }
+        }
+    }
+    else
+    {
+        return "";
+    }
+}
+
+void SipMessageApp::setAdapter(const SipMessageAdapter& adapter)
 {
     if (m_adapter != nullptr)
     {
@@ -117,7 +143,7 @@ void SipGenericMessage::setAdapter(const SipMessageAdapter& adapter)
     }
 }
 
-void SipGenericMessage::addField(const std::string& name, const std::string& value)
+void SipMessageApp::addField(const std::string& name, const std::string& value)
 {
     if (name.empty() || value.empty())
     {
@@ -156,10 +182,10 @@ void SipGenericMessage::addField(const std::string& name, const std::string& val
     }
 }
 
-void SipGenericMessage::addParameter(const std::string& fieldName, const std::string& parameterName, const std::string& value)
+void SipMessageApp::addParameter(const std::string& fieldName, const std::string& parameterName, const std::string& value)
 {}
 
-void SipGenericMessage::setBody(const std::string& body)
+void SipMessageApp::setBody(const std::string& body)
 {
     if (body.empty())
     {
@@ -172,7 +198,7 @@ void SipGenericMessage::setBody(const std::string& body)
     }
 }
 
-void SipGenericMessage::print() const
+void SipMessageApp::print() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {

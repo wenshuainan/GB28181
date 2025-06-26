@@ -1,15 +1,29 @@
 #include <iostream>
 #include <thread>
 #include "ResipUserAgent.h"
+#include "UA.h"
 
-SipUserAgent* SipUserAgent::create(const SipUserAgent::Info& info)
+SipUserAgent* SipUserAgent::create(UA *app, const Info& info)
 {
-    return new ResipUserAgent(info);
+    SipUserAgent *sip = new ResipUserAgent(info);
+    if (sip != nullptr)
+    {
+        sip->app = app;
+    }
+
+    return sip;
+}
+
+bool SipUserAgent::postApp(UA *app, const SipMessageApp& message)
+{
+    return app->postRecved(message);
 }
 
 ResipUserAgent::ResipUserAgent(const SipUserAgent::Info& info)
     : BasicClientUserAgent(info)
-{}
+{
+    mRegistrationRetryDelayTime = info.interval;
+}
 
 ResipUserAgent::~ResipUserAgent()
 {}
@@ -33,28 +47,24 @@ bool ResipUserAgent::init()
     return true;
 }
 
-bool ResipUserAgent::recv(SipGenericMessage& message)
+bool ResipUserAgent::recv(SipMessageApp& message)
 {
     return false;
 }
 
-bool ResipUserAgent::send(const SipGenericMessage& message)
+bool ResipUserAgent::send(const SipMessageApp& message)
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     const std::shared_ptr<SipMessageAdapter> &adapter = message.getAdapter();
     if (adapter == nullptr || adapter->instance == nullptr)
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     mDum->send(adapter->instance);
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return true;
 }
 
-bool ResipUserAgent::genReqMessage(SipGenericMessage& req, const std::string& method, const std::string& requestUri)
+bool ResipUserAgent::genReqMessage(SipMessageApp& req, const std::string& method, const std::string& requestUri)
 {
     if (req.getAdapter() == nullptr)
     {
@@ -90,7 +100,7 @@ bool ResipUserAgent::genReqMessage(SipGenericMessage& req, const std::string& me
     return true;
 }
 
-bool ResipUserAgent::genResMessage(SipGenericMessage& res, const SipGenericMessage& req, int code, const std::string& reasonPhrase)
+bool ResipUserAgent::genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase)
 {
     const std::shared_ptr<SipMessageAdapter> &reqAdapter = req.getAdapter();
     if (reqAdapter == nullptr || reqAdapter->instance == nullptr)
@@ -120,4 +130,42 @@ ResipUserAgent::makeResponse(resip::SipMessage& response,
 {
    resip_assert(request.isRequest());
    resip::Helper::makeResponse(response, request, responseCode, reason);
+}
+
+void ResipUserAgent::postAdapter(const resip::SipMessage& sipMessage)
+{
+    SipMessageApp messageApp;
+    SipMessageAdapter messageAdapter;
+
+    messageAdapter.instance = std::make_shared<resip::SipMessage>(sipMessage);
+    messageApp.setAdapter(messageAdapter);
+    
+    postApp(this->app, messageApp);
+}
+
+void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
+{
+    postAdapter(response);
+}
+
+void ResipUserAgent::onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
+{
+    postAdapter(response);
+}
+
+void ResipUserAgent::onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
+{
+    postAdapter(response);
+}
+
+int ResipUserAgent::onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg)
+{
+    postAdapter(msg);
+
+    return mRegistrationRetryDelayTime;
+}
+
+void ResipUserAgent::onMessageArrived(resip::ServerPagerMessageHandle, const resip::SipMessage& message)
+{
+    postAdapter(message);
 }

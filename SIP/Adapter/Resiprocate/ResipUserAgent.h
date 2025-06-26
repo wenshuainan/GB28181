@@ -20,10 +20,10 @@ public:
 
 public:
     virtual bool init();
-    virtual bool recv(SipGenericMessage& message);
-    virtual bool send(const SipGenericMessage& message);
-    virtual bool genReqMessage(SipGenericMessage& req, const std::string& method, const std::string& requestUri = "");
-    virtual bool genResMessage(SipGenericMessage& res, const SipGenericMessage& req, int code, const std::string& reasonPhrase = "");
+    virtual bool recv(SipMessageApp& message);
+    virtual bool send(const SipMessageApp& message);
+    virtual bool genReqMessage(SipMessageApp& req, const std::string& method, const std::string& requestUri = "");
+    virtual bool genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "");
 
 public:
     void makeResponse(resip::SipMessage& response, 
@@ -33,6 +33,16 @@ public:
 
 private:
     void threadProc();
+    void postAdapter(const resip::SipMessage& sipMessage);
+
+protected:
+    // Registration Handler ////////////////////////////////////////////////////////
+    void onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    void onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    void onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    int onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg);
+
+    void onMessageArrived(resip::ServerPagerMessageHandle, const resip::SipMessage& message);
 };
 
 #endif
