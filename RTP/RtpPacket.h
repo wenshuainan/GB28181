@@ -8,8 +8,8 @@ class RtpPacket
 {
 private:
     RtpHeader header;
+    char *payload; // 数据区，直接指向RtpPlayload
     int capacity; // 负载容量，一般由MTU决定，payload根据此进行分包
-    char *data; // 数据区，直接指向RtpPlayload
 
 public:
     RtpPacket(RtpHeader& header, int capacity);
