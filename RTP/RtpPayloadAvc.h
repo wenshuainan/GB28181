@@ -5,7 +5,25 @@
 
 class RtpPayloadAvc : public RtpPayload
 {
+private:
+    int startBit;
+    int endBit;
+    unsigned char nalHeader;
+    bool bNalHeaderNextTime;
+    char lastTimeTail[3];
+    int tailLen;
+
 public:
+    RtpPayloadAvc();
+    virtual ~RtpPayloadAvc();
+
+private:
+    unsigned char makeFUAIndicator();
+    unsigned char makeFUAHeader();
+    bool makeFUA(RtpPacket& packet);
+
+public:
+    virtual int format(char *data, int len, RtpPacket& packet);
 };
 
 #endif

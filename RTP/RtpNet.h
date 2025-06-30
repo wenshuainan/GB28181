@@ -15,13 +15,18 @@ public:
 
 protected:
     int sockfd;
+    int localPort;
+
+public:
+    RtpNet(int localPort = 0);
+    virtual ~RtpNet();
 
 protected:
     virtual bool framing() = 0;
 
 public:
-    virtual bool connect(char *ip, int port, Type type) = 0; //打开socket
-    virtual bool disconnect() = 0; //关闭socket
+    virtual bool connect(char *ip, int port, Type type) = 0;
+    virtual bool disconnect() = 0;
     virtual bool send(RtpPacket *packet) = 0;
 };
 

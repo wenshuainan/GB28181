@@ -25,12 +25,14 @@ private:
     std::shared_ptr<RtpNet> net;
     std::shared_ptr<RtpPayload> payload;
     std::vector<std::shared_ptr<RtpPacket>> packets;
+    std::shared_ptr<RtpPacket> packet;
 
 public:
     RtpParticipant(Participant& participant);
     ~RtpParticipant();
     
-    bool inputPayloadRaw(RtpPayload::Type type, char *data, int len);
+    bool inputData(RtpPayload::Type type, char *data, int len);
+    bool inputFrame(RtpPayload::Type type, char *frame, int len);
 };
 
 #endif

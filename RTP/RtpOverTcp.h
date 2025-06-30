@@ -6,7 +6,19 @@
 class RtpOverTcp : public RtpNet
 {
 private:
-    int16_t length; // 2 bytes before packet
+    unsigned short length;
+
+public:
+    RtpOverTcp();
+    virtual ~RtpOverTcp();
+
+protected:
+    virtual bool framing();
+
+public:
+    virtual bool connect(char *ip, int port, Type type);
+    virtual bool disconnect();
+    virtual bool send(RtpPacket *packet);
 };
 
 #endif
