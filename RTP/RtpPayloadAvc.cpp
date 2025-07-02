@@ -5,7 +5,7 @@ RtpPayloadAvc::RtpPayloadAvc()
 {
     startBit = 0;
     endBit = 0;
-    bNalHeaderNextTime = false;
+    bNaluHeaderNextTime = false;
 }
 
 RtpPayloadAvc::~RtpPayloadAvc()
@@ -15,7 +15,7 @@ unsigned char RtpPayloadAvc::makeFUAIndicator()
 {
     unsigned char indicator = 0;
 
-    indicator = nalHeader & 0x07;
+    indicator = naluHeader & 0x07;
     indicator |= 28 << 3;
 
     return indicator;
@@ -27,7 +27,7 @@ unsigned char RtpPayloadAvc::makeFUAHeader()
 
     header = startBit;
     header |= endBit << 1;
-    header |= (nalHeader & 0xF8);
+    header |= (naluHeader & 0xF8);
 
     return header;
 }
@@ -109,9 +109,9 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
         }
     }
 
-    if (bNalHeaderNextTime)
+    if (bNaluHeaderNextTime)
     {
-        nalHeader = data[0];
+        naluHeader = data[0];
     }
 
     /* find start code: 0x00 0x00 0x00 0x01 */
@@ -136,11 +136,11 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
         packet.setFinished();
         if (i + 4 < len)
         {
-            nalHeader = data[i+4];
+            naluHeader = data[i+4];
         }
         else
         {
-            bNalHeaderNextTime = true;
+            bNaluHeaderNextTime = true;
         }
         tailLen = 0;
 

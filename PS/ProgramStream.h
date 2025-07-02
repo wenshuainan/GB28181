@@ -6,15 +6,33 @@
 
 class BitStream
 {
+private:
+    std::vector<uint8_t> stream;
+    int32_t offset;
+    uint16_t length;
+    int32_t lengthFieldOffset;
+
 public:
-    void write(int32_t nbits, uint8_t value, int32_t valueoffset = 0);
-    void write(int32_t nbits, uint16_t value, int32_t valueoffset = 0);
-    void write(int32_t nbits, uint32_t value, int32_t valueoffset = 0);
-    void write(int32_t nbits, uint64_t value, int32_t valueoffset = 0);
+    BitStream(int32_t lengthFiledOffset = 0);
+    virtual ~BitStream();
+    int32_t getLen() const;
+
+private:
+    void updateLengthField();
+
+public:
+    void write(int32_t nbits, uint8_t value, int32_t startbit = 0);
+    void write(int32_t nbits, uint16_t value, int32_t startbit = 0);
+    void write(int32_t nbits, uint32_t value, int32_t startbit = 0);
+    void write(int32_t nbits, uint64_t value, int32_t startbit = 0);
+    void write(const std::vector<uint8_t>& data);
 };
 
 class SystemHeader
 {
+private:
+    BitStream bitstream;
+
 private:
     uint32_t sytem_header_start_code;
     uint16_t header_length;
@@ -27,7 +45,7 @@ private:
     uint8_t video_bound;
     uint8_t packet_rate_restriction_flag;
     uint8_t reserved_bits;
-    struct NextBits
+    struct StreamType
     {
         uint8_t stream_id;
         union
@@ -35,21 +53,36 @@ private:
             struct
             {
                 uint8_t stream_id_extension;
-                uint8_t STD_buffer_bound_scale;
-                uint16_t STD_buffer_size_bound;
+                uint8_t P_STD_buffer_bound_scale;
+                uint16_t P_STD_buffer_size_bound;
             };
             struct
             {
-                uint8_t STD_buffer_bound_scale;
-                uint16_t STD_buffer_size_bound;
+                uint8_t P_STD_buffer_bound_scale;
+                uint16_t P_STD_buffer_size_bound;
             };
         };
     };
-    std::vector<NextBits> next_bits;
+    std::vector<StreamType> streamTypes;
+
+public:
+    SystemHeader();
+    virtual ~SystemHeader();
+    void toBitStream();
+    void toBitStream(BitStream& bitstream);
+    const BitStream& getBitStream() const;
+
+public:
+    int32_t getStreamLength() const;
+    void addVideoStreamType(uint8_t stream_id);
+    void addAudioStreamType(uint8_t stream_id);
 };
 
 class PackHeader
 {
+private:
+    BitStream bitstream;
+
 private:
     uint32_t pack_start_code;
     uint64_t system_clock_reference_base;
@@ -59,6 +92,17 @@ private:
     uint8_t pack_stuffing_length;
     std::vector<uint8_t> pack_stuffing_bytes;
     std::shared_ptr<SystemHeader> system_header;
+
+public:
+    PackHeader();
+    virtual ~PackHeader();
+    void toBitStream();
+    void toBitStream(BitStream& bitstream);
+    const BitStream& getBitStream() const;
+
+public:
+    void setSystemHeader(std::shared_ptr<SystemHeader>& system_header);
+    void updateMuxRate(int32_t newPESPacketLength);
 };
 
 class Descriptor
@@ -76,7 +120,74 @@ class HEVCVideoDescriptor : public Descriptor
 class MPEG2AACAudioDescriptor : public Descriptor
 {};
 
-class ProgramStreamMap
+class PESPacket
+{
+protected:
+    BitStream bitstream;
+
+private:
+    uint32_t packet_start_code_prefix;
+    uint8_t stream_id;
+    uint16_t PES_packet_length;
+    uint8_t PES_scrambling_control;
+    uint8_t PES_priority;
+    uint8_t data_alignment_indicator;
+    uint8_t copyright;
+    uint8_t original_or_copy;
+    uint8_t PTS_DTS_flags;
+    uint8_t ESCR_flag;
+    uint8_t ES_rate_flag;
+    uint8_t DSM_trick_mode_flag;
+    uint8_t additional_copy_info_flag;
+    uint8_t PES_CRC_flag;
+    uint8_t PES_extension_flag;
+    uint8_t PES_header_data_length;
+    uint64_t PTS;
+    uint64_t DTS;
+    uint64_t ESCR_base;
+    uint16_t ESCR_extension;
+    u_int32_t ES_rate;
+    uint8_t trick_mode_control;
+    uint8_t field_id;
+    uint8_t intra_slice_refresh;
+    uint8_t frequency_truncation;
+    uint8_t rep_cntrl;
+    uint8_t additional_copy_info;
+    uint8_t previous_PES_packet_CRC;
+    uint8_t PES_private_data_flag;
+    uint8_t pack_header_field_flag;
+    uint8_t program_packet_sequence_counter_flag;
+    uint8_t P_STD_buffer_flag;
+    uint8_t PES_extension_flag_2;
+    std::vector<uint8_t> PES_private_data;
+    uint8_t pack_field_length;
+    uint8_t program_packet_sequence_counter;
+    uint8_t MPEG1_MPEG2_identifier;
+    uint8_t original_stuff_length;
+    uint8_t P_STD_buffer_scale;
+    uint16_t P_STD_buffer_size;
+    uint8_t PES_extension_field_length;
+    uint8_t stream_id_extension_flag;
+    uint8_t stream_id_extension;
+    uint8_t tref_extension_flag;
+    uint64_t TREF;
+    std::vector<uint8_t> stuffing_byte;
+    std::vector<uint8_t> PES_packet_data_byte;
+    std::vector<uint8_t> padding_byte;
+
+public:
+    PESPacket(int32_t dataByteLength = 0);
+    virtual ~PESPacket();
+    virtual void toBitStream();
+    virtual void toBitStream(BitStream& bitstream);
+    virtual const BitStream& getBitStream() const;
+
+public:
+    int32_t inputDataByte(const uint8_t* data, int32_t size);
+    int32_t getStreamLength() const;
+};
+
+class ProgramStreamMap : public PESPacket
 {
 private:
     uint32_t packet_start_code_prefix;
@@ -88,7 +199,7 @@ private:
     uint8_t marker_bit;
     uint16_t program_stream_info_length;
     std::vector<std::shared_ptr<Descriptor>> descriptor;
-    uint16_t elementry_stream_map_length;
+    uint16_t elementary_stream_map_length;
     struct ElementaryStreamMap
     {
         uint8_t stream_type;
@@ -101,21 +212,34 @@ private:
         std::vector<std::shared_ptr<Descriptor>> descriptor;
     };
     std::vector<ElementaryStreamMap> elementary_stream_map;
-};
+    uint32_t CRC_32;
 
-class PESPacket
-{
-private:
-    uint32_t packet_start_code_prefix;
-    uint8_t stream_id;
-    uint16_t PES_packet_length;
+public:
+    ProgramStreamMap();
+    virtual ~ProgramStreamMap();
+    void toBitStream();
+    void toBitStream(BitStream& bitstream);
+    const BitStream& getBitStream() const;
 };
 
 class Pack
 {
 private:
+    BitStream bitstream;
+
+private:
     PackHeader pack_header;
-    std::vector<std::shared_ptr<PESPacket>> pes_packets;
+    std::vector<std::shared_ptr<PESPacket>> PES_packet;
+
+public:
+    Pack();
+    virtual ~Pack();
+    void toBitStream();
+    void toBitStream(BitStream& bitstream);
+    const BitStream& getBitStream() const;
+
+public:
+    void addPESPacket(const td::shared_ptr<PESPacket>& PES_packet);
 };
 
 #endif

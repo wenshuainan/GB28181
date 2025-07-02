@@ -8,8 +8,8 @@ class RtpPayloadAvc : public RtpPayload
 private:
     int startBit;
     int endBit;
-    unsigned char nalHeader;
-    bool bNalHeaderNextTime;
+    unsigned char naluHeader;
+    bool bNaluHeaderNextTime;
     char lastTimeTail[3];
     int tailLen;
 
