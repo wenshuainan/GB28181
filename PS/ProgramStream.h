@@ -15,17 +15,17 @@ private:
 public:
     BitStream(int32_t lengthFiledOffset = 0);
     virtual ~BitStream();
-    int32_t getLen() const;
+    int32_t getLength() const;
 
 private:
     void updateLengthField();
 
 public:
-    void write(int32_t nbits, uint8_t value, int32_t startbit = 0);
-    void write(int32_t nbits, uint16_t value, int32_t startbit = 0);
-    void write(int32_t nbits, uint32_t value, int32_t startbit = 0);
-    void write(int32_t nbits, uint64_t value, int32_t startbit = 0);
-    void write(const std::vector<uint8_t>& data);
+    void write8(int32_t nbits, uint8_t value, int32_t startbit = 0);
+    void write16(int32_t nbits, uint16_t value, int32_t startbit = 0);
+    void write32(int32_t nbits, uint32_t value, int32_t startbit = 0);
+    void write64(int32_t nbits, uint64_t value, int32_t startbit = 0);
+    void writeBytes(const std::vector<uint8_t>& data);
 };
 
 class SystemHeader
@@ -122,7 +122,7 @@ class MPEG2AACAudioDescriptor : public Descriptor
 
 class PESPacket
 {
-protected:
+private:
     BitStream bitstream;
 
 private:
@@ -146,7 +146,7 @@ private:
     uint64_t DTS;
     uint64_t ESCR_base;
     uint16_t ESCR_extension;
-    u_int32_t ES_rate;
+    uint32_t ES_rate;
     uint8_t trick_mode_control;
     uint8_t field_id;
     uint8_t intra_slice_refresh;
@@ -176,7 +176,7 @@ private:
     std::vector<uint8_t> padding_byte;
 
 public:
-    PESPacket(int32_t dataByteLength = 0);
+    PESPacket();
     virtual ~PESPacket();
     virtual void toBitStream();
     virtual void toBitStream(BitStream& bitstream);
@@ -189,6 +189,9 @@ public:
 
 class ProgramStreamMap : public PESPacket
 {
+private:
+    BitStream bitstream;
+
 private:
     uint32_t packet_start_code_prefix;
     uint8_t map_stream_id;
@@ -239,7 +242,7 @@ public:
     const BitStream& getBitStream() const;
 
 public:
-    void addPESPacket(const td::shared_ptr<PESPacket>& PES_packet);
+    void addPESPacket(const std::shared_ptr<PESPacket>& PES_packet);
 };
 
 #endif

@@ -10,6 +10,7 @@ class PackProgramStream
 private:
     std::vector<std::shared_ptr<PackES>> programES;
     std::vector<std::shared_ptr<Pack>> pack;
+    std::shared_ptr<Pack> packing;
 
 private:
     std::function<void (uint8_t *, int32_t)> streamCallback;
@@ -23,6 +24,7 @@ public:
     std::shared_ptr<SystemHeader> makeSystemHeader();
     std::shared_ptr<ProgramStreamMap> makePSM();
     void addPack(const std::shared_ptr<Pack>& pack);
+    std::shared_ptr<Pack> getPack();
 
 public:
     void setStreamCallback(std::function<void (uint8_t *, int32_t)> callback);
