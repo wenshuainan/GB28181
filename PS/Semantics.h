@@ -1,5 +1,5 @@
-#ifndef PROGRAM_STREAM_H
-#define PROGRAM_STREAM_H
+#ifndef PS_SEMANTICS_H
+#define PS_SEMANTICS_H
 
 #include <vector>
 #include <memory>
@@ -13,19 +13,22 @@ private:
     int32_t lengthFieldOffset;
 
 public:
-    BitStream(int32_t lengthFiledOffset = 0);
+    BitStream(int32_t lengthFiledOffset = -1);
     virtual ~BitStream();
     int32_t getLength() const;
+    const uint8_t* getData() const;
 
 private:
     void updateLengthField();
 
 public:
+    void clear();
     void write8(int32_t nbits, uint8_t value, int32_t startbit = 0);
     void write16(int32_t nbits, uint16_t value, int32_t startbit = 0);
     void write32(int32_t nbits, uint32_t value, int32_t startbit = 0);
     void write64(int32_t nbits, uint64_t value, int32_t startbit = 0);
     void writeBytes(const std::vector<uint8_t>& data);
+    void writeBitStream(const BitStream& bitstream);
 };
 
 class SystemHeader
@@ -48,20 +51,9 @@ private:
     struct StreamType
     {
         uint8_t stream_id;
-        union
-        {
-            struct
-            {
-                uint8_t stream_id_extension;
-                uint8_t P_STD_buffer_bound_scale;
-                uint16_t P_STD_buffer_size_bound;
-            };
-            struct
-            {
-                uint8_t P_STD_buffer_bound_scale;
-                uint16_t P_STD_buffer_size_bound;
-            };
-        };
+        uint8_t stream_id_extension;
+        uint8_t P_STD_buffer_bound_scale;
+        uint16_t P_STD_buffer_size_bound;
     };
     std::vector<StreamType> streamTypes;
 
@@ -71,9 +63,9 @@ public:
     void toBitStream();
     void toBitStream(BitStream& bitstream);
     const BitStream& getBitStream() const;
+    int32_t getBitStreamLength() const;
 
 public:
-    int32_t getStreamLength() const;
     void addVideoStreamType(uint8_t stream_id);
     void addAudioStreamType(uint8_t stream_id);
 };
@@ -101,8 +93,8 @@ public:
     const BitStream& getBitStream() const;
 
 public:
-    void setSystemHeader(std::shared_ptr<SystemHeader>& system_header);
-    void updateMuxRate(int32_t newPESPacketLength);
+    void setSystemHeader(const std::shared_ptr<SystemHeader>& system_header);
+    void updateMuxRate(int32_t addedLength);
 };
 
 class Descriptor
@@ -181,10 +173,11 @@ public:
     virtual void toBitStream();
     virtual void toBitStream(BitStream& bitstream);
     virtual const BitStream& getBitStream() const;
+    int32_t getBitStreamLength() const;
 
 public:
-    int32_t inputDataByte(const uint8_t* data, int32_t size);
-    int32_t getStreamLength() const;
+    int32_t writeDataByte(const uint8_t* data, int32_t size);
+    void setStreamID(uint8_t stream_id);
 };
 
 class ProgramStreamMap : public PESPacket
@@ -203,7 +196,7 @@ private:
     uint16_t program_stream_info_length;
     std::vector<std::shared_ptr<Descriptor>> descriptor;
     uint16_t elementary_stream_map_length;
-    struct ElementaryStreamMap
+    struct ElementaryStream
     {
         uint8_t stream_type;
         uint16_t elementary_stream_id;
@@ -214,7 +207,7 @@ private:
         uint8_t elementary_stream_id_extension;
         std::vector<std::shared_ptr<Descriptor>> descriptor;
     };
-    std::vector<ElementaryStreamMap> elementary_stream_map;
+    std::vector<ElementaryStream> elementary_stream_map;
     uint32_t CRC_32;
 
 public:
@@ -223,6 +216,9 @@ public:
     void toBitStream();
     void toBitStream(BitStream& bitstream);
     const BitStream& getBitStream() const;
+
+public:
+    void addElementaryStream(uint8_t stream_type);
 };
 
 class Pack
@@ -242,7 +238,9 @@ public:
     const BitStream& getBitStream() const;
 
 public:
+    void addSystemHeader(const std::shared_ptr<SystemHeader>& system_header);
     void addPESPacket(const std::shared_ptr<PESPacket>& PES_packet);
+    const std::vector<std::shared_ptr<PESPacket>>& getPESPacket() const;
 };
 
 #endif

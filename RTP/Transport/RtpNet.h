@@ -25,9 +25,12 @@ protected:
     virtual bool framing() = 0;
 
 public:
-    virtual bool connect(char *ip, int port, Type type) = 0;
+    virtual bool connect(char *ip, int port) = 0;
     virtual bool disconnect() = 0;
     virtual bool send(RtpPacket *packet) = 0;
+
+public:
+    static RtpNet* create(Type type, int localPort = 0);
 };
 
 #endif

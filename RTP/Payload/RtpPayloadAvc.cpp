@@ -57,7 +57,9 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
 
     if (tailLen == sizeof(lastTimeTail))
     {
-        if (len > 0 && lastTimeTail[0] == 0x00 && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00 && data[0] == 0x01)
+        if (len > 0
+            && lastTimeTail[0] == 0x00 && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
+            && data[0] == 0x01)
         {
             endBit = 1;
             makeFUA(packet);
@@ -65,7 +67,9 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
             tailLen = 0;
             return 1; // 1 byte data[0]
         }
-        else if (len > 1 && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00 && data[0] == 0x00 && data[1] == 0x01)
+        else if (len > 1
+            && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
+            && data[0] == 0x00 && data[1] == 0x01)
         {
             if (freeSpace >= 1)
             {
@@ -82,7 +86,9 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
                 return 0;
             }
         }
-        else if (len > 2 && lastTimeTail[2] == 0x00 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
+        else if (len > 2
+            && lastTimeTail[2] == 0x00
+            && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
         {
             if (freeSpace >= 2)
             {
