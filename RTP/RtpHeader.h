@@ -6,15 +6,15 @@ class RtpHeader
 public:
     struct Fixed
     {
-        unsigned char cc : 4;
-        unsigned char x : 1;
-        unsigned char p : 1;
-        unsigned char v : 2;
-        unsigned char pt : 7;
-        unsigned char m : 1;
-        unsigned short seq;
-        unsigned int ts;
-        unsigned int ssrc;
+        uint8_t cc : 4;
+        uint8_t x : 1;
+        uint8_t p : 1;
+        uint8_t v : 2;
+        uint8_t pt : 7;
+        uint8_t m : 1;
+        uint16_t seq;
+        uint32_t ts;
+        uint32_t ssrc;
     };
 
 private:
@@ -24,12 +24,8 @@ public:
     RtpHeader(const Fixed& fixed);
     ~RtpHeader();
 
-    /* 输出网络字节序 */
-    const char* getNetBytes();
-
+public:
     void setMarker(int marker = 1);
-
-    int getLen();
 };
 
 #endif

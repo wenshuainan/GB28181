@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <memory>
-#include "RtpPacket.h"
+
+class RtpParticipant;
 
 class RtpPayload
 {
@@ -20,16 +21,18 @@ public:
 
 protected:
     Type type;
+    int32_t maxLen;
+    RtpParticipant *participant;
 
 public:
-    RtpPayload();
+    RtpPayload(RtpParticipant *participant, int32_t maxLen = 1400);
     virtual ~RtpPayload();
 
 public:
-    static RtpPayload *create(Type type);
+    static std::shared_ptr<RtpPayload> create(RtpParticipant *participant, Type type, int32_t maxLen = 1400);
 
 public:
-    virtual int format(char *data, int len, RtpPacket& packet) = 0;
+    virtual int32_t format(uint8_t *data, int32_t len) = 0;
 };
 
 #endif

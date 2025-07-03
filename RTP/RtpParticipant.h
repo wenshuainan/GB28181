@@ -1,7 +1,7 @@
 #ifndef RTP_PARTICIPANT_H
 #define RTP_PARTICIPANT_H
 
-#include <vector>
+#include <queue>
 #include <memory>
 #include "RtpNet.h"
 #include "RtpPacket.h"
@@ -20,19 +20,25 @@ public:
         RtpNet::Type netType;
         RtpPayload::Type payloadType;
     };
+
+    struct Formated
+    {
+        bool bFirst;
+        uint8_t marker;
+        std::shared_ptr<std::vector<uint8_t>> payload;
+    };
     
 private:
     std::shared_ptr<RtpNet> net;
-    std::shared_ptr<RtpPayload> payload;
-    std::vector<std::shared_ptr<RtpPacket>> packets;
-    std::shared_ptr<RtpPacket> packet;
+    std::queue<Formated> formated;
 
 public:
     RtpParticipant(Participant& participant);
     ~RtpParticipant();
-    
-    bool inputData(RtpPayload::Type type, char *data, int len);
-    bool inputFrame(RtpPayload::Type type, char *frame, int len);
+
+public:
+    bool pushPayload(const Formated& formated);
+    void send();
 };
 
 #endif

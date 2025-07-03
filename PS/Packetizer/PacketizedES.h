@@ -26,7 +26,7 @@ public:
     static std::shared_ptr<PES> create(ES_TYPE type, PSMux *mux);
 
 public:
-    virtual int32_t packetized(uint8_t *data, uint32_t size) = 0;
+    virtual int32_t packetized(uint8_t *data, int32_t size) = 0;
 };
 
 #endif

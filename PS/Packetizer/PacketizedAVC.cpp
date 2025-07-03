@@ -43,7 +43,7 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
     packet.bKeyFrame = false;
 }
 
-int32_t PacketizedAVC::packetized(uint8_t *data, uint32_t size)
+int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
 {
     int parsed;
 

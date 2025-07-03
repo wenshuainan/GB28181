@@ -20,7 +20,7 @@ private:
     void pushPacket(uint8_t naluType);
 
 public:
-    int32_t packetized(uint8_t *data, uint32_t size);
+    int32_t packetized(uint8_t *data, int32_t size);
 };
 
 #endif

@@ -1,117 +1,125 @@
 #include <string.h>
 #include "RtpPayloadAvc.h"
 
-RtpPayloadAvc::RtpPayloadAvc()
+RtpPayloadAvc::RtpPayloadAvc(RtpParticipant *participant, int32_t maxLen)
+    : RtpPayload(participant, maxLen)
 {
-    startBit = 0;
-    endBit = 0;
     bNaluHeaderNextTime = false;
+    formated.bFirst = false;
+    formated.marker = 0;
+    formated.payload = nullptr;
 }
 
 RtpPayloadAvc::~RtpPayloadAvc()
 {}
 
-unsigned char RtpPayloadAvc::makeFUAIndicator()
+uint8_t RtpPayloadAvc::makeFUAIndicator(uint8_t naluHeader)
 {
-    unsigned char indicator = 0;
+    uint8_t indicator = 0;
 
     indicator = naluHeader & 0x07;
-    indicator |= 28 << 3;
+    indicator |= 28 << 3; // FU-A = 28
 
     return indicator;
 }
 
-unsigned char RtpPayloadAvc::makeFUAHeader()
+uint8_t RtpPayloadAvc::makeFUAHeader(uint8_t start, uint8_t end, uint8_t naluType)
 {
-    unsigned char header = 0;
+    uint8_t header = 0;
 
-    header = startBit;
-    header |= endBit << 1;
-    header |= (naluHeader & 0xF8);
+    header = start;
+    header |= end << 1;
+    header |= naluType << 3;
 
     return header;
 }
 
-bool RtpPayloadAvc::makeFUA(RtpPacket& packet)
+void RtpPayloadAvc::pushFomated()
 {
-    unsigned char indicator = makeFUAIndicator();
-    unsigned char header = makeFUAHeader();
+    if (formated.payload == nullptr)
+    {
+        return;
+    }
 
-    packet.write(&indicator, 1, 0);
-    packet.write(&header, 1, 1);
+    formated.payload->at(0) = makeFUAIndicator(naluHeader);
+    formated.payload->at(1) = makeFUAHeader(formated.bFirst ? 1 : 0, formated.marker, naluHeader & 0x1f);
 
-    return true;
+    participant->pushPayload(formated);
+
+    formated.bFirst = false;
+    formated.marker = 0;
 }
 
-int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
+int32_t RtpPayloadAvc::format(uint8_t *data, int32_t len)
 {
-    int freeSpace = packet.getFreeSpace();
+    if (len <= 0)
+    {
+        return len;
+    }
 
     if (tailLen + len <= sizeof(lastTimeTail))
     {
         memcpy(lastTimeTail + tailLen, data, len);
         tailLen += len;
-
         return len;
     }
-
-    if (tailLen == sizeof(lastTimeTail))
+    else if (tailLen == sizeof(lastTimeTail))
     {
         if (len > 0
             && lastTimeTail[0] == 0x00 && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
             && data[0] == 0x01)
         {
-            endBit = 1;
-            makeFUA(packet);
-            packet.setFinished();
+            formated.marker = 1;
+            pushFomated();
+            formated.bFirst = true;
+            formated.payload = std::make_shared<std::vector<uint8_t>>();
             tailLen = 0;
-            return 1; // 1 byte data[0]
+            return 1;
         }
         else if (len > 1
             && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
             && data[0] == 0x00 && data[1] == 0x01)
         {
-            if (freeSpace >= 1)
-            {
-                packet.write(lastTimeTail, 1);
-                endBit = 1;
-                makeFUA(packet);
-                packet.setFinished();
-                tailLen = 0;
-                return 2; // 2 byte data[0] data[1]
-            }
-            else
-            {
-                packet.setFinished();
-                return 0;
-            }
+            formated.marker = 1;
+            pushFomated();
+            formated.bFirst = true;
+            formated.payload = std::make_shared<std::vector<uint8_t>>();
+            formated.payload->push_back(lastTimeTail[0]);
+            tailLen = 0;
+            return 2;
         }
         else if (len > 2
             && lastTimeTail[2] == 0x00
             && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
         {
-            if (freeSpace >= 2)
-            {
-                packet.write(lastTimeTail, 2);
-                endBit = 1;
-                makeFUA(packet);
-                packet.setFinished();
-                tailLen = 0;
-                return 3; // 3 byte data[0] data[1] data[2]
-            }
-            else
-            {
-                packet.setFinished();
-                return 0;
-            }
+            formated.marker = 1;
+            pushFomated();
+            formated.bFirst = true;
+            formated.payload = std::make_shared<std::vector<uint8_t>>();
+            formated.payload->push_back(lastTimeTail[0]);
+            formated.payload->push_back(lastTimeTail[1]);
+            tailLen = 0;
+            return 3;
         }
         else
         {
-            if (freeSpace >= tailLen)
+            if (formated.payload->size() + tailLen <= maxLen)
             {
-                packet.write(lastTimeTail, tailLen);
-                tailLen = 0;
+                formated.payload->push_back(lastTimeTail[0]);
+                formated.payload->push_back(lastTimeTail[1]);
+                formated.payload->push_back(lastTimeTail[2]);
             }
+            else
+            {
+                pushFomated();
+                formated.bFirst = true;
+                formated.payload = std::make_shared<std::vector<uint8_t>>();
+                formated.payload->push_back(lastTimeTail[0]);
+                formated.payload->push_back(lastTimeTail[1]);
+                formated.payload->push_back(lastTimeTail[2]);
+            }
+
+            tailLen = 0;
         }
     }
 
@@ -121,51 +129,61 @@ int RtpPayloadAvc::format(char *data, int len, RtpPacket& packet)
     }
 
     /* find start code: 0x00 0x00 0x00 0x01 */
-    int i;
-    for (i = 0; i < len - 3 && i < freeSpace; i++)
+    int parsed;
+    for (parsed = 0; parsed < len - 3; parsed++)
     {
-        if (data[i] == 0x00 && data[i+1] == 0x00
-            && data[i+2] == 0x00 && data[i+3] == 0x01)
+        if (data[parsed] == 0x00
+            && data[parsed+1] == 0x00
+            && data[parsed+2] == 0x00
+            && data[parsed+3] == 0x01)
         {
-            endBit = 1;
             break;
         }
     }
 
-    packet.write(data, i);
-    makeFUA(packet);
-
-    if (endBit)
+    int f = 0;
+    while (f < parsed)
     {
-        startBit = 1;
-        endBit = 0;
-        packet.setFinished();
-        if (i + 4 < len)
+        int32_t s = formated.payload->size();
+        int p = maxLen - s;
+        if (p > parsed - f)
         {
-            naluHeader = data[i+4];
+            p = parsed - f;
+        }
+        formated.payload->resize(s + p);
+        mempcpy(formated.payload->data() + s, data + f, p);
+        f += p;
+        if (p < parsed)
+        {
+            pushFomated();
+        }
+    }
+
+    if (parsed == len - 3)
+    {
+        memccpy(lastTimeTail, data + parsed, 3);
+        tailLen = 3;
+    }
+    else
+    {
+        formated.marker = 1;
+        pushFomated();
+        formated.bFirst = true;
+        formated.payload = std::make_shared<std::vector<uint8_t>>();
+        tailLen = 0;
+
+        if (parsed + 4 < len)
+        {
+            naluHeader = data[parsed+4];
+            bNaluHeaderNextTime = false;
         }
         else
         {
             bNaluHeaderNextTime = true;
         }
-        tailLen = 0;
 
-        return i + 3;
+        parsed += 4;
     }
-    else
-    {
-        startBit = 0;
-        if (i == len - 3)
-        {
-            memcpy(lastTimeTail, data + i, 3);
-            tailLen = 3;
-            return len;
-        }
-        if (i == freeSpace)
-        {
-            packet.setFinished();
-            return i;
-        }
-        return i;
-    }
+
+    return parsed;
 }
