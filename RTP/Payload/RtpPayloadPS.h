@@ -6,11 +6,11 @@
 class RtpPayloadPS : public RtpPayload
 {
 public:
-    RtpPayloadPS();
+    RtpPayloadPS(RtpParticipant *participant, int32_t maxLen = 1400);
     virtual ~RtpPayloadPS();
 
 public:
-    virtual int format(char *data, int len, RtpPacket& packet);
-}
+    virtual int32_t format(uint8_t *data, int32_t len);
+};
 
 #endif

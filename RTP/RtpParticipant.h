@@ -3,9 +3,10 @@
 
 #include <queue>
 #include <memory>
-#include "RtpNet.h"
+#include <thread>
+#include "Transport/RtpNet.h"
 #include "RtpPacket.h"
-#include "RtpPayload.h"
+#include "Payload/RtpPayload.h"
 
 class RtpParticipant
 {
@@ -19,26 +20,38 @@ public:
         } destination;
         RtpNet::Type netType;
         RtpPayload::Type payloadType;
+        uint32_t SSRC;
     };
 
     struct Formated
     {
         bool bFirst;
         uint8_t marker;
+        uint32_t tms; //毫秒时间
         std::shared_ptr<std::vector<uint8_t>> payload;
     };
     
 private:
     std::shared_ptr<RtpNet> net;
-    std::queue<Formated> formated;
-
+    std::queue<Formated> formatedQue;
+    std::thread *thread;
+    bool bRunning;
+    RtpPayload::Type payloadType;
+    RtpPayload *payloadFormat;
+    uint32_t SSRC;
+    
 public:
     RtpParticipant(Participant& participant);
     ~RtpParticipant();
 
+private:
+    uint16_t genRandom();
+    void process();
+
 public:
     bool pushPayload(const Formated& formated);
-    void send();
+    bool start();
+    bool stop();
 };
 
 #endif

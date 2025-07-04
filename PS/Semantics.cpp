@@ -17,7 +17,7 @@ BitStream::~BitStream()
 
 int32_t BitStream::getLength() const
 {
-    return offset / 8;
+    return (offset + 7) / 8; // +7: 超出之后不足8bit也算一个字节
 }
 
 const uint8_t* BitStream::getData() const
@@ -27,13 +27,15 @@ const uint8_t* BitStream::getData() const
 
 void BitStream::updateLengthField()
 {
-    if (offset < lengthFieldOffset)
+    int32_t fieldlen = sizeof(this->length) * 8;
+
+    if (offset < lengthFieldOffset + fieldlen)
     {
         return;
     }
     else
     {
-        uint16_t length = ((offset - lengthFieldOffset) + 8) / 9; // (+8)/9: 超出之后不足8bit也算一个字节
+        uint16_t length = ((offset - lengthFieldOffset - fieldlen) + 7) / 8; // (+7): 超出之后不足8bit也算一个字节
         if (length == this->length)
         {
             return;
@@ -47,8 +49,46 @@ void BitStream::updateLengthField()
     uint16_t bigendian = htons(length); //大端序
     int32_t index = lengthFieldOffset / 8; //长度字段在字节流中的偏移
 
-    stream[index] = bigendian;
-    stream[index + 1] = bigendian << 8;
+    stream[index] = *((uint8_t *)(&bigendian));
+    stream[index + 1] = *((uint8_t *)(&bigendian) + 1);
+}
+
+void BitStream::write16be(int32_t nbits, uint16_t value, int32_t startbit)
+{
+    if (nbits <= 0 || startbit < 0 || startbit + nbits > 16)
+    {
+        return;
+    }
+
+    /* 低地址起第一个字节 */
+    int32_t b1nbits = startbit > 8 ? nbits : nbits + startbit - 8;
+    int32_t b1start = startbit > 8 ? startbit - 8 : 0;
+
+    /* 低地址起第二个字节 */
+    int32_t b2nbits = nbits - (b1nbits > 0 ? b1nbits : 0);
+    int32_t b2start = startbit;
+
+    write8(b1nbits, *((uint8_t *)(&value)), b1start);
+    write8(b2nbits, *((uint8_t *)(&value) + 1), b2start);
+}
+
+void BitStream::write32be(int32_t nbits, uint32_t value, int32_t startbit)
+{
+    if (nbits <= 0 || startbit < 0 || startbit + nbits > 32)
+    {
+        return;
+    }
+
+    /* 低地址起第一个字 */
+    int32_t w1nbits = startbit > 16 ? nbits : nbits + startbit - 16;
+    int32_t w1start = startbit > 16 ? startbit - 16 : 0;
+
+    /* 低地址起第二个字 */
+    int32_t w2nbits = nbits - (w1nbits > 0 ? w1nbits : 0);
+    int32_t w2start = startbit;
+
+    write16be(w1nbits, *((uint16_t *)(&value)), w1start);
+    write16be(w2nbits, *((uint16_t *)(&value) + 1), w2start);
 }
 
 void BitStream::clear()
@@ -60,14 +100,14 @@ void BitStream::clear()
 
 void BitStream::write8(int32_t nbits, uint8_t value, int32_t startbit)
 {
-    int32_t index = offset / 8; //当前字节，从字节流开头的偏移
-    int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
-
     /* 参数非法 */
     if (nbits <= 0 || startbit < 0 || startbit + nbits > 8)
     {
         return;
     }
+
+    int32_t index = offset / 8; //当前字节，从字节流开头的偏移
+    int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
 
     /* 扩充字节流空间 */
     if (stream.size() <= index)
@@ -98,57 +138,69 @@ void BitStream::write8(int32_t nbits, uint8_t value, int32_t startbit)
 
 void BitStream::write16(int32_t nbits, uint16_t value, int32_t startbit)
 {
+    if (nbits <= 0 || startbit < 0 || startbit + nbits > 16)
+    {
+        return;
+    }
+
     uint16_t bigendian = htons(value); //大端序
 
-    /* 高位起第一个字节 */
-    int32_t b1nbits = nbits + startbit - 8;
+    /* 低地址起第一个字节 */
+    int32_t b1nbits = startbit > 8 ? nbits : nbits + startbit - 8;
     int32_t b1start = startbit > 8 ? startbit - 8 : 0;
 
-    /* 高位起第二个字节 */
-    int32_t b2nbits = nbits - b1nbits;
+    /* 低地址起第二个字节 */
+    int32_t b2nbits = nbits - (b1nbits > 0 ? b1nbits : 0);
     int32_t b2start = startbit;
 
-    write8(b1nbits, (uint8_t)bigendian, b1start);
-    write8(b2nbits, (uint8_t)(bigendian << 8), b2start);
+    write8(b1nbits, *((uint8_t *)(&bigendian)), b1start);
+    write8(b2nbits, *(((uint8_t *)(&bigendian)) + 1), b2start);
 }
 
 void BitStream::write32(int32_t nbits, uint32_t value, int32_t startbit)
 {
+    if (nbits <= 0 || startbit < 0 || startbit + nbits > 32)
+    {
+        return;
+    }
+
     uint32_t bigendian = htonl(value); //大端序
 
-    /* 高位起第一个字 */
-    int32_t w1nbits = nbits + startbit - 16;
+    /* 低地址起第一个字 */
+    int32_t w1nbits = startbit > 16 ? nbits : nbits + startbit - 16;
     int32_t w1start = startbit > 16 ? startbit - 16 : 0;
 
-    /* 高位起第二个字 */
-    int32_t w2nbits = nbits - w1nbits;
+    /* 低地址起第二个字 */
+    int32_t w2nbits = nbits - (w1nbits > 0 ? w1nbits : 0);
     int32_t w2start = startbit;
 
-    write16(w1nbits, (uint16_t)bigendian, w1start);
-    write16(w2nbits, (uint16_t)(bigendian << 16), w2start);
+    write16be(w1nbits, *((uint16_t *)(&bigendian)), w1start);
+    write16be(w2nbits, *((uint16_t *)(&bigendian) + 1), w2start);
 }
 
 void BitStream::write64(int32_t nbits, uint64_t value, int32_t startbit)
 {
-    uint32_t dw1 = value;
-    uint32_t dw2 = value << 32;
-
-    if (dw1 != htonl(dw1))
+    if (nbits <= 0 || startbit < 0 || startbit + nbits > 64)
     {
-        dw1 = htonl(dw2);
-        dw2 = htonl(dw1);
+        return;
     }
 
-    /* 高位起第一个双字 */
-    int32_t dw1nbits = nbits + startbit - 32;
+    uint32_t dw1 = value >> 32;
+    uint32_t dw2 = value;
+
+    dw1 = htonl(dw1);
+    dw2 = htonl(dw2);
+
+    /* 低地址起第一个双字 */
+    int32_t dw1nbits = startbit > 32 ? nbits : nbits + startbit - 32;
     int32_t dw1start = startbit > 32 ? startbit - 32 : 0;
 
-    /* 高位起第二个双字 */
-    int32_t dw2nbits = nbits - dw1nbits;
+    /* 低地址起第二个双字 */
+    int32_t dw2nbits = nbits - (dw1nbits > 0 ? dw1nbits : 0);
     int32_t dw2start = startbit;
 
-    write32(dw1nbits, dw1, dw1start);
-    write32(dw2nbits, dw2, dw2start);
+    write32be(dw1nbits, dw1, dw1start);
+    write32be(dw2nbits, dw2, dw2start);
 }
 
 void BitStream::writeBytes(const std::vector<uint8_t>& data)
@@ -247,7 +299,7 @@ void SystemHeader::toBitStream(BitStream& bitstream)
     bitstream.write8(5, video_bound);
     bitstream.write8(1, packet_rate_restriction_flag);
     bitstream.write8(7, 0x7F);
-    for (auto& it : streamTypes)
+    for (auto it : streamTypes)
     {
         bitstream.write8(8, it.stream_id);
         if (it.stream_id == 0xB7)
@@ -279,7 +331,7 @@ int32_t SystemHeader::getBitStreamLength() const
 
 void SystemHeader::addVideoStreamType(uint8_t stream_id)
 {
-    for (auto& it : streamTypes)
+    for (auto it : streamTypes)
     {
         if (it.stream_id == stream_id)
         {
@@ -297,7 +349,7 @@ void SystemHeader::addVideoStreamType(uint8_t stream_id)
 
 void SystemHeader::addAudioStreamType(uint8_t stream_id)
 {
-    for (auto& it : streamTypes)
+    for (auto it : streamTypes)
     {
         if (it.stream_id == stream_id)
         {
@@ -321,7 +373,7 @@ PackHeader::PackHeader()
     struct timeval tv;
     gettimeofday(&tv, NULL);
     uint64_t tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    system_clock_reference_base = ((27000 * tms) / 300) % (1 << 33);
+    system_clock_reference_base = ((27000 * tms) / 300) % (1ULL << 33);
     system_clock_reference_extension = (27000 * tms) % 300;
 
     program_mux_rate = 0;
@@ -341,6 +393,7 @@ void PackHeader::toBitStream()
 void PackHeader::toBitStream(BitStream& bitstream)
 {
     bitstream.write32(32, pack_start_code);
+    // printf(">>>>>> %s:%d [%0x %0x %0x %0x]\n", __FILE__, __LINE__, bitstream.getData()[0], bitstream.getData()[1], bitstream.getData()[2], bitstream.getData()[3]);
     bitstream.write8(2, 0x01);
     bitstream.write64(3, system_clock_reference_base, 30);
     bitstream.write8(1, 1);
@@ -350,7 +403,7 @@ void PackHeader::toBitStream(BitStream& bitstream)
     bitstream.write8(1, 1);
     bitstream.write16(9, system_clock_reference_extension);
     bitstream.write8(1, 1);
-    bitstream.write32(22, program_mux_rate / 50);
+    bitstream.write32(22, (program_mux_rate + 49) / 50);
     bitstream.write8(1, 1);
     bitstream.write8(1, 1);
     bitstream.write8(5, 0);
@@ -380,11 +433,12 @@ void PackHeader::updateMuxRate(int32_t addedLength)
     program_mux_rate += addedLength;
 }
 
-PESPacket::PESPacket()
+PESPacket::PESPacket(uint8_t stream_id)
     : bitstream(32)
 {
     packet_start_code_prefix = 0x000001;
-    stream_id = 0;
+    this->stream_id = stream_id;
+    PES_packet_length = 0;
     PES_scrambling_control = 0;
     PES_priority = 1;
     data_alignment_indicator = 0;
@@ -401,7 +455,7 @@ PESPacket::PESPacket()
     struct timeval tv;
     gettimeofday(&tv, NULL);
     uint64_t tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    PTS = ((27000 * tms) / 300) % (1 << 33);
+    PTS = ((27000 * tms) / 300) % (1ULL << 33);
     PTS_DTS_flags = 0x02;
 
     //DTS if have video B frame ...
@@ -592,6 +646,7 @@ void PESPacket::toBitStream(BitStream& bitstream)
     // {
     //     stuffing_byte
     // }
+    // printf(">>>>>> %s:%d %0x %0x %0x %0x\n", __FILE__, __LINE__, PES_packet_data_byte.at(0), PES_packet_data_byte.at(1), PES_packet_data_byte.at(2), PES_packet_data_byte.at(3));
     bitstream.writeBytes(PES_packet_data_byte);
 }
 
@@ -611,25 +666,22 @@ int32_t PESPacket::writeDataByte(const uint8_t* data, int32_t size)
     int32_t input = ori + size > 65000 ? 65000 - ori : size;
 
     PES_packet_data_byte.resize(ori + input);
-    memcpy(PES_packet_data_byte.data(), data, input);
+    memcpy(PES_packet_data_byte.data() + ori, data, input);
 
     return input;
 }
 
-void PESPacket::setStreamID(uint8_t stream_id)
-{
-    stream_id = stream_id;
-}
-
 ProgramStreamMap::ProgramStreamMap()
-    : bitstream(32)
+    : PESPacket(0), bitstream(32)
 {
     packet_start_code_prefix = 0x000001;
     map_stream_id = 0xBC;
-    single_extension_stream_flag = 0;
+    program_stream_map_length = 0;
     current_next_indicator = 1;
+    single_extension_stream_flag = 0;
     program_stream_map_version = 1;
     program_stream_info_length = 0;
+    elementary_stream_map_length = 0;
     CRC_32 = 0;
 }
 
@@ -650,7 +702,7 @@ void ProgramStreamMap::toBitStream(BitStream& bitstream)
     bitstream.write8(1, current_next_indicator);
     bitstream.write8(1, single_extension_stream_flag);
     bitstream.write8(1, 0);
-    bitstream.write8(5, 1);
+    bitstream.write8(5, program_stream_map_version);
     bitstream.write8(7, 0);
     bitstream.write8(1, 1);
     bitstream.write16(16, program_stream_info_length);
@@ -708,6 +760,7 @@ void ProgramStreamMap::addElementaryStream(uint8_t stream_type)
     elementary_stream.elementary_stream_info_length = 0;
 
     elementary_stream_map.push_back(elementary_stream);
+    elementary_stream_map_length += 4; // stream_type + elementary_stream_id + elementary_stream_info_length
 }
 
 Pack::Pack()
@@ -726,10 +779,10 @@ void Pack::toBitStream(BitStream& bitstream)
 {
     pack_header.toBitStream(bitstream);
 
-    for (auto it : PES_packet)
-    {
-        it->toBitStream(bitstream);
-    }
+    // for (auto it : PES_packet)
+    // {
+    //     it->toBitStream(bitstream);
+    // }
 }
 
 const BitStream& Pack::getBitStream() const
@@ -746,6 +799,7 @@ void Pack::addSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
 
 void Pack::addPESPacket(const std::shared_ptr<PESPacket>& PES_packet)
 {
+    // printf(">>>>>>> %s:%d\n", __FILE__, __LINE__);
     PES_packet->toBitStream();
     this->PES_packet.push_back(PES_packet);
     pack_header.updateMuxRate(PES_packet->getBitStreamLength());

@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/uio.h>
+#include <string.h>
+#include <errno.h>
 #include "RtpOverTcp.h"
 
 bool RtpOverTcp::framing()
@@ -48,29 +50,7 @@ bool RtpOverTcp::disconnect()
     return true;
 }
 
-bool RtpOverTcp::send(RtpPacket *packet)
+bool RtpOverTcp::send(const RtpPacket& packet)
 {
-    unsigned short length = packet->getLen();
-
-    if (sockfd < 0)
-    {
-        std::cerr << "Socket not connected" << std::endl;
-        return false;
-    }
-
-    struct iovec iov[2];
-    iov[0].iov_base = (void *)&length;
-    iov[0].iov_len = sizeof(length);
-    iov[1].iov_base = (void *)packet->getPayload();
-    iov[1].iov_len = length;
-
-    int iovcnt = 2;
-    int res = writev(sockfd, iov, iovcnt);
-    if (res < 0)
-    {
-        std::cerr << "Error sending data: " << strerror(errno) << std::endl;
-        return false;
-    }
-    
-    return true;
+    return false;
 }

@@ -27,10 +27,10 @@ protected:
 public:
     virtual bool connect(char *ip, int port) = 0;
     virtual bool disconnect() = 0;
-    virtual bool send(RtpPacket *packet) = 0;
+    virtual bool send(const RtpPacket& packet) = 0;
 
 public:
-    static RtpNet* create(Type type, int localPort = 0);
+    static std::shared_ptr<RtpNet> create(Type type, int localPort = 0);
 };
 
 #endif

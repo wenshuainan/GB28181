@@ -20,6 +20,8 @@ public:
 
 private:
     void updateLengthField();
+    void write16be(int32_t nbits, uint16_t value, int32_t startbit = 0);
+    void write32be(int32_t nbits, uint32_t value, int32_t startbit = 0);
 
 public:
     void clear();
@@ -168,7 +170,7 @@ private:
     std::vector<uint8_t> padding_byte;
 
 public:
-    PESPacket();
+    PESPacket(uint8_t stream_id);
     virtual ~PESPacket();
     virtual void toBitStream();
     virtual void toBitStream(BitStream& bitstream);
@@ -177,7 +179,6 @@ public:
 
 public:
     int32_t writeDataByte(const uint8_t* data, int32_t size);
-    void setStreamID(uint8_t stream_id);
 };
 
 class ProgramStreamMap : public PESPacket

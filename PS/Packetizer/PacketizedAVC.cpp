@@ -1,4 +1,5 @@
 #include <string.h>
+#include <unistd.h>
 #include "PacketizedAVC.h"
 #include "PSMux.h"
 
@@ -6,11 +7,10 @@ PacketizedAVC::PacketizedAVC(PSMux *mux)
     : PES(mux)
 {
     naluHeader = 0;
-    bNaluHeaderNextTime = false;
     cacheLen = 0;
     packet.bFirst = false;
     packet.bKeyFrame = false;
-    packet.stream_type = 0x1B;
+    packet.stream_type = 0x1B; // H264 PSM.stream_type = 0x1B
     packet.pes = nullptr;
 }
 
@@ -24,28 +24,42 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
         return;
     }
 
+    // static int ii = 0;
+    // printf(">>>>>> ii=%d len=%d\n", ++ii);
+
+    // printf("typeeeeeeeeeeeeeeeeeeee %d\n", naluType);
+
     switch (naluType)
     {
-    case 5: //IDR
+    // case 5: //IDR
     case 7: //SPS
-    case 8: //PPS
+    // case 8: //PPS
         packet.bKeyFrame = true;
         break;
+
+    case 6:
+        return;
     
     default:
         packet.bKeyFrame = false;
         break;
     }
 
+    // printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     mux->pushVideoPES(packet);
 
     packet.bFirst = false;
     packet.bKeyFrame = false;
+
+    usleep(40000);
 }
 
 int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
 {
-    int parsed;
+    if (size <= 0 || data == nullptr)
+    {
+        return 0;
+    }
 
     if (size + cacheLen <= sizeof(cache))
     {
@@ -55,41 +69,58 @@ int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
     }
     else if (cacheLen == sizeof(cache))
     {
-        if (size > 0
-            && cache[0] == 0x00 && cache[1] == 0x00 && cache[2] == 0x00
-            && data[0] == 0x01)
+        if (cache[0] == 0x00 && cache[1] == 0x00 && cache[2] == 0x00 && cache[3] == 0x01)
         {
             pushPacket(naluHeader & 0x1F);
-            packet.pes = std::make_shared<PESPacket>();
+            packet.pes = std::make_shared<PESPacket>(0xE0);
             packet.pes->writeDataByte(cache, cacheLen);
             packet.pes->writeDataByte(data, 1);
             packet.bFirst = true;
+            naluHeader = data[0];
             cacheLen = 0;
             return 1;
         }
         else if (size > 1
-            && cache[1] == 0x00 && cache[2] == 0x00
-            && data[0] == 0x00 && data[1] == 0x01)
+            && cache[1] == 0x00 && cache[2] == 0x00 && cache[3] == 0x00
+            && data[0] == 0x01)
         {
+            packet.pes->writeDataByte(cache, 1);
             pushPacket(naluHeader & 0x1F);
-            packet.pes = std::make_shared<PESPacket>();
-            packet.pes->writeDataByte(cache, cacheLen);
+            packet.pes = std::make_shared<PESPacket>(0xE0);
+            packet.pes->writeDataByte(cache + 1, cacheLen - 1);
             packet.pes->writeDataByte(data, 2);
             packet.bFirst = true;
+            naluHeader = data[1];
             cacheLen = 0;
             return 2;
         }
         else if (size > 2
-            && cache[2] == 0x00
-            && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
+            && cache[2] == 0x00 && cache[3] == 0x00
+            && data[0] == 0x00 && data[1] == 0x01)
         {
+            packet.pes->writeDataByte(cache, 2);
             pushPacket(naluHeader & 0x1F);
-            packet.pes = std::make_shared<PESPacket>();
-            packet.pes->writeDataByte(cache, cacheLen);
+            packet.pes = std::make_shared<PESPacket>(0xE0);
+            packet.pes->writeDataByte(cache + 2, cacheLen - 2);
             packet.pes->writeDataByte(data, 3);
             packet.bFirst = true;
+            naluHeader = data[2];
             cacheLen = 0;
             return 3;
+        }
+        else if (size > 3
+            && cache[3] == 0x00
+            && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
+        {
+            packet.pes->writeDataByte(cache, 3);
+            pushPacket(naluHeader & 0x1F);
+            packet.pes = std::make_shared<PESPacket>(0xE0);
+            packet.pes->writeDataByte(cache + 3, cacheLen - 3);
+            packet.pes->writeDataByte(data, 4);
+            packet.bFirst = true;
+            naluHeader = data[3];
+            cacheLen = 0;
+            return 4;
         }
         else
         {
@@ -97,26 +128,24 @@ int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
             if (len < cacheLen)
             {
                 pushPacket(naluHeader & 0x1F);
-                packet.pes = std::make_shared<PESPacket>();
+                packet.pes = std::make_shared<PESPacket>(0xE0);
                 packet.pes->writeDataByte(cache + len, cacheLen - len);
             }
             cacheLen = 0;
         }
     }
 
-    if (bNaluHeaderNextTime)
-    {
-        naluHeader = data[0];
-    }
-
-    for (parsed = 0; parsed < size - 3; parsed++)
+    int parsed;
+    for (parsed = 0; parsed < size - 4; parsed++)
     {
         if (data[parsed] == 0x00
             && data[parsed+1] == 0x00
             && data[parsed+2] == 0x00
             && data[parsed+3] == 0x01)
         {
-            break;
+            int type = (data[parsed+4] & 0x1F);
+            if (type != 5 && type != 8)
+                break;
         }
     }
 
@@ -127,35 +156,29 @@ int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
         if (w < parsed - len)
         {
             pushPacket(naluHeader & 0x1F);
-            packet.pes = std::make_shared<PESPacket>();
+            packet.pes = std::make_shared<PESPacket>(0xE0);
         }
         len += w;
     }
 
-    if (parsed == size - 3)
+    if (parsed == size - 4)
     {
-        memcpy(cache, data + parsed, 3);
-        cacheLen = 3;
+        memcpy(cache, data + parsed, 4);
+        cacheLen = 4;
+        parsed += 4;
     }
     else
     {
         pushPacket(naluHeader & 0x1F);
-        packet.pes = std::make_shared<PESPacket>();
-        packet.pes->writeDataByte(data + parsed, 4);
+        packet.pes = std::make_shared<PESPacket>(0xE0);
+        packet.pes->writeDataByte(data + parsed, 5);
         packet.bFirst = true;
 
-        if (parsed + 4 < size)
-        {
-            naluHeader = data[parsed+4];
-            bNaluHeaderNextTime = false;
-        }
-        else
-        {
-            bNaluHeaderNextTime = true;
-        }
-
-        parsed += 4;
+        naluHeader = data[parsed+4];
+        cacheLen = 0;
+        parsed += 5;
     }
 
+    // printf(">>>>>>> size=%d\n", size);
     return parsed;
 }

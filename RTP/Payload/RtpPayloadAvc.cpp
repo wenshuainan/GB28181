@@ -151,7 +151,7 @@ int32_t RtpPayloadAvc::format(uint8_t *data, int32_t len)
             p = parsed - f;
         }
         formated.payload->resize(s + p);
-        mempcpy(formated.payload->data() + s, data + f, p);
+        memcpy(formated.payload->data() + s, data + f, p);
         f += p;
         if (p < parsed)
         {
@@ -161,7 +161,7 @@ int32_t RtpPayloadAvc::format(uint8_t *data, int32_t len)
 
     if (parsed == len - 3)
     {
-        memccpy(lastTimeTail, data + parsed, 3);
+        memcpy(lastTimeTail, data + parsed, 3);
         tailLen = 3;
     }
     else

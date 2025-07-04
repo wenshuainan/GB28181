@@ -7,8 +7,8 @@ class PacketizedAVC : public PES
 {
 private:
     uint8_t naluHeader;
-    bool bNaluHeaderNextTime;
-    uint8_t cache[3];
+    // bool bNaluHeaderNextTime;
+    uint8_t cache[4];
     int32_t cacheLen;
     PSMux::Packet packet;
 

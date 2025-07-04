@@ -1,14 +1,13 @@
 #include "RtpPayloadPS.h"
 
-RtpPayloadPS::RtpPayloadPS()
-{}
+RtpPayloadPS::RtpPayloadPS(RtpParticipant *participant, int32_t maxLen)
+    : RtpPayload(participant, maxLen)
+{}  
 
 RtpPayloadPS::~RtpPayloadPS()
 {}
 
-int RtpPayloadPS::format(char *data, int len, RtpPacket& packet)
+int32_t RtpPayloadPS::format(uint8_t *data, int32_t len)
 {
-    int payloadlen = packet.write(data, len);
-
-    return payloadlen;
+    return 0;
 }
