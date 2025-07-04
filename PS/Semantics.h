@@ -219,7 +219,7 @@ public:
     const BitStream& getBitStream() const;
 
 public:
-    void addElementaryStream(uint8_t stream_type);
+    void addElementaryStream(uint8_t stream_type, uint8_t elementary_stream_id);
 };
 
 class Pack

@@ -24,11 +24,6 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
         return;
     }
 
-    // static int ii = 0;
-    // printf(">>>>>> ii=%d len=%d\n", ++ii);
-
-    // printf("typeeeeeeeeeeeeeeeeeeee %d\n", naluType);
-
     switch (naluType)
     {
     // case 5: //IDR
@@ -45,13 +40,12 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
         break;
     }
 
-    // printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     mux->pushVideoPES(packet);
 
     packet.bFirst = false;
     packet.bKeyFrame = false;
 
-    usleep(40000);
+    usleep(40000); // debug printf >>>>>>
 }
 
 int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
@@ -179,6 +173,5 @@ int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
         parsed += 5;
     }
 
-    // printf(">>>>>>> size=%d\n", size);
     return parsed;
 }

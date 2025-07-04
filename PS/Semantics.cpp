@@ -327,7 +327,9 @@ const BitStream& SystemHeader::getBitStream() const
 }
 
 int32_t SystemHeader::getBitStreamLength() const
-{}
+{
+    return bitstream.getLength();
+}
 
 void SystemHeader::addVideoStreamType(uint8_t stream_id)
 {
@@ -393,7 +395,6 @@ void PackHeader::toBitStream()
 void PackHeader::toBitStream(BitStream& bitstream)
 {
     bitstream.write32(32, pack_start_code);
-    // printf(">>>>>> %s:%d [%0x %0x %0x %0x]\n", __FILE__, __LINE__, bitstream.getData()[0], bitstream.getData()[1], bitstream.getData()[2], bitstream.getData()[3]);
     bitstream.write8(2, 0x01);
     bitstream.write64(3, system_clock_reference_base, 30);
     bitstream.write8(1, 1);
@@ -441,7 +442,7 @@ PESPacket::PESPacket(uint8_t stream_id)
     PES_packet_length = 0;
     PES_scrambling_control = 0;
     PES_priority = 1;
-    data_alignment_indicator = 0;
+    data_alignment_indicator = 1;
     copyright = 0;
     PTS_DTS_flags = 0;
     ESCR_flag = 0;
@@ -450,7 +451,40 @@ PESPacket::PESPacket(uint8_t stream_id)
     additional_copy_info_flag = 0;
     PES_CRC_flag = 0;
     PES_extension_flag = 0;
-    PES_header_data_length = 8; // PES_header_data_length之前的字节数
+    PES_header_data_length = 0; // PES header任选字段和填充字段所占的字节数，根据前面各个flag选择
+    if (PTS_DTS_flags == 0x02)
+    {
+        PES_header_data_length += 5;
+    }
+    else if (PTS_DTS_flags == 0x03)
+    {
+        PES_header_data_length += 10;
+    }
+    if (ESCR_flag == 1)
+    {
+        PES_header_data_length += 6;
+    }
+    if (ES_rate_flag == 1)
+    {
+        PES_header_data_length += 3;
+    }
+    if (DSM_trick_mode_flag == 1)
+    {
+        PES_header_data_length += 1;
+    }
+    if (additional_copy_info_flag == 1)
+    {
+        PES_header_data_length += 1;
+    }
+    if (PES_CRC_flag == 1)
+    {
+        PES_header_data_length += 2;
+    }
+    if (PES_extension_flag == 1)
+    {
+        PES_header_data_length += 1;
+        // ...
+    }
 
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -646,7 +680,6 @@ void PESPacket::toBitStream(BitStream& bitstream)
     // {
     //     stuffing_byte
     // }
-    // printf(">>>>>> %s:%d %0x %0x %0x %0x\n", __FILE__, __LINE__, PES_packet_data_byte.at(0), PES_packet_data_byte.at(1), PES_packet_data_byte.at(2), PES_packet_data_byte.at(3));
     bitstream.writeBytes(PES_packet_data_byte);
 }
 
@@ -744,7 +777,7 @@ const BitStream& ProgramStreamMap::getBitStream() const
     return bitstream;
 }
 
-void ProgramStreamMap::addElementaryStream(uint8_t stream_type)
+void ProgramStreamMap::addElementaryStream(uint8_t stream_type, uint8_t elementary_stream_id)
 {
     for (auto it : elementary_stream_map)
     {
@@ -756,11 +789,13 @@ void ProgramStreamMap::addElementaryStream(uint8_t stream_type)
     
     ElementaryStream elementary_stream;
     elementary_stream.stream_type = stream_type;
-    elementary_stream.elementary_stream_id = 0;
+    elementary_stream.elementary_stream_id = elementary_stream_id;
     elementary_stream.elementary_stream_info_length = 0;
 
     elementary_stream_map.push_back(elementary_stream);
-    elementary_stream_map_length += 4; // stream_type + elementary_stream_id + elementary_stream_info_length
+    elementary_stream_map_length += sizeof(elementary_stream.stream_type);
+    elementary_stream_map_length += sizeof(elementary_stream.elementary_stream_id);
+    elementary_stream_map_length += sizeof(elementary_stream.elementary_stream_info_length);
 }
 
 Pack::Pack()
@@ -799,7 +834,6 @@ void Pack::addSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
 
 void Pack::addPESPacket(const std::shared_ptr<PESPacket>& PES_packet)
 {
-    // printf(">>>>>>> %s:%d\n", __FILE__, __LINE__);
     PES_packet->toBitStream();
     this->PES_packet.push_back(PES_packet);
     pack_header.updateMuxRate(PES_packet->getBitStreamLength());

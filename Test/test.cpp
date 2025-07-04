@@ -15,9 +15,9 @@ static void *stream_proc(void *arg)
     // const char *filename = "./assets/birds.mp4";
     // const char *filename = "./assets/nature.264";
     // const char *filename = "./assets/nature2.264";
-    // const char *filename = "./assets/240x320.h264";
+    const char *filename = "./assets/240x320.h264";
     // const char *filename = "./assets/240x3202.h264";
-    const char *filename = "./assets/128x128.h264";
+    // const char *filename = "./assets/128x128.h264";
     // const char *filename = "./assets/1920x1080.h264";
     // const char *filename = "./assets/cuc_ieschool.h264";
     // const char *filename = "./assets/x.h264";
@@ -55,7 +55,7 @@ static void *stream_proc(void *arg)
         while (wrlen < len && s_stream_flag)
         {
             int wr = pes->packetized(buf + wrlen, len - wrlen);
-            // printf(">>>>>> %s:%d wr=%d\n", __FILE__, __LINE__, wr);
+            printf(">>>>>> %s:%d wr=%d\n", __FILE__, __LINE__, wr);
             if (wr < 0)
             {
                 printf("simulate write data failed\n");
@@ -63,7 +63,6 @@ static void *stream_proc(void *arg)
             }
             wrlen += wr;
         }
-        // printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s:%d\n", __FILE__, __LINE__);
     }
 
     if (stream != NULL)

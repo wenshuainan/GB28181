@@ -14,7 +14,6 @@ void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
     {
         pack->toBitStream();
         const BitStream stream = pack->getBitStream();
-        // printf(">>>>>> %s:%d [%0x %0x %0x %0x]\n", __FILE__, __LINE__, stream.getData()[0], stream.getData()[1], stream.getData()[2], stream.getData()[3]);
         streamCallback(stream.getData(), stream.getLength());
 
         const std::vector<std::shared_ptr<PESPacket>>& PES_packet = pack->getPESPacket();
@@ -51,10 +50,9 @@ void PSMux::multiplexed()
                     if (packet.bKeyFrame)
                     {
                         systemheader->addVideoStreamType(0xE0);
-                        // systemheader->addVideoStreamType(0xBC);
                         pack->addSystemHeader(systemheader);
 
-                        psm->addElementaryStream(packet.stream_type);
+                        psm->addElementaryStream(packet.stream_type, 0xE0);
                         pack->addPESPacket(psm);
                     }
                 }
@@ -75,7 +73,7 @@ void PSMux::multiplexed()
                 audioStream.pop();
 
                 systemheader->addVideoStreamType(0xC0);
-                psm->addElementaryStream(packet.stream_type);
+                psm->addElementaryStream(packet.stream_type, 0xC0);
 
                 pack->addPESPacket(packet.pes);
             }
@@ -83,8 +81,6 @@ void PSMux::multiplexed()
 
         if (bVAUFinished)
         {
-            // static int ii = 0;
-            // printf("MMMMMM %d\n", ++ii);
             sendPack(pack);
             pack = nullptr;
             bVAUFinished = false;
