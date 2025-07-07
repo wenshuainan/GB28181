@@ -444,7 +444,7 @@ PESPacket::PESPacket(uint8_t stream_id)
     PES_priority = 1;
     data_alignment_indicator = 1;
     copyright = 0;
-    PTS_DTS_flags = 0;
+    PTS_DTS_flags = 0x02;
     ESCR_flag = 0;
     ES_rate_flag = 0;
     DSM_trick_mode_flag = 0;
@@ -486,14 +486,14 @@ PESPacket::PESPacket(uint8_t stream_id)
         // ...
     }
 
+    //PTS_DTS_flags = 0x02;
     struct timeval tv;
     gettimeofday(&tv, NULL);
     uint64_t tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
     PTS = ((27000 * tms) / 300) % (1ULL << 33);
-    PTS_DTS_flags = 0x02;
 
-    //DTS if have video B frame ...
     //PTS_DTS_flags = 0x03;
+    //DTS if have video B frame ...
 
     /* if PES_extension_flag == 0 other extension flag no need set */
     // PES_private_data_flag = 0;

@@ -2,6 +2,7 @@
 #define RTP_HEADER_H
 
 #include <cstdint>
+#include <memory>
 
 class RtpHeader
 {
@@ -21,13 +22,15 @@ public:
 
 private:
     Fixed fixed;
+    std::shared_ptr<uint8_t> data;
 
 public:
     RtpHeader(const Fixed& fixed);
     ~RtpHeader();
 
 public:
-    void setMarker(int marker = 1);
+    const uint8_t* getData();
+    uint16_t getLength() const;
 };
 
 #endif

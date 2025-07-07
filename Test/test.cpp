@@ -8,21 +8,20 @@
 #include "Packetizer/PacketizedAVC.h"
 #include "Semantics.h"
 
+#include "RTP/RtpParticipant.h"
+static RtpParticipant *s_rtp_participant = NULL;
+
 static int s_stream_flag = 0;
 static void *stream_proc(void *arg)
 {
     FILE *stream = NULL;
-    // const char *filename = "./assets/birds.mp4";
-    // const char *filename = "./assets/nature.264";
-    // const char *filename = "./assets/nature2.264";
-    const char *filename = "./assets/240x320.h264";
+    const char *filename = "./assets/nature.h264";
+    // const char *filename = "./assets/240x320.h264";
     // const char *filename = "./assets/240x3202.h264";
     // const char *filename = "./assets/128x128.h264";
     // const char *filename = "./assets/1920x1080.h264";
     // const char *filename = "./assets/cuc_ieschool.h264";
-    // const char *filename = "./assets/x.h264";
     // const char *filename = "./assets/birds.h264";
-    // const char *filename = "./assets/x2.h264";
 
     prctl(PR_SET_NAME, "simulate_stream");
 
@@ -76,12 +75,16 @@ static void *stream_proc(void *arg)
 void ps_stream_callback(const uint8_t *data, int32_t size)
 {
     // printf("~~~~~~ %p %u\n", data, size);
+#if 0
     static FILE *file = fopen("./stream.ps", "w");
     if (file)
     {
         fwrite(data, 1, size, file);
         fflush(file);
     }
+#else
+    s_rtp_participant->format(data, size);
+#endif
 }
 
 int main()
@@ -101,6 +104,16 @@ int main()
 
     ua.start(info);
 #elif 1
+    RtpParticipant::Participant participant = {
+        .destination = {"10.12.13.136", 5000},
+        .netType = RtpNet::Type::UDP,
+        .payloadType = RtpPayload::Type::H264,
+        .SSRC = 0x99000000
+    };
+    RtpParticipant rtpParticipant(participant);
+    rtpParticipant.start();
+    s_rtp_participant = &rtpParticipant;
+
     PSMux mux;
     mux.setStreamCallback(ps_stream_callback);
     mux.start();

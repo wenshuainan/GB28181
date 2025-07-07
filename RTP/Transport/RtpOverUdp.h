@@ -9,13 +9,10 @@ public:
     RtpOverUdp();
     virtual ~RtpOverUdp();
 
-protected:
-    virtual bool framing();
-
 public:
     virtual bool connect(char *ip, int port);
     virtual bool disconnect();
-    virtual bool send(RtpPacket *packet);
+    virtual bool send(RtpPacket& packet);
 };
 
 #endif

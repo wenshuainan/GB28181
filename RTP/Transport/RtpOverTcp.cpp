@@ -7,17 +7,17 @@
 #include <errno.h>
 #include "RtpOverTcp.h"
 
-bool RtpOverTcp::framing()
-{
-    return false;
-}
+RtpOverTcp::RtpOverTcp()
+{}
+
+RtpOverTcp::~RtpOverTcp()
+{}
 
 bool RtpOverTcp::connect(char *ip, int port)
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0)
     {
-        std::cerr << "Error creating socket" << std::endl;
         return false;
     }
 
@@ -30,12 +30,10 @@ bool RtpOverTcp::connect(char *ip, int port)
     int res = ::connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
     if (res < 0)
     {
-        std::cerr << "Connection failed: " << strerror(errno) << std::endl;
         close(sockfd);
         return false;
     }
 
-    std::cout << "Connected to " << ip << ":" << port << std::endl;
     return true;
 }
 
@@ -50,7 +48,24 @@ bool RtpOverTcp::disconnect()
     return true;
 }
 
-bool RtpOverTcp::send(const RtpPacket& packet)
+bool RtpOverTcp::send(RtpPacket& packet)
 {
-    return false;
+    if (sockfd < 0)
+    {
+        return false;
+    }
+
+    struct iovec iov[3];
+    uint16_t length = htons(packet.getHeaderLength() + packet.getPayloadLength());
+
+    iov[0].iov_base = &length;
+    iov[0].iov_len = sizeof(length);
+
+    iov[1].iov_base = (void *)packet.getHeader();
+    iov[1].iov_len = packet.getHeaderLength();
+
+    iov[2].iov_base = (void *)packet.getPayload();
+    iov[2].iov_len = packet.getPayloadLength();
+
+    return writev(sockfd, iov, 3) > 0;
 }

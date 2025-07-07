@@ -2,7 +2,26 @@
 #include "RtpParticipant.h"
 
 RtpParticipant::RtpParticipant(Participant& participant)
-{}
+{
+    bRunning = false;
+    payloadType = participant.payloadType;
+    SSRC = participant.SSRC;
+
+    net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
+
+    switch (payloadType)
+    {
+    case RtpPayload::Type::PS:
+        payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::PS));
+        break;
+    case RtpPayload::Type::H264:
+        payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::H264));
+        break;
+    
+    default:
+        break;
+    }
+}
 
 RtpParticipant::~RtpParticipant()
 {}
@@ -58,10 +77,46 @@ void RtpParticipant::process()
 }
 
 bool RtpParticipant::pushPayload(const Formated& formated)
-{}
+{
+    formatedQue.push(formated);
+}
+
+int32_t RtpParticipant::format(const uint8_t *data, int32_t len)
+{
+    if (payloadFormat == nullptr)
+    {
+        return 0;
+    }
+
+    return payloadFormat->format(data, len);
+}
 
 bool RtpParticipant::start()
-{}
+{
+    if (bRunning)
+    {
+        return false;
+    }
+
+    bRunning = true;
+    thread = new std::thread(&RtpParticipant::process, this);
+    return true;
+}
 
 bool RtpParticipant::stop()
-{}
+{
+    if (!bRunning)
+    {
+        return false;
+    }
+
+    bRunning = false;
+    if (thread->joinable())
+    {
+        thread->join();
+    }
+    delete thread;
+    thread = nullptr;
+
+    return true;
+}

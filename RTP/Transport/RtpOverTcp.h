@@ -5,21 +5,14 @@
 
 class RtpOverTcp : public RtpNet
 {
-private:
-    unsigned short length;
-    Type type;
-
 public:
     RtpOverTcp();
     virtual ~RtpOverTcp();
 
-protected:
-    virtual bool framing();
-
 public:
     virtual bool connect(char *ip, int port);
     virtual bool disconnect();
-    virtual bool send(const RtpPacket& packet);
+    virtual bool send(RtpPacket& packet);
 };
 
 #endif

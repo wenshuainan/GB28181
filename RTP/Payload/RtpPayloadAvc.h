@@ -8,9 +8,8 @@ class RtpPayloadAvc : public RtpPayload
 {
 private:
     uint8_t naluHeader;
-    bool bNaluHeaderNextTime;
-    uint8_t lastTimeTail[3];
-    int tailLen;
+    uint8_t cache[4];
+    int32_t cacheLen;
     RtpParticipant::Formated formated;
 
 public:
@@ -23,7 +22,7 @@ private:
     void pushFomated();
 
 public:
-    virtual int32_t format(uint8_t *data, int32_t len);
+    virtual int32_t format(const uint8_t *data, int32_t len);
 };
 
 #endif

@@ -33,11 +33,11 @@ public:
     
 private:
     std::shared_ptr<RtpNet> net;
+    std::shared_ptr<RtpPayload> payloadFormat;
     std::queue<Formated> formatedQue;
     std::thread *thread;
     bool bRunning;
     RtpPayload::Type payloadType;
-    RtpPayload *payloadFormat;
     uint32_t SSRC;
     
 public:
@@ -50,6 +50,9 @@ private:
 
 public:
     bool pushPayload(const Formated& formated);
+
+public:
+    int32_t format(const uint8_t *data, int32_t len);
     bool start();
     bool stop();
 };

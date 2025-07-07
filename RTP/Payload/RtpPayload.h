@@ -32,7 +32,7 @@ public:
     static std::shared_ptr<RtpPayload> create(RtpParticipant *participant, Type type, int32_t maxLen = 1400);
 
 public:
-    virtual int32_t format(uint8_t *data, int32_t len) = 0;
+    virtual int32_t format(const uint8_t *data, int32_t len) = 0;
 };
 
 #endif

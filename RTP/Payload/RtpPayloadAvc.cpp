@@ -2,9 +2,8 @@
 #include "RtpPayloadAvc.h"
 
 RtpPayloadAvc::RtpPayloadAvc(RtpParticipant *participant, int32_t maxLen)
-    : RtpPayload(participant, maxLen)
+    : RtpPayload(participant, maxLen - 2) // -2 for FUA indicator and header
 {
-    bNaluHeaderNextTime = false;
     formated.bFirst = false;
     formated.marker = 0;
     formated.payload = nullptr;
@@ -50,87 +49,89 @@ void RtpPayloadAvc::pushFomated()
     formated.marker = 0;
 }
 
-int32_t RtpPayloadAvc::format(uint8_t *data, int32_t len)
+int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
 {
-    if (len <= 0)
+    if (data == nullptr || len <= 0)
     {
+        return 0;
+    }
+
+    if (cacheLen + len <= sizeof(cache))
+    {
+        memcpy(cache + cacheLen, data, len);
+        cacheLen += len;
         return len;
     }
 
-    if (tailLen + len <= sizeof(lastTimeTail))
+    if (cacheLen > 0)
     {
-        memcpy(lastTimeTail + tailLen, data, len);
-        tailLen += len;
-        return len;
-    }
-    else if (tailLen == sizeof(lastTimeTail))
-    {
-        if (len > 0
-            && lastTimeTail[0] == 0x00 && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
-            && data[0] == 0x01)
+        uint8_t assemble[8] = {0};
+        int32_t assembleLen = 0;
+
+        memcpy(assemble, cache, cacheLen);
+        assembleLen += cacheLen;
+
+        int32_t dataLen = len > 4 ? 4 : len;
+        memcpy(assemble + assembleLen, data, dataLen);
+        assembleLen += dataLen;
+
+        int i;
+        for (i = 0; i < assembleLen - 4; i++)
         {
-            formated.marker = 1;
-            pushFomated();
-            formated.bFirst = true;
-            formated.payload = std::make_shared<std::vector<uint8_t>>();
-            tailLen = 0;
-            return 1;
-        }
-        else if (len > 1
-            && lastTimeTail[1] == 0x00 && lastTimeTail[2] == 0x00
-            && data[0] == 0x00 && data[1] == 0x01)
-        {
-            formated.marker = 1;
-            pushFomated();
-            formated.bFirst = true;
-            formated.payload = std::make_shared<std::vector<uint8_t>>();
-            formated.payload->push_back(lastTimeTail[0]);
-            tailLen = 0;
-            return 2;
-        }
-        else if (len > 2
-            && lastTimeTail[2] == 0x00
-            && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
-        {
-            formated.marker = 1;
-            pushFomated();
-            formated.bFirst = true;
-            formated.payload = std::make_shared<std::vector<uint8_t>>();
-            formated.payload->push_back(lastTimeTail[0]);
-            formated.payload->push_back(lastTimeTail[1]);
-            tailLen = 0;
-            return 3;
-        }
-        else
-        {
-            if (formated.payload->size() + tailLen <= maxLen)
+            if (assemble[i] == 0x00
+                && assemble[i+1] == 0x00
+                && assemble[i+2] == 0x00
+                && assemble[i+3] == 0x01)
             {
-                formated.payload->push_back(lastTimeTail[0]);
-                formated.payload->push_back(lastTimeTail[1]);
-                formated.payload->push_back(lastTimeTail[2]);
+                int j;
+                for (j = 0; j < i; j++)
+                {
+                    if (formated.payload->size() >= maxLen)
+                    {
+                        pushFomated();
+                        formated.payload = std::make_shared<std::vector<uint8_t>>();
+                    }
+                    formated.payload->push_back(assemble[j]);
+                }
+                formated.marker = 1;
+                pushFomated();
+                naluHeader = assemble[i+4];
+                formated.payload = std::make_shared<std::vector<uint8_t>>();
+                formated.bFirst = true;
+
+                for (j = i + 4; j < assembleLen; j++)
+                {
+                    formated.payload->push_back(assemble[j]);
+                }
+
+                cacheLen = 0;
+
+                return dataLen;
             }
-            else
+        }
+
+        for (i = 0; i < cacheLen; i++)
+        {
+            if (formated.payload->size() >= maxLen)
             {
                 pushFomated();
-                formated.bFirst = true;
                 formated.payload = std::make_shared<std::vector<uint8_t>>();
-                formated.payload->push_back(lastTimeTail[0]);
-                formated.payload->push_back(lastTimeTail[1]);
-                formated.payload->push_back(lastTimeTail[2]);
             }
-
-            tailLen = 0;
+            formated.payload->push_back(cache[i]);
         }
+
+        cacheLen = 0;
     }
 
-    if (bNaluHeaderNextTime)
+    if (len <= sizeof(cache))
     {
-        naluHeader = data[0];
+        memcpy(cache, data, len);
+        cacheLen = len;
+        return len;
     }
 
-    /* find start code: 0x00 0x00 0x00 0x01 */
     int parsed;
-    for (parsed = 0; parsed < len - 3; parsed++)
+    for (parsed = 0; parsed < len - 4; parsed++)
     {
         if (data[parsed] == 0x00
             && data[parsed+1] == 0x00
@@ -141,48 +142,40 @@ int32_t RtpPayloadAvc::format(uint8_t *data, int32_t len)
         }
     }
 
-    int f = 0;
-    while (f < parsed)
+    int cpyed = 0;
+    while (cpyed < parsed)
     {
-        int32_t s = formated.payload->size();
-        int p = maxLen - s;
-        if (p > parsed - f)
+        int32_t ori = formated.payload->size();
+        int wr = maxLen - ori;
+        if (wr > parsed - cpyed)
         {
-            p = parsed - f;
+            wr = parsed - cpyed;
         }
-        formated.payload->resize(s + p);
-        memcpy(formated.payload->data() + s, data + f, p);
-        f += p;
-        if (p < parsed)
+        formated.payload->resize(ori + wr);
+        memcpy(formated.payload->data() + ori, data + cpyed, wr);
+        cpyed += wr;
+        if (wr < parsed)
         {
             pushFomated();
         }
     }
 
-    if (parsed == len - 3)
+    if (parsed == len - 4)
     {
-        memcpy(lastTimeTail, data + parsed, 3);
-        tailLen = 3;
+        memcpy(cache, data + parsed, 4);
+        cacheLen = 4;
+        parsed += 4;
     }
     else
     {
         formated.marker = 1;
         pushFomated();
+        naluHeader = data[parsed+4];
         formated.bFirst = true;
         formated.payload = std::make_shared<std::vector<uint8_t>>();
-        tailLen = 0;
 
-        if (parsed + 4 < len)
-        {
-            naluHeader = data[parsed+4];
-            bNaluHeaderNextTime = false;
-        }
-        else
-        {
-            bNaluHeaderNextTime = true;
-        }
-
-        parsed += 4;
+        cacheLen = 0;
+        parsed += 5;
     }
 
     return parsed;
