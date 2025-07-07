@@ -15,10 +15,10 @@ static int s_stream_flag = 0;
 static void *stream_proc(void *arg)
 {
     FILE *stream = NULL;
-    const char *filename = "./assets/nature.h264";
+    // const char *filename = "./assets/nature.h264";
     // const char *filename = "./assets/240x320.h264";
     // const char *filename = "./assets/240x3202.h264";
-    // const char *filename = "./assets/128x128.h264";
+    const char *filename = "./assets/128x128.h264";
     // const char *filename = "./assets/1920x1080.h264";
     // const char *filename = "./assets/cuc_ieschool.h264";
     // const char *filename = "./assets/birds.h264";
@@ -75,8 +75,8 @@ static void *stream_proc(void *arg)
 void ps_stream_callback(const uint8_t *data, int32_t size)
 {
     // printf("~~~~~~ %p %u\n", data, size);
-#if 0
-    static FILE *file = fopen("./stream.ps", "w");
+#if 1
+    static FILE *file = fopen("./stream.ps", "wb");
     if (file)
     {
         fwrite(data, 1, size, file);

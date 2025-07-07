@@ -68,7 +68,7 @@ bool RtpOverUdp::send(RtpPacket& packet)
     ssize_t sent = writev(sockfd, iov, 2);
     return sent == (ssize_t)(hlen + plen);
 #else
-    static FILE* file = fopen("./rtp_over_udp.log", "a");
+    static FILE* file = fopen("./rtp_over_udp.log", "wb");
     if (file)
     {
         fwrite(packet.getHeader(), 1, packet.getHeaderLength(), file);
