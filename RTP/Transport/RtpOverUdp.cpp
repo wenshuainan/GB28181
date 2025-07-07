@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -68,9 +69,10 @@ bool RtpOverUdp::send(RtpPacket& packet)
     ssize_t sent = writev(sockfd, iov, 2);
     return sent == (ssize_t)(hlen + plen);
 #else
-    static FILE* file = fopen("./rtp_over_udp.log", "wb");
+    static FILE* file = fopen("./rtp_over_udp.rtp", "wb");
     if (file)
     {
+        printf(">>>>>> %s:%d %u %u\n", __FILE__, __LINE__, packet.getHeaderLength(), packet.getPayloadLength());
         fwrite(packet.getHeader(), 1, packet.getHeaderLength(), file);
         fwrite(packet.getPayload(), 1, packet.getPayloadLength(), file);
         fflush(file);

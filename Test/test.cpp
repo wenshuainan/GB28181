@@ -25,7 +25,8 @@ static void *stream_proc(void *arg)
 
     prctl(PR_SET_NAME, "simulate_stream");
 
-    PES *pes = (PacketizedAVC *)arg;
+    // PES *pes = (PacketizedAVC *)arg;
+    RtpParticipant *participant = (RtpParticipant *)arg;
 
     while (s_stream_flag)
     {
@@ -53,7 +54,8 @@ static void *stream_proc(void *arg)
         int wrlen = 0;
         while (wrlen < len && s_stream_flag)
         {
-            int wr = pes->packetized(buf + wrlen, len - wrlen);
+            // int wr = pes->packetized(buf + wrlen, len - wrlen);
+            int wr = participant->format(buf + wrlen, len - wrlen);
             printf(">>>>>> %s:%d wr=%d\n", __FILE__, __LINE__, wr);
             if (wr < 0)
             {
@@ -75,7 +77,7 @@ static void *stream_proc(void *arg)
 void ps_stream_callback(const uint8_t *data, int32_t size)
 {
     // printf("~~~~~~ %p %u\n", data, size);
-#if 1
+#if 0
     static FILE *file = fopen("./stream.ps", "wb");
     if (file)
     {
@@ -121,7 +123,8 @@ int main()
     PacketizedAVC packetizer(&mux);
     pthread_t tid;
     s_stream_flag = 1;
-    pthread_create(&tid, NULL, stream_proc, &packetizer);
+    // pthread_create(&tid, NULL, stream_proc, &packetizer);
+    pthread_create(&tid, NULL, stream_proc, &rtpParticipant);
 #else
     BitStream bs;
     // bs.write8(1, 0x80, 7);

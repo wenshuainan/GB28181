@@ -22,7 +22,7 @@ public:
 
 private:
     Fixed fixed;
-    std::shared_ptr<uint8_t> data;
+    uint8_t fixedData[sizeof(Fixed)];
 
 public:
     RtpHeader(const Fixed& fixed);

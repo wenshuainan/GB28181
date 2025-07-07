@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <unistd.h>
 #include <random>
 #include "RtpParticipant.h"
 
@@ -53,6 +55,7 @@ void RtpParticipant::process()
     {
         if (formatedQue.empty())
         {
+            usleep(10000);
             continue;
         }
 
@@ -79,6 +82,7 @@ void RtpParticipant::process()
 bool RtpParticipant::pushPayload(const Formated& formated)
 {
     formatedQue.push(formated);
+    return true;
 }
 
 int32_t RtpParticipant::format(const uint8_t *data, int32_t len)
