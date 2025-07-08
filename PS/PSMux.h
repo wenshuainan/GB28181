@@ -47,10 +47,6 @@ private:
 public:
     bool pushVideoPES(const Packet& packet);
     bool pushAudioPES(const Packet& packet);
-
-public:
-    bool start();
-    bool stop();
 };
 
 #endif

@@ -3,11 +3,26 @@
 PSMux::PSMux(PSCallback *callback)
 {
     m_callback = callback;
-    bRunning = false;
+
+    bRunning = true;
+    thread = new std::thread(&PSMux::multiplexed, this);
 }
 
 PSMux::~PSMux()
-{}
+{
+    if (!bRunning)
+    {
+        return;
+    }
+
+    bRunning = false;
+    if (thread != nullptr)
+    {
+        thread->join();
+        delete thread;
+        thread = nullptr;
+    }
+}
 
 void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
 {
@@ -98,35 +113,5 @@ bool PSMux::pushVideoPES(const Packet& packet)
 bool PSMux::pushAudioPES(const Packet& packet)
 {
     this->audioStream.push(packet);
-    return true;
-}
-
-bool PSMux::start()
-{
-    if (bRunning)
-    {
-        return false;
-    }
-
-    bRunning = true;
-    thread = new std::thread(&PSMux::multiplexed, this);
-    return true;
-}
-
-bool PSMux::stop()
-{
-    if (!bRunning)
-    {
-        return false;
-    }
-
-    bRunning = false;
-    if (thread != nullptr)
-    {
-        thread->join();
-        delete thread;
-        thread = nullptr;
-    }
-
     return true;
 }
