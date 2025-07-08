@@ -21,11 +21,13 @@ public:
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
     bool agent(const SipMessageApp& message);
-    bool start();
-    bool stop();
 
 private:
     void changeDevState(int code, const std::string& reasonPhrase);
+
+public:
+    bool start();
+    bool stop();
 };
 
 #endif

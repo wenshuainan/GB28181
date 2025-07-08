@@ -12,10 +12,10 @@ RtpOverUdp::RtpOverUdp()
 RtpOverUdp::~RtpOverUdp()
 {}
 
-bool RtpOverUdp::connect(char *ip, int port)
+bool RtpOverUdp::connect(const std::string& ipv4, int port)
 {
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0)
+    m_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (m_sockfd < 0)
     {
         return false;
     }
@@ -24,12 +24,12 @@ bool RtpOverUdp::connect(char *ip, int port)
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
-    servaddr.sin_addr.s_addr = inet_addr(ip);
+    servaddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 
-    if (::connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
+    if (::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
-        close(sockfd);
-        sockfd = -1;
+        close(m_sockfd);
+        m_sockfd = -1;
         return false;
     }
 
@@ -38,10 +38,10 @@ bool RtpOverUdp::connect(char *ip, int port)
 
 bool RtpOverUdp::disconnect()
 {
-    if (sockfd > 0)
+    if (m_sockfd > 0)
     {
-        close(sockfd);
-        sockfd = -1;
+        close(m_sockfd);
+        m_sockfd = -1;
     }
 
     return true;
@@ -50,8 +50,9 @@ bool RtpOverUdp::disconnect()
 bool RtpOverUdp::send(RtpPacket& packet)
 {
 #if 0
-    if (sockfd < 0)
+    if (m_sockfd < 0)
     {
+        printf("socket not connected\n");
         return false;
     }
 
@@ -66,7 +67,7 @@ bool RtpOverUdp::send(RtpPacket& packet)
     iov[1].iov_base = (void *)payload;
     iov[1].iov_len = plen;
 
-    ssize_t sent = writev(sockfd, iov, 2);
+    ssize_t sent = writev(m_sockfd, iov, 2);
     return sent == (ssize_t)(hlen + plen);
 #else
     static FILE* file = fopen("./rtp_over_udp.rtp", "wb");

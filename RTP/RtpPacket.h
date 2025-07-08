@@ -9,8 +9,8 @@
 class RtpPacket
 {
 private:
-    RtpHeader header;
-    std::shared_ptr<std::vector<uint8_t>> payload;
+    RtpHeader m_header;
+    std::shared_ptr<std::vector<uint8_t>> m_payload;
 
 public:
     RtpPacket(const RtpHeader::Fixed& fixed, std::shared_ptr<std::vector<uint8_t>> payload);

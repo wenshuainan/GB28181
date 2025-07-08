@@ -20,9 +20,9 @@ public:
     };
 
 protected:
-    Type type;
-    int32_t maxLen;
-    RtpParticipant *participant;
+    Type m_type;
+    RtpParticipant *m_participant;
+    int32_t m_maxLen;
 
 public:
     RtpPayload(RtpParticipant *participant, int32_t maxLen = 1400);

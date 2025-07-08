@@ -1,21 +1,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include "RtpPayloadAvc.h"
 
 RtpPayloadAvc::RtpPayloadAvc(RtpParticipant *participant, int32_t maxLen)
-    : RtpPayload(participant, maxLen - 2) // -2 for FUA indicator and header
+    : RtpPayload(participant, maxLen)
 {
-    formated.marker = 0;
-    formated.bFirst = true;
-    formated.payload = std::make_shared<std::vector<uint8_t>>();
-
-    //FUA indicator and header
-    if (formated.payload != nullptr)
-    {
-        formated.payload->push_back(0);
-        formated.payload->push_back(0);
-    }
+    m_formated.marker = 0;
+    m_formated.bFirst = false;
+    m_formated.payload = nullptr;
 }
 
 RtpPayloadAvc::~RtpPayloadAvc()
@@ -44,20 +38,23 @@ uint8_t RtpPayloadAvc::makeFUAHeader(uint8_t start, uint8_t end, uint8_t naluTyp
 
 void RtpPayloadAvc::pushFomated()
 {
-    if (formated.payload == nullptr)
+    if (m_formated.payload == nullptr)
     {
         return;
     }
 
-    formated.payload->at(0) = makeFUAIndicator(naluHeader);
-    formated.payload->at(1) = makeFUAHeader(formated.bFirst ? 1 : 0, formated.marker, naluHeader & 0x1f);
+    m_formated.payload->at(0) = makeFUAIndicator(m_naluHeader);
+    m_formated.payload->at(1) = makeFUAHeader(m_formated.bFirst ? 1 : 0, m_formated.marker, m_naluHeader & 0x1f);
 
-    participant->pushPayload(formated);
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    m_formated.tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    m_participant->pushPayload(m_formated);
 
-    formated.bFirst = false;
-    formated.marker = 0;
+    m_formated.bFirst = false;
+    m_formated.marker = 0;
 
-    // usleep(40000);
+    usleep(40000);
 }
 
 int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
@@ -67,20 +64,20 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
         return 0;
     }
 
-    if (cacheLen + len <= sizeof(cache))
+    if ((uint32_t)m_cacheLen + len <= sizeof(m_cache))
     {
-        memcpy(cache + cacheLen, data, len);
-        cacheLen += len;
+        memcpy(m_cache + m_cacheLen, data, len);
+        m_cacheLen += len;
         return len;
     }
 
-    if (cacheLen > 0)
+    if (m_cacheLen > 0)
     {
         uint8_t assemble[8] = {0};
         int32_t assembleLen = 0;
 
-        memcpy(assemble, cache, cacheLen);
-        assembleLen += cacheLen;
+        memcpy(assemble, m_cache, m_cacheLen);
+        assembleLen += m_cacheLen;
 
         int32_t dataLen = len > 4 ? 4 : len;
         memcpy(assemble + assembleLen, data, dataLen);
@@ -97,65 +94,50 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
                 int j;
                 for (j = 0; j < i; j++)
                 {
-                    if (formated.payload->size() >= maxLen)
+                    if (m_formated.payload->size() >= (uint32_t)m_maxLen)
                     {
                         pushFomated();
-                        formated.payload = std::make_shared<std::vector<uint8_t>>();
-                        //FUA indicator and header
-                        if (formated.payload != nullptr)
-                        {
-                            formated.payload->push_back(0);
-                            formated.payload->push_back(0);
-                        }
+                        m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+                        m_formated.payload->resize(2); //FUA indicator and header
                     }
-                    formated.payload->push_back(assemble[j]);
+                    m_formated.payload->push_back(assemble[j]);
                 }
-                formated.marker = 1;
+                m_formated.marker = 1;
                 pushFomated();
-                naluHeader = assemble[i+4];
-                formated.bFirst = true;
-                formated.payload = std::make_shared<std::vector<uint8_t>>();
-                //FUA indicator and header
-                if (formated.payload != nullptr)
-                {
-                    formated.payload->push_back(0);
-                    formated.payload->push_back(0);
-                }
+                m_naluHeader = assemble[i+4];
+                m_formated.bFirst = true;
+                m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+                m_formated.payload->resize(2); //FUA indicator and header
 
                 for (j = i + 4; j < assembleLen; j++)
                 {
-                    formated.payload->push_back(assemble[j]);
+                    m_formated.payload->push_back(assemble[j]);
                 }
 
-                cacheLen = 0;
+                m_cacheLen = 0;
 
                 return dataLen;
             }
         }
 
-        for (i = 0; i < cacheLen; i++)
+        for (i = 0; i < m_cacheLen; i++)
         {
-            if (formated.payload->size() >= maxLen)
+            if (m_formated.payload->size() >= (uint32_t)m_maxLen)
             {
                 pushFomated();
-                formated.payload = std::make_shared<std::vector<uint8_t>>();
-                //FUA indicator and header
-                if (formated.payload != nullptr)
-                {
-                    formated.payload->push_back(0);
-                    formated.payload->push_back(0);
-                }
+                m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+                m_formated.payload->resize(2); //FUA indicator and header
             }
-            formated.payload->push_back(cache[i]);
+            m_formated.payload->push_back(m_cache[i]);
         }
 
-        cacheLen = 0;
+        m_cacheLen = 0;
     }
 
-    if (len <= sizeof(cache))
+    if ((uint32_t)len <= sizeof(m_cache))
     {
-        memcpy(cache, data, len);
-        cacheLen = len;
+        memcpy(m_cache, data, len);
+        m_cacheLen = len;
         return len;
     }
 
@@ -174,51 +156,40 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
     int32_t cpyed = 0;
     while (cpyed < parsed)
     {
-        printf(">>>>>> %s,%d\n", __FILE__, __LINE__);
-        int32_t ori = formated.payload->size();
+        int32_t ori = m_formated.payload->size();
         int wr = parsed - cpyed;
-        if (wr > maxLen - ori)
+        if (wr > m_maxLen - ori)
         {
-            wr = maxLen - ori;
+            wr = m_maxLen - ori;
         }
-        formated.payload->resize(ori + wr);
-        memcpy(formated.payload->data() + ori, data + cpyed, wr);
+        m_formated.payload->resize(ori + wr);
+        memcpy(m_formated.payload->data() + ori, data + cpyed, wr);
         cpyed += wr;
         if (cpyed < parsed)
         {
             pushFomated();
-            formated.payload = std::make_shared<std::vector<uint8_t>>();
-            //FUA indicator and header
-            if (formated.payload != nullptr)
-            {
-                formated.payload->push_back(0);
-                formated.payload->push_back(0);
-            }
+            m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+            m_formated.payload->resize(2); //FUA indicator and header
         }
     }
 
     if (parsed == len - 4)
     {
-        memcpy(cache, data + parsed, 4);
-        cacheLen = 4;
+        memcpy(m_cache, data + parsed, 4);
+        m_cacheLen = 4;
         parsed += 4;
     }
     else
     {
-        formated.marker = 1;
+        m_formated.marker = 1;
         pushFomated();
-        naluHeader = data[parsed+4];
-        formated.bFirst = true;
-        formated.payload = std::make_shared<std::vector<uint8_t>>();
-        //FUA indicator and header
-        if (formated.payload != nullptr)
-        {
-            formated.payload->push_back(0);
-            formated.payload->push_back(0);
-            formated.payload->push_back(data[parsed+4]);
-        }
+        m_naluHeader = data[parsed+4];
+        m_formated.bFirst = true;
+        m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+        m_formated.payload->resize(2); //FUA indicator and header
 
-        cacheLen = 0;
+        m_formated.payload->push_back(data[parsed+4]);
+        m_cacheLen = 0;
         parsed += 5;
     }
 

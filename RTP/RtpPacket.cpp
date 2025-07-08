@@ -1,7 +1,7 @@
 #include "RtpPacket.h"
 
 RtpPacket::RtpPacket(const RtpHeader::Fixed& fixed, std::shared_ptr<std::vector<uint8_t>> payload)
-    : header(fixed), payload(payload)
+    : m_header(fixed), m_payload(payload)
 {}
 
 RtpPacket::~RtpPacket()
@@ -9,30 +9,30 @@ RtpPacket::~RtpPacket()
 
 const uint8_t* RtpPacket::getHeader()
 {
-    return header.getData();
+    return m_header.getData();
 }
 
 const uint8_t* RtpPacket::getPayload()
 {
-    if (payload == nullptr || payload->empty())
+    if (m_payload == nullptr || m_payload->empty())
     {
         return nullptr;
     }
 
-    return payload->data();
+    return m_payload->data();
 }
 
 uint16_t RtpPacket::getHeaderLength() const
 {
-    return header.getLength();
+    return m_header.getLength();
 }
 
 uint16_t RtpPacket::getPayloadLength() const
 {
-    if (payload == nullptr)
+    if (m_payload == nullptr)
     {
         return 0;
     }
 
-    return payload->size();
+    return m_payload->size();
 }

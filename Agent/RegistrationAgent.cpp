@@ -63,10 +63,6 @@ bool RegistrationAgent::stop()
 
     message.addField("Expires", "0");
 
-    /* 添加GB版本号扩展头域（附录I） */
-    message.addField(GBVerName, GBVerValue);
-    message.print(); //debug
-
     if (sip->send(message))
     {
         outCallID = message.getCallID();

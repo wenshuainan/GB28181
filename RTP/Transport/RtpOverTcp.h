@@ -10,7 +10,7 @@ public:
     virtual ~RtpOverTcp();
 
 public:
-    virtual bool connect(char *ip, int port);
+    virtual bool connect(const std::string& ipv4, int port);
     virtual bool disconnect();
     virtual bool send(RtpPacket& packet);
 };

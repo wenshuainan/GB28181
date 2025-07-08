@@ -8,6 +8,7 @@ RtpParticipant::RtpParticipant(Participant& participant)
     bRunning = false;
     payloadType = participant.payloadType;
     SSRC = participant.SSRC;
+    destination = participant.destination;
 
     net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
 
@@ -40,12 +41,12 @@ void RtpParticipant::process()
 {
     RtpHeader::Fixed fixed =
     {
-        .v = 2,
-        .p = 0,
-        .x = 0,
         .cc = 0,
-        .m = 0,
+        .x = 0,
+        .p = 0,
+        .v = 2,
         .pt = payloadType,
+        .m = 0,
         .seq = genRandom(),
         .ts = 0,
         .ssrc = SSRC
@@ -64,7 +65,7 @@ void RtpParticipant::process()
 
         if (formated.bFirst)
         {
-            fixed.ts = formated.tms / 90;
+            fixed.ts = formated.tms * 90;
         }
         if (formated.marker)
         {
@@ -95,32 +96,65 @@ int32_t RtpParticipant::format(const uint8_t *data, int32_t len)
     return payloadFormat->format(data, len);
 }
 
-bool RtpParticipant::start()
+bool RtpParticipant::connect()
 {
-    if (bRunning)
+    if (net == nullptr || net->isConnected())
+    {
+        return false;
+    }
+    if (destination.ipv4.empty() || destination.port <= 0)
     {
         return false;
     }
 
-    bRunning = true;
-    thread = new std::thread(&RtpParticipant::process, this);
-    return true;
+    bool ret = net->connect(destination.ipv4, destination.port);
+    if (ret)
+    {
+        bRunning = true;
+        thread = new std::thread(&RtpParticipant::process, this);
+    }
+
+    return ret;
 }
 
-bool RtpParticipant::stop()
+bool RtpParticipant::disconnect()
 {
-    if (!bRunning)
+    if (net == nullptr || !net->isConnected())
     {
         return false;
     }
 
-    bRunning = false;
-    if (thread->joinable())
+    bool ret = net->disconnect();
+    if (ret)
     {
-        thread->join();
+        bRunning = false;
+        if (thread && thread->joinable())
+        {
+            thread->join();
+        }
+        delete thread;
+        thread = nullptr;
     }
-    delete thread;
-    thread = nullptr;
 
-    return true;
+    return ret;
+}
+
+const char* RtpParticipant::getLocalIpv4()
+{
+    if (net == nullptr)
+    {
+        return "";
+    }
+
+    return net->getLocalIpv4().c_str();
+}
+
+int32_t RtpParticipant::getLocalPort() const
+{
+    if (net == nullptr)
+    {
+        return -1;
+    }
+
+    return net->getLocalPort();
 }

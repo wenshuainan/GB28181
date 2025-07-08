@@ -18,16 +18,6 @@ MANSCDPAgent::~MANSCDPAgent()
     }
 }
 
-bool MANSCDPAgent::start()
-{
-    return true;
-}
-
-bool MANSCDPAgent::stop()
-{
-    return true;
-}
-
 bool MANSCDPAgent::match(const std::string& method, const std::string& contentType)
 {
     return contentType == "Application/MANSCDP+xml";

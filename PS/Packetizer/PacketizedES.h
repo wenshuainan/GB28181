@@ -16,7 +16,7 @@ public:
     };
 
 protected:
-    PSMux *mux;
+    PSMux *m_mux;
 
 public:
     PES(PSMux *mux);

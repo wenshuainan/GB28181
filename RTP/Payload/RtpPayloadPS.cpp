@@ -20,37 +20,37 @@ int32_t RtpPayloadPS::format(const uint8_t *data, int32_t len)
         && data[2] == 0x01
         && data[3] == 0xBA)
     {
-        if (formated.payload != nullptr)
+        if (m_formated.payload != nullptr)
         {
-            formated.marker = 1;
-            participant->pushPayload(formated);
+            m_formated.marker = 1;
+            m_participant->pushPayload(m_formated);
         }
 
-        formated.bFirst = true;
-        formated.marker = 0;
-        formated.payload = std::make_shared<std::vector<uint8_t>>();
+        m_formated.bFirst = true;
+        m_formated.marker = 0;
+        m_formated.payload = std::make_shared<std::vector<uint8_t>>();
     }
     else
     {
-        if (formated.payload != nullptr)
+        if (m_formated.payload != nullptr)
         {
-            participant->pushPayload(formated);
+            m_participant->pushPayload(m_formated);
         }
 
-        formated.payload = std::make_shared<std::vector<uint8_t>>();
+        m_formated.payload = std::make_shared<std::vector<uint8_t>>();
     }
 
     int pushedlen = 0;
     while (pushedlen < len)
     {
-        int32_t wr = maxLen > len - pushedlen ? len - pushedlen : maxLen;
-        formated.payload->resize(wr);
-        memcpy(formated.payload->data(), data + pushedlen, wr);
+        int32_t wr = m_maxLen > len - pushedlen ? len - pushedlen : m_maxLen;
+        m_formated.payload->resize(wr);
+        memcpy(m_formated.payload->data(), data + pushedlen, wr);
         pushedlen += wr;
         if (pushedlen < len)
         {
-            participant->pushPayload(formated);
-            formated.payload = std::make_shared<std::vector<uint8_t>>();
+            m_participant->pushPayload(m_formated);
+            m_formated.payload = std::make_shared<std::vector<uint8_t>>();
         }
     }
 

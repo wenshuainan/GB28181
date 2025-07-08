@@ -4,6 +4,7 @@
 #include <queue>
 #include <memory>
 #include <thread>
+#include <string>
 #include "Transport/RtpNet.h"
 #include "RtpPacket.h"
 #include "Payload/RtpPayload.h"
@@ -15,7 +16,7 @@ public:
     {
         struct Destination
         {
-            char ipv4[16];
+            std::string ipv4;
             int port;
         } destination;
         RtpNet::Type netType;
@@ -38,6 +39,7 @@ private:
     std::thread *thread;
     bool bRunning;
     RtpPayload::Type payloadType;
+    Participant::Destination destination;
     uint32_t SSRC;
     
 public:
@@ -53,8 +55,10 @@ public:
 
 public:
     int32_t format(const uint8_t *data, int32_t len);
-    bool start();
-    bool stop();
+    bool connect();
+    bool disconnect();
+    const char* getLocalIpv4();
+    int32_t getLocalPort() const;
 };
 
 #endif

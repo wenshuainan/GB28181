@@ -1,7 +1,8 @@
 #include "PSMux.h"
 
-PSMux::PSMux()
+PSMux::PSMux(PSCallback *callback)
 {
+    m_callback = callback;
     bRunning = false;
 }
 
@@ -10,17 +11,17 @@ PSMux::~PSMux()
 
 void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
 {
-    if (pack != nullptr && streamCallback != nullptr)
+    if (pack != nullptr && m_callback != nullptr)
     {
         pack->toBitStream();
         const BitStream stream = pack->getBitStream();
-        streamCallback(stream.getData(), stream.getLength());
+        m_callback->onProgramStream(stream.getData(), stream.getLength());
 
         const std::vector<std::shared_ptr<PESPacket>>& PES_packet = pack->getPESPacket();
         for (auto it : PES_packet)
         {
-            const BitStream stream = it->getBitStream();
-            streamCallback(stream.getData(), stream.getLength());
+            const BitStream pes = it->getBitStream();
+            m_callback->onProgramStream(pes.getData(), pes.getLength());
         }
     }
 }
@@ -98,11 +99,6 @@ bool PSMux::pushAudioPES(const Packet& packet)
 {
     this->audioStream.push(packet);
     return true;
-}
-
-void PSMux::setStreamCallback(std::function<void (const uint8_t *, int32_t)> callback)
-{
-    this->streamCallback = callback;
 }
 
 bool PSMux::start()

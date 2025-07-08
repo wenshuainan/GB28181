@@ -2,6 +2,7 @@
 #define AGENT_H
 
 #include <string>
+#include <string.h>
 #include "SipAdapter.h"
 
 class UA;
@@ -16,10 +17,14 @@ public:
     Agent(UA *ua) : m_ua(ua) {}
     virtual ~Agent() {}
 
+protected:
+    bool strCaseCmp(const std::string& str1, const std::string& str2)
+    {
+        return str1.length() == str2.length()
+                && strcasecmp(str1.c_str(), str2.c_str()) == 0;
+    }
+
 public:
-    virtual bool start() = 0;
-    virtual bool stop() = 0;
-    
     /* 匹配Request，UA先遍历所有agent，调用match，匹配成功则调用Agent的agent方法处理SIP数据 */
     virtual bool match(const std::string& method, const std::string& contentType) = 0;
 

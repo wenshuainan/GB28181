@@ -15,10 +15,10 @@ static int s_stream_flag = 0;
 static void *stream_proc(void *arg)
 {
     FILE *stream = NULL;
-    // const char *filename = "./assets/nature.h264";
+    const char *filename = "./assets/nature.h264";
     // const char *filename = "./assets/240x320.h264";
     // const char *filename = "./assets/240x3202.h264";
-    const char *filename = "./assets/128x128.h264";
+    // const char *filename = "./assets/128x128.h264";
     // const char *filename = "./assets/1920x1080.h264";
     // const char *filename = "./assets/cuc_ieschool.h264";
     // const char *filename = "./assets/birds.h264";
@@ -107,7 +107,7 @@ int main()
     ua.start(info);
 #elif 1
     RtpParticipant::Participant participant = {
-        .destination = {"10.12.13.136", 5000},
+        .destination = {"10.12.13.136", 1000},
         .netType = RtpNet::Type::UDP,
         .payloadType = RtpPayload::Type::H264,
         .SSRC = 0x99000000

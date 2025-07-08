@@ -35,14 +35,14 @@ void BitStream::updateLengthField()
     }
     else
     {
-        uint16_t length = ((offset - lengthFieldOffset - fieldlen) + 7) / 8; // (+7): 超出之后不足8bit也算一个字节
-        if (length == this->length)
+        uint16_t len = ((offset - lengthFieldOffset - fieldlen) + 7) / 8; // (+7): 超出之后不足8bit也算一个字节
+        if (len == length)
         {
             return;
         }
         else
         {
-            this->length = length;
+            length = len;
         }
     }
 
@@ -110,7 +110,7 @@ void BitStream::write8(int32_t nbits, uint8_t value, int32_t startbit)
     int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
 
     /* 扩充字节流空间 */
-    if (stream.size() <= index)
+    if (stream.size() <= (uint32_t)index)
     {
         stream.resize(index + 128); // 多申请一些，防止每次都调用
     }
@@ -206,7 +206,7 @@ void BitStream::write64(int32_t nbits, uint64_t value, int32_t startbit)
 void BitStream::writeBytes(const std::vector<uint8_t>& data)
 {
     int32_t index = offset / 8; //当前字节，从字节流开头的偏移
-    int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
+    // int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
     int32_t datalen = data.size();
 
     /* 参数非法 */
@@ -216,7 +216,7 @@ void BitStream::writeBytes(const std::vector<uint8_t>& data)
     }
 
     /* 扩充字节流空间 */
-    if (index + datalen > stream.size())
+    if ((uint32_t)index + datalen > stream.size())
     {
         stream.resize(index + datalen);
     }
@@ -235,7 +235,7 @@ void BitStream::writeBytes(const std::vector<uint8_t>& data)
 void BitStream::writeBitStream(const BitStream& bitstream)
 {
     int32_t index = offset / 8; //当前字节，从字节流开头的偏移
-    int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
+    // int32_t bitoffset = offset % 8; //从当前字节最高位的偏移
     int32_t writelen = bitstream.getLength();
 
     if (writelen <= 0)
@@ -244,7 +244,7 @@ void BitStream::writeBitStream(const BitStream& bitstream)
     }
 
     /* 扩充字节流空间 */
-    if (index + writelen > stream.size())
+    if ((uint32_t)index + writelen > stream.size())
     {
         stream.resize(index + writelen);
     }
@@ -261,7 +261,7 @@ void BitStream::writeBitStream(const BitStream& bitstream)
 }
 
 SystemHeader::SystemHeader()
-    : bitstream(32)
+    : m_bitstream(32)
 {
     sytem_header_start_code = 0x000001BB;
     rate_bound = 0xFFFFFFFF;
@@ -279,8 +279,8 @@ SystemHeader::~SystemHeader()
 
 void SystemHeader::toBitStream()
 {
-    bitstream.clear();
-    toBitStream(bitstream);
+    m_bitstream.clear();
+    toBitStream(m_bitstream);
 }
 
 void SystemHeader::toBitStream(BitStream& bitstream)
@@ -323,12 +323,12 @@ void SystemHeader::toBitStream(BitStream& bitstream)
 
 const BitStream& SystemHeader::getBitStream() const
 {
-    return bitstream;
+    return m_bitstream;
 }
 
 int32_t SystemHeader::getBitStreamLength() const
 {
-    return bitstream.getLength();
+    return m_bitstream.getLength();
 }
 
 void SystemHeader::addVideoStreamType(uint8_t stream_id)
@@ -388,8 +388,8 @@ PackHeader::~PackHeader()
 
 void PackHeader::toBitStream()
 {
-    bitstream.clear();
-    toBitStream(bitstream);
+    m_bitstream.clear();
+    toBitStream(m_bitstream);
 }
 
 void PackHeader::toBitStream(BitStream& bitstream)
@@ -421,12 +421,12 @@ void PackHeader::toBitStream(BitStream& bitstream)
 
 const BitStream& PackHeader::getBitStream() const
 {
-    return bitstream;
+    return m_bitstream;
 }
 
-void PackHeader::setSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
+void PackHeader::setSystemHeader(const std::shared_ptr<SystemHeader>& systemheader)
 {
-    this->system_header = system_header;
+    system_header = systemheader;
 }
 
 void PackHeader::updateMuxRate(int32_t addedLength)
@@ -434,11 +434,11 @@ void PackHeader::updateMuxRate(int32_t addedLength)
     program_mux_rate += addedLength;
 }
 
-PESPacket::PESPacket(uint8_t stream_id)
-    : bitstream(32)
+PESPacket::PESPacket(uint8_t streamid)
+    : m_bitstream(32)
 {
     packet_start_code_prefix = 0x000001;
-    this->stream_id = stream_id;
+    stream_id = streamid;
     PES_packet_length = 0;
     PES_scrambling_control = 0;
     PES_priority = 1;
@@ -506,8 +506,8 @@ PESPacket::~PESPacket()
 
 void PESPacket::toBitStream()
 {
-    bitstream.clear();
-    toBitStream(bitstream);
+    m_bitstream.clear();
+    toBitStream(m_bitstream);
 }
 
 void PESPacket::toBitStream(BitStream& bitstream)
@@ -685,12 +685,12 @@ void PESPacket::toBitStream(BitStream& bitstream)
 
 const BitStream& PESPacket::getBitStream() const
 {
-    return bitstream;
+    return m_bitstream;
 }
 
 int32_t PESPacket::getBitStreamLength() const
 {
-    return bitstream.getLength();
+    return m_bitstream.getLength();
 }
 
 int32_t PESPacket::writeDataByte(const uint8_t* data, int32_t size)
@@ -705,7 +705,7 @@ int32_t PESPacket::writeDataByte(const uint8_t* data, int32_t size)
 }
 
 ProgramStreamMap::ProgramStreamMap()
-    : PESPacket(0), bitstream(32)
+    : PESPacket(0), m_bitstream(32)
 {
     packet_start_code_prefix = 0x000001;
     map_stream_id = 0xBC;
@@ -723,8 +723,8 @@ ProgramStreamMap::~ProgramStreamMap()
 
 void ProgramStreamMap::toBitStream()
 {
-    bitstream.clear();
-    toBitStream(bitstream);
+    m_bitstream.clear();
+    toBitStream(m_bitstream);
 }
 
 void ProgramStreamMap::toBitStream(BitStream& bitstream)
@@ -756,16 +756,16 @@ void ProgramStreamMap::toBitStream(BitStream& bitstream)
             bitstream.write8(8, it.pseudo_descriptor_length);
             bitstream.write8(1, 1);
             bitstream.write8(7, it.elementary_stream_id_extension);
-            for (int i = 3; i < it.descriptor.size(); i++)
+            for (size_t i = 3; i < it.descriptor.size(); i++)
             {
                 it.descriptor[i]->toBitStream(bitstream);
             }
         }
         else
         {
-            for (auto it : it.descriptor)
+            for (auto itdesc : it.descriptor)
             {
-                it->toBitStream(bitstream);
+                itdesc->toBitStream(bitstream);
             }
         }
     }
@@ -774,7 +774,7 @@ void ProgramStreamMap::toBitStream(BitStream& bitstream)
 
 const BitStream& ProgramStreamMap::getBitStream() const
 {
-    return bitstream;
+    return m_bitstream;
 }
 
 void ProgramStreamMap::addElementaryStream(uint8_t stream_type, uint8_t elementary_stream_id)
@@ -806,8 +806,8 @@ Pack::~Pack()
 
 void Pack::toBitStream()
 {
-    bitstream.clear();
-    toBitStream(bitstream);
+    m_bitstream.clear();
+    toBitStream(m_bitstream);
 }
 
 void Pack::toBitStream(BitStream& bitstream)
@@ -822,7 +822,7 @@ void Pack::toBitStream(BitStream& bitstream)
 
 const BitStream& Pack::getBitStream() const
 {
-    return bitstream;
+    return m_bitstream;
 }
 
 void Pack::addSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
@@ -832,11 +832,11 @@ void Pack::addSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
     pack_header.updateMuxRate(system_header->getBitStreamLength());
 }
 
-void Pack::addPESPacket(const std::shared_ptr<PESPacket>& PES_packet)
+void Pack::addPESPacket(const std::shared_ptr<PESPacket>& packet)
 {
-    PES_packet->toBitStream();
-    this->PES_packet.push_back(PES_packet);
-    pack_header.updateMuxRate(PES_packet->getBitStreamLength());
+    packet->toBitStream();
+    this->PES_packet.push_back(packet);
+    pack_header.updateMuxRate(packet->getBitStreamLength());
 }
 
 const std::vector<std::shared_ptr<PESPacket>>& Pack::getPESPacket() const

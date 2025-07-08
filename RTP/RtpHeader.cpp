@@ -3,7 +3,7 @@
 #include "RtpHeader.h"
 
 RtpHeader::RtpHeader(const Fixed& fixed)
-    : fixed(fixed)
+    : m_fixed(fixed)
 {}
 
 RtpHeader::~RtpHeader()
@@ -11,16 +11,19 @@ RtpHeader::~RtpHeader()
 
 const uint8_t* RtpHeader::getData()
 {
-    uint16_t seq = htons(fixed.seq);
-    memcpy(fixedData + 2, &seq, 2);
+    m_fixedData[0] = *((uint8_t *)&m_fixed);
+    m_fixedData[1] = *((uint8_t *)&m_fixed + 1);
 
-    uint32_t ts = htonl(fixed.ts);
-    memcpy(fixedData + 4, &ts, 4);
+    uint16_t seq = htons(m_fixed.seq);
+    memcpy(m_fixedData + 2, &seq, 2);
 
-    uint32_t SSRC = htonl(fixed.ssrc);
-    memcpy(fixedData + 8, &SSRC, 4);
+    uint32_t ts = htonl(m_fixed.ts);
+    memcpy(m_fixedData + 4, &ts, 4);
 
-    return fixedData;
+    uint32_t SSRC = htonl(m_fixed.ssrc);
+    memcpy(m_fixedData + 8, &SSRC, 4);
+
+    return m_fixedData;
 }
 
 uint16_t RtpHeader::getLength() const

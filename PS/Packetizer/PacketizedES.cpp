@@ -2,7 +2,7 @@
 #include "PacketizedAVC.h"
 
 PES::PES(PSMux *mux)
-    : mux(mux)
+    : m_mux(mux)
 {}
 
 PES::~PES()

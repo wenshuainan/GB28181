@@ -8,6 +8,14 @@
 #include <thread>
 #include "Semantics.h"
 
+class PSCallback
+{
+public:
+    PSCallback() {}
+    virtual ~PSCallback() {}
+    virtual void onProgramStream(const uint8_t *data, int32_t size) = 0;
+};
+
 class PSMux
 {
 public:
@@ -26,10 +34,10 @@ private:
     std::thread *thread;
 
 private:
-    std::function<void (const uint8_t *, int32_t)> streamCallback;
+    PSCallback *m_callback;
 
 public:
-    PSMux();
+    PSMux(PSCallback *callback);
     ~PSMux();
 
 private:
@@ -41,7 +49,6 @@ public:
     bool pushAudioPES(const Packet& packet);
 
 public:
-    void setStreamCallback(std::function<void (const uint8_t *, int32_t)> callback);
     bool start();
     bool stop();
 };

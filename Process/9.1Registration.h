@@ -15,14 +15,14 @@ public:
     };
 
 protected:
-    State state;
+    State m_state;
 
 public:
-    Registration() : state(UNREGISTERED) {}
+    Registration() : m_state(UNREGISTERED) {}
     ~Registration() {}
 
     virtual void processState(State state, const std::string& sipReasonPhrase) = 0;
-    virtual State getState() { return state; }
+    virtual State getState() { return m_state; }
 };
 
 #endif

@@ -36,7 +36,7 @@ public:
 class SystemHeader
 {
 private:
-    BitStream bitstream;
+    BitStream m_bitstream;
 
 private:
     uint32_t sytem_header_start_code;
@@ -75,7 +75,7 @@ public:
 class PackHeader
 {
 private:
-    BitStream bitstream;
+    BitStream m_bitstream;
 
 private:
     uint32_t pack_start_code;
@@ -95,7 +95,7 @@ public:
     const BitStream& getBitStream() const;
 
 public:
-    void setSystemHeader(const std::shared_ptr<SystemHeader>& system_header);
+    void setSystemHeader(const std::shared_ptr<SystemHeader>& systemheader);
     void updateMuxRate(int32_t addedLength);
 };
 
@@ -117,7 +117,7 @@ class MPEG2AACAudioDescriptor : public Descriptor
 class PESPacket
 {
 private:
-    BitStream bitstream;
+    BitStream m_bitstream;
 
 private:
     uint32_t packet_start_code_prefix;
@@ -170,7 +170,7 @@ private:
     std::vector<uint8_t> padding_byte;
 
 public:
-    PESPacket(uint8_t stream_id);
+    PESPacket(uint8_t streamid);
     virtual ~PESPacket();
     virtual void toBitStream();
     virtual void toBitStream(BitStream& bitstream);
@@ -184,7 +184,7 @@ public:
 class ProgramStreamMap : public PESPacket
 {
 private:
-    BitStream bitstream;
+    BitStream m_bitstream;
 
 private:
     uint32_t packet_start_code_prefix;
@@ -225,7 +225,7 @@ public:
 class Pack
 {
 private:
-    BitStream bitstream;
+    BitStream m_bitstream;
 
 private:
     PackHeader pack_header;
@@ -240,7 +240,7 @@ public:
 
 public:
     void addSystemHeader(const std::shared_ptr<SystemHeader>& system_header);
-    void addPESPacket(const std::shared_ptr<PESPacket>& PES_packet);
+    void addPESPacket(const std::shared_ptr<PESPacket>& packet);
     const std::vector<std::shared_ptr<PESPacket>>& getPESPacket() const;
 };
 

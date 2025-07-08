@@ -35,12 +35,14 @@ public:
     const char* getContentType() const;
     const char* getCallID() const;
     const char* getBody() const;
-    // const char* getSDPxxx() const;
-    // SDP ...
+    const char* getSDPMediaType() const;
+    const int32_t getSDPPort() const;
     void setAdapter(const SipMessageAdapter& adapter);
     void addField(const std::string& name, const std::string& value);
     void addParameter(const std::string& fName, const std::string& pName, const std::string& value);
     void setBody(const std::string& body);
+    void setSDPMediaType(const std::string& mediaType);
+    void setSDPPort(const int32_t port);
     void print() const;
 };
 

@@ -7,7 +7,7 @@
 class RtpPayloadPS : public RtpPayload
 {
 private:
-    RtpParticipant::Formated formated;
+    RtpParticipant::Formated m_formated;
 
 public:
     RtpPayloadPS(RtpParticipant *participant, int32_t maxLen = 1400);

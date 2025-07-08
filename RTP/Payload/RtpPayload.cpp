@@ -3,7 +3,7 @@
 #include "RtpPayloadPS.h"
 
 RtpPayload::RtpPayload(RtpParticipant *participant, int32_t maxLen)
-    : participant(participant), maxLen(maxLen)
+    : m_participant(participant), m_maxLen(maxLen)
 {}
 
 RtpPayload::~RtpPayload()

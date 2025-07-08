@@ -13,10 +13,10 @@ RtpOverTcp::RtpOverTcp()
 RtpOverTcp::~RtpOverTcp()
 {}
 
-bool RtpOverTcp::connect(char *ip, int port)
+bool RtpOverTcp::connect(const std::string& ipv4, int port)
 {
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0)
+    m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (m_sockfd < 0)
     {
         return false;
     }
@@ -25,12 +25,12 @@ bool RtpOverTcp::connect(char *ip, int port)
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(port);
-    servaddr.sin_addr.s_addr = inet_addr(ip);
+    servaddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 
-    int res = ::connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    int res = ::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
     if (res < 0)
     {
-        close(sockfd);
+        close(m_sockfd);
         return false;
     }
 
@@ -39,10 +39,10 @@ bool RtpOverTcp::connect(char *ip, int port)
 
 bool RtpOverTcp::disconnect()
 {
-    if (sockfd > 0)
+    if (m_sockfd > 0)
     {
-        close(sockfd);
-        sockfd = -1;
+        close(m_sockfd);
+        m_sockfd = -1;
     }
 
     return true;
@@ -50,7 +50,7 @@ bool RtpOverTcp::disconnect()
 
 bool RtpOverTcp::send(RtpPacket& packet)
 {
-    if (sockfd < 0)
+    if (m_sockfd < 0)
     {
         return false;
     }
@@ -67,5 +67,5 @@ bool RtpOverTcp::send(RtpPacket& packet)
     iov[2].iov_base = (void *)packet.getPayload();
     iov[2].iov_len = packet.getPayloadLength();
 
-    return writev(sockfd, iov, 3) > 0;
+    return writev(m_sockfd, iov, 3) > 0;
 }

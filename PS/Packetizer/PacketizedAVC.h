@@ -6,10 +6,10 @@
 class PacketizedAVC : public PES
 {
 private:
-    uint8_t naluHeader;
-    uint8_t cache[4];
-    int32_t cacheLen;
-    PSMux::Packet packet;
+    uint8_t m_naluHeader;
+    uint8_t m_cache[4];
+    int32_t m_cacheLen;
+    PSMux::Packet m_packet;
 
 public:
     PacketizedAVC(PSMux *mux);
