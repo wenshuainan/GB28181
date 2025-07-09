@@ -47,7 +47,7 @@ public:
         struct
         {
             std::vector<itemType> item;
-            integerType Num;
+            integerType Num; //attribute
         } DeviceList;
         /* 〈! -- 扩展信息,可多项--〉 */
     };

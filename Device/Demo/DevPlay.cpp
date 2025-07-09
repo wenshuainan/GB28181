@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "DevPlay.h"
 
 DevPlay::DevPlay()
