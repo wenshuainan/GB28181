@@ -18,7 +18,7 @@ public:
     virtual ~Agent() {}
 
 protected:
-    bool strCaseCmp(const std::string& str1, const std::string& str2)
+    bool strCaseCmp(const std::string& str1, const std::string& str2) const
     {
         return str1.length() == str2.length()
                 && strcasecmp(str1.c_str(), str2.c_str()) == 0;

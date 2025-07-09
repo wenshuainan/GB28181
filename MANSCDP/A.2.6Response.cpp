@@ -1,46 +1,59 @@
 #include "A.2.6Response.h"
 
-bool CmdResponse::serialize(const Response& response, XMLDocument *doc)
+bool DeviceControlResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
-    XMLElement *rootElement = doc->NewElement("Response");
-    if (rootElement != nullptr)
-    {
-        return doc->InsertEndChild(rootElement) != nullptr;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool DeviceControlResponse::serialize(const Response& response, XMLDocument *doc)
-{
-    if (!CmdResponse::serialize(response, doc))
-    {
-        return false;
-    }
-
-    XMLNode *rootElement = doc->FirstChild();
+    XMLNode *rootElement = xmldocRes->FirstChild();
     if (rootElement == nullptr)
     {
         return false;
     }
 
-    XMLElement *xmlCmdType = doc->NewElement("CmdType");
+    XMLElement *xmlCmdType = xmldocRes->NewElement("CmdType");
     xmlCmdType->SetText("DeviceControl");
     rootElement->InsertEndChild(xmlCmdType);
 
-    XMLElement *xmlSN = doc->NewElement("SN");
-    xmlSN->SetText(response.SN.getValue());
+    XMLElement *xmlSN = xmldocRes->NewElement("SN");
+    xmlSN->SetText(res.SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
-    XMLElement *xmlDeviceID = doc->NewElement("DeviceID");
-    xmlDeviceID->SetText(response.DeviceID.getStr().c_str());
+    XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
+    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
-    XMLElement *xmlResult = doc->NewElement("Result");
-    xmlResult->SetText(response.Result.getStr().c_str());
+    XMLElement *xmlResult = xmldocRes->NewElement("Result");
+    xmlResult->SetText(res.Result.getStr().c_str());
     rootElement->InsertEndChild(xmlResult);
 
     return true;
 }
+
+bool CatalogQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes)
+{
+    XMLNode *rootElement = xmldocRes->FirstChild();
+    if (rootElement == nullptr)
+    {
+        return false;
+    }
+
+    XMLElement *xmlCmdType = xmldocRes->NewElement("CmdType");
+    xmlCmdType->SetText("Catalog");
+    rootElement->InsertEndChild(xmlCmdType);
+
+    XMLElement *xmlSN = xmldocRes->NewElement("SN");
+    xmlSN->SetText(res.SN.getValue());
+    rootElement->InsertEndChild(xmlSN);
+
+    XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
+    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
+    rootElement->InsertEndChild(xmlDeviceID);
+
+    XMLElement *xmlSumNum = xmldocRes->NewElement("SumNum");
+    xmlSumNum->SetText(res.SumNum.getValue());
+    rootElement->InsertEndChild(xmlSumNum);
+
+    XMLElement *xmlDeviceList = xmldocRes->NewElement("DeviceList");
+    rootElement->InsertEndChild(xmlDeviceList);
+}
+
+bool DeviceInfoQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes)
+{}

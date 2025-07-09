@@ -1,6 +1,7 @@
 #ifndef REGISTRATION_AGENT_H
 #define REGISTRATION_AGENT_H
 
+#include <memory>
 #include "Agent.h"
 #include "9.1Registration.h"
 
@@ -9,7 +10,7 @@ class RegistrationAgent : public Agent
     friend class UA;
 
 private:
-    Registration *registration;
+    std::shared_ptr<Registration> registration;
     std::string GBVerName;
     std::string GBVerValue;
 

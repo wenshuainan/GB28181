@@ -1,5 +1,5 @@
-#ifndef DEV_CONTROL_H
-#define DEV_CONTROL_H
+#ifndef DEV_CONTROL_PROCESS_H
+#define DEV_CONTROL_PROCESS_H
 
 #include "9.3Control.h"
 
@@ -10,9 +10,9 @@ public:
     ~DevControl();
 
 public:
-    bool process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res);
-    bool process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res);
-    bool process(const RecordRequest::Request& req, DeviceControlResponse::Response& res);
+    bool process(const PTZCmdControl::Request& req, DeviceControlResponse::Response& res);
+    bool process(const TeleBootControl::Request& req, DeviceControlResponse::Response& res);
+    bool process(const RecordControl::Request& req, DeviceControlResponse::Response& res);
 };
 
 #endif

@@ -7,7 +7,7 @@ DevControl::DevControl()
 DevControl::~DevControl()
 {}
 
-bool DevControl::process(const PTZCmdRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const PTZCmdControl::Request& req, DeviceControlResponse::Response& res)
 {
     std::cout << "DevControl::process" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
@@ -25,12 +25,12 @@ bool DevControl::process(const PTZCmdRequest::Request& req, DeviceControlRespons
     return true;
 }
 
-bool DevControl::process(const TeleBootRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const TeleBootControl::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }
 
-bool DevControl::process(const RecordRequest::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const RecordControl::Request& req, DeviceControlResponse::Response& res)
 {
     return false;
 }

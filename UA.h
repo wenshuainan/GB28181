@@ -1,22 +1,10 @@
-#ifndef USER_AGENT_H
-#define USER_AGENT_H
+#ifndef GB28181_USER_AGENT_H
+#define GB28181_USER_AGENT_H
 
+#include <vector>
+#include <memory>
 #include "SipAdapter.h"
 #include "Agent.h"
-#include "9.1Registration.h"
-#include "9.2Play.h"
-#include "9.3Control.h"
-#include "9.4Alarm.h"
-#include "9.5Query.h"
-#include "9.6Status.h"
-#include "9.7Search.h"
-#include "9.8Playback.h"
-#include "9.9Download.h"
-#include "9.10Date.h"
-#include "9.11Subscription.h"
-#include "9.12Voice.h"
-#include "9.13Upgrade.h"
-#include "9.14Snapshot.h"
 
 #define DEBUG_LOG std::cout << "GB28181: " << __FILE__ << ":" << __LINE__ << " "
 
@@ -29,8 +17,8 @@ public:
     };
     
 private:
-    std::vector<Agent *> agents;
-    SipUserAgent *sip;
+    std::vector<std::shared_ptr<Agent>> agents;
+    std::shared_ptr<SipUserAgent> sip;
 
 public:
     UA();
@@ -42,7 +30,7 @@ public:
 public:
     bool start(const Info& info);
     bool stop();
-    SipUserAgent* getSip() { return sip; }
+    const std::shared_ptr<SipUserAgent>& getSip() { return sip; }
 };
 
 #endif

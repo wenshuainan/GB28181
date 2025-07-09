@@ -3,9 +3,9 @@
 #include "ResipUserAgent.h"
 #include "UA.h"
 
-SipUserAgent* SipUserAgent::create(UA *app, const Info& info)
+std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *app, const Info& info)
 {
-    SipUserAgent *sip = new ResipUserAgent(info);
+    std::shared_ptr<SipUserAgent> sip = std::make_shared<ResipUserAgent>(info);
     if (sip != nullptr)
     {
         sip->app = app;
@@ -13,6 +13,9 @@ SipUserAgent* SipUserAgent::create(UA *app, const Info& info)
 
     return sip;
 }
+
+bool SipUserAgent::destroy()
+{}
 
 bool SipUserAgent::postApp(UA *app, const SipMessageApp& message)
 {

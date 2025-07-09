@@ -4,14 +4,16 @@
 #include <memory>
 #include "Agent.h"
 #include "Process/9.3Control.h"
+#include "Process/9.5Query.h"
 
 class MANSCDPAgent : public Agent
 {
     friend class UA;
 
 private:
-    Control *control;
-    std::shared_ptr<const SipMessageApp> cacheMessage;
+    std::shared_ptr<Control> control;
+    std::shared_ptr<Query> query;
+    std::shared_ptr<const SipMessageApp> lastReqMessage;
 
 private:
     /* 
@@ -19,7 +21,7 @@ private:
      * Control、Query、Notify
      * 遍历所有请求命令，匹配成功则调用其dispach方法处理
      */
-    std::vector<CmdTypeRequest *> requests;
+    std::vector<std::shared_ptr<CmdTypeRequest>> requests;
 
 public:
     MANSCDPAgent(UA *ua);
@@ -30,13 +32,8 @@ public:
     bool match(const std::string& callID);
     bool agent(const SipMessageApp& message);
 
-private:
-    bool sendResponse(int code, const XMLDocument& doc);
-
 public:
-    /* 具体的请求类型处理方法 */
-    bool agentControl(const PTZCmdRequest::Request& req);
-    bool agentControl(const TeleBootRequest::Request& req);
+    bool sendResponse(const XMLDocument& xmldocRes) const;
 };
 
 #endif

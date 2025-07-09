@@ -68,7 +68,7 @@ class Session
 public:
     struct Attr
     {
-        std::string version;
+        int32_t version;
         std::string owner;
         std::string name;
         Connection *conInfo;
@@ -98,17 +98,19 @@ class MediaAgent : public Agent
     friend class Media; // 允许Media访问MediaAgent的私有成员play
 
 private:
-    Play *play;
-    std::shared_ptr<Session> m_sessionPlay;
+    std::shared_ptr<Play> play;
+    std::shared_ptr<Session> m_sessionPlay; //实时视音频点播
 
 public:
     MediaAgent(UA *ua);
     ~MediaAgent();
 
 private:
-    bool agentReqINVITE(const SipMessageApp& req, SipMessageApp& res);
-    bool agentReqACK();
-    bool agentReqBYE();
+    bool agentReqINVITE(const SipMessageApp& req);
+    bool agentReqACK(const SipMessageApp& req);
+    bool agentReqBYE(const SipMessageApp& req);
+
+    RtpNet::Type parseNetType(const std::string& str) const;
 
 public:
     bool match(const std::string& method, const std::string& contentType);

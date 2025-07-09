@@ -4,6 +4,8 @@
 #include "A.2.1GlobalTypes.h"
 
 class MANSCDPAgent;
+class Control;
+class Query;
 
 /*  A.2.2.1 请求命令结构头文件定义
    〈elementref="tg:Control"/〉
@@ -12,16 +14,13 @@ class MANSCDPAgent;
 */
 class CmdTypeRequest
 {
-protected:
-    MANSCDPAgent *m_agent;
-
 public:
-    CmdTypeRequest(MANSCDPAgent *agent) : m_agent(agent) {}
+    CmdTypeRequest() {}
     virtual ~CmdTypeRequest() {}
 
 public:
-    virtual bool match(const std::string& name) = 0;
-    virtual bool dispatch(XMLElement *xml) = 0;
+    virtual bool match(const std::string& ReqType) = 0;
+    virtual bool dispatch(const XMLElement *xmlReq) = 0;
 };
 
 /* A.2.3 控制命令
@@ -30,16 +29,13 @@ public:
 */
 class CmdTypeControl
 {
-protected:
-    MANSCDPAgent *m_agent;
-
 public:
-    CmdTypeControl(MANSCDPAgent *agent) : m_agent(agent) {}
+    CmdTypeControl() {}
     virtual ~CmdTypeControl() {}
 
 public:
-    virtual bool match(const std::string& name) = 0;
-    virtual bool dispatch(XMLElement *xml) = 0;
+    virtual bool match(const std::string& CmdType) = 0;
+    virtual bool dispatch(const XMLElement *xmlReq) = 0;
 };
 
 /*
@@ -47,26 +43,36 @@ public:
    PTZCmd
    TeleBoot
    ...
+
+   A.2.3.2.2~A.2.3.2.13
+   BasicParam
+   SVACEncOdeCOnfig
+   ...
+
+   A.2.4.2~A.2.4.14
+   DeviceStatus
+   Catalog
+   ...
 */
-class CmdTypesSpecRequest
+class CmdTypeSpecRequest
 {
 protected:
     MANSCDPAgent *m_agent;
+    Control *m_control;
+    Query *m_query;
 
 public:
-    CmdTypesSpecRequest(MANSCDPAgent *agent) : m_agent(agent) {}
-    virtual ~CmdTypesSpecRequest() {}
-    
+    CmdTypeSpecRequest(MANSCDPAgent *agent, Control *control)
+        : m_agent(agent), m_control(control), m_query(nullptr)
+    {}
+    CmdTypeSpecRequest(MANSCDPAgent *agent, Query *query)
+        : m_agent(agent), m_control(nullptr), m_query(query)
+    {}
+    virtual ~CmdTypeSpecRequest() {}
+
 public:
-    virtual bool match(XMLElement *xml) = 0;
-    virtual bool dispatch(XMLElement *xml) = 0;
+    virtual bool match(const XMLElement *xmlReq) = 0;
+    virtual bool handle(const XMLElement *xmlReq) = 0;
 };
-
-/* A.2.2.2 应答命令结构头文件定义 */
-class CmdTypeResponse
-{};
-
-class CmdTypeSpecResponse
-{};
 
 #endif

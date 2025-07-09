@@ -1,21 +1,22 @@
 #include "MANSCDPAgent.h"
 #include "tinyxml2.h"
-#include "A.2.6Response.h"
 #include "UA.h"
+#include "A.2.6Response.h"
+#include "DevControl.h"
+#include "DevQuery.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
-    control = nullptr;
+    control = std::make_shared<DevControl>();
+    query = std::make_shared<DevQuery>();
 
-    requests.push_back(new ControlReuest(this));
+    requests.push_back(std::make_shared<ControlReuest>(this, control.get()));
+    requests.push_back(std::make_shared<QueryRequest>(this, query.get()));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
 {
-    for (auto i : requests)
-    {
-        delete i;
-    }
+    requests.clear();
 }
 
 bool MANSCDPAgent::match(const std::string& method, const std::string& contentType)
@@ -35,7 +36,7 @@ bool MANSCDPAgent::agent(const SipMessageApp& message)
     if (type == SipMessageApp::Type::Request)
     {
         XMLDocument doc;
-        cacheMessage = std::make_shared<const SipMessageApp>(message);
+        lastReqMessage = std::make_shared<const SipMessageApp>(message);
     
         if (doc.Parse(message.getBody()) != XML_SUCCESS)
         {
@@ -58,37 +59,16 @@ bool MANSCDPAgent::agent(const SipMessageApp& message)
     return false;
 }
 
-bool MANSCDPAgent::sendResponse(int code, const XMLDocument& doc)
+bool MANSCDPAgent::sendResponse(const XMLDocument& xmldocRes) const
 {
-    SipUserAgent *sip = m_ua->getSip();
     SipMessageApp message;
-    sip->genResMessage(message, *cacheMessage, code, "OK");
+    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
+    sip->genResMessage(message, *lastReqMessage, 200, "OK");
     message.addField("Content-Type", "Application/MANSCDP+xml");
 
     XMLPrinter printer;
-    doc.Print(&printer);
+    xmldocRes.Print(&printer);
     message.setBody(printer.CStr());
 
     return sip->send(message);
-}
-
-bool MANSCDPAgent::agentControl(const PTZCmdRequest::Request& req)
-{
-    if (control)
-    {
-        DeviceControlResponse::Response res;
-        control->process(req, res);
-
-        XMLDocument doc;
-        DeviceControlResponse::serialize(res, &doc);
-
-        return sendResponse(200, doc);
-    }
-
-    return false;
-}
-
-bool MANSCDPAgent::agentControl(const TeleBootRequest::Request& req)
-{
-    return false;
 }

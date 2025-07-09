@@ -402,6 +402,8 @@ public:
         stringType SecurityLevelCode;
         /* <! -- 保密属性（必选）缺省为0；0-不涉密；1-涉密 --> */
         integerType Secrecy;
+        /* 〈! -- 设备/系统IPv4/IPv6地址(可选)--〉 */
+        stringType IPAddress;
     };
 };
 

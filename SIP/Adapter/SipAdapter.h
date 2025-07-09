@@ -16,34 +16,53 @@ class SipMessageApp
 {
 public:
     enum Type
-     {
+    {
         Request,
         Response,
-     };
+    };
 
 private:
-     std::shared_ptr<SipMessageAdapter> m_adapter;
+    std::shared_ptr<SipMessageAdapter> m_adapter;
 
 public:
     SipMessageApp();
     ~SipMessageApp();
+    void print() const;
+
     const std::shared_ptr<SipMessageAdapter>& getAdapter() const;
     Type getType() const;
     const char* getMethod() const;
     int getCode() const;
     const char* getReasonPhrase() const;
     const char* getContentType() const;
+
     const char* getCallID() const;
     const char* getBody() const;
-    const char* getSDPMediaType() const;
-    const int32_t getSDPPort() const;
+
+    int32_t getSdpSessionVersion() const;
+    const char* getSdpSessionOwner() const;
+    const char* getSdpSessionName() const;
+    const char* getSdpSessionIpv4() const;
+    int32_t getSdpMediaNum() const;
+    int32_t getSdpMediaPort(int32_t index) const;
+    const char* getSdpMediaTransport(int32_t index) const;
+    int32_t getSdpMediaPayloadType(int32_t index) const;
+    const char* getSdpMediaIpv4(int32_t index) const;
+    uint32_t getSdpMediaSSRC(int32_t index) const;
+
     void setAdapter(const SipMessageAdapter& adapter);
+
     void addField(const std::string& name, const std::string& value);
     void addParameter(const std::string& fName, const std::string& pName, const std::string& value);
+
     void setBody(const std::string& body);
-    void setSDPMediaType(const std::string& mediaType);
-    void setSDPPort(const int32_t port);
-    void print() const;
+
+    bool setSdp(int32_t version, const std::string& owner, const std::string& name);
+    bool setSdpConnectionIpv4(const std::string& ipv4);
+    bool addSdpMedia(int32_t num);
+    bool setSdpMediaPort(int32_t index, int32_t port);
+    bool setSdpMediaTransport(int32_t index, const std::string& transport);
+    bool setSdpMediaPayloadType(int32_t index, int32_t payloadType);
 };
 
 class SipUserAgent
@@ -100,7 +119,8 @@ public:
     virtual ~SipUserAgent() {}
 
 public:
-    static SipUserAgent* create(UA *app, const Info& info);
+    static std::shared_ptr<SipUserAgent> create(UA *app, const Info& info);
+    bool destroy();
 };
 
 #endif

@@ -1,10 +1,12 @@
 #include <iostream>
 #include <unistd.h>
-#include "RegistrationAgent.h"
 #include "UA.h"
+#include "RegistrationAgent.h"
+#include "DevRegistration.h"
 
 RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 {
+    registration = std::make_shared<DevRegistration>();
     GBVerName = "X-GB-Ver";
     GBVerValue = "3.0";
 }

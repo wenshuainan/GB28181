@@ -1,0 +1,4 @@
+#ifndef SNAPSHOT_PROCESS_H
+#define SNAPSHOT_PROCESS_H
+
+#endif

@@ -1,21 +1,22 @@
 #ifndef A_2_3_CONTROL_H
 #define A_2_3_CONTROL_H
 
+#include <memory>
 #include "A.2.2CmdType.h"
 
 /* A.2.3 控制命令 */
 class ControlReuest : public CmdTypeRequest
 {
 private:
-    std::vector<CmdTypeControl *> element;
+    std::vector<std::shared_ptr<CmdTypeControl>> spec;
 
 public:
-    ControlReuest(MANSCDPAgent *agent);
+    ControlReuest(MANSCDPAgent *agent, Control *control);
     virtual ~ControlReuest();
 
 public:
-    virtual bool match(const std::string& name);
-    virtual bool dispatch(XMLElement *xml);
+    virtual bool match(const std::string& ReqType);
+    virtual bool dispatch(const XMLElement *xmlReq);
 };
 
 /* A.2.3.1 设备控制命令 */
@@ -37,20 +38,20 @@ public:
     };
 
 private:
-    std::vector<CmdTypesSpecRequest *> element;
+    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    DeviceControlRequest(MANSCDPAgent *agent);
+    DeviceControlRequest(MANSCDPAgent *agent, Control *control);
     virtual ~DeviceControlRequest();
-    static bool deserialize(const XMLElement *xml, Request& request);
+    static bool deserialize(const XMLElement *xmlReq, Request& req);
 
 public:
-    virtual bool match(const std::string& name);
-    virtual bool dispatch(XMLElement *xml);
+    virtual bool match(const std::string& CmdType);
+    virtual bool dispatch(const XMLElement *xmlReq);
 };
 
 /* A.2.3.1.2 摄像机云台控制命令 */
-class PTZCmdRequest : public CmdTypesSpecRequest
+class PTZCmdControl : public CmdTypeSpecRequest
 {
 public:
     struct Request : DeviceControlRequest::Request
@@ -68,19 +69,19 @@ public:
     };
 
 public:
-    PTZCmdRequest(MANSCDPAgent *agent);
-    virtual ~PTZCmdRequest();
+    PTZCmdControl(MANSCDPAgent *agent, Control *control);
+    virtual ~PTZCmdControl();
 
 private:
-    static bool deserialize(const XMLElement *xml, Request& request);
+    bool deserialize(const XMLElement *xmlReq, Request& req);
 
 public:
-    virtual bool match(XMLElement *xml);
-    virtual bool dispatch(XMLElement *xml);
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
 };
 
 /* A.2.3.1.3 远程启动控制命令 */
-class TeleBootRequest : public CmdTypesSpecRequest
+class TeleBootControl : public CmdTypeSpecRequest
 {
 public:
     enum EBoot
@@ -94,12 +95,19 @@ public:
     };
 
 public:
-    TeleBootRequest(MANSCDPAgent *agent);
-    virtual ~TeleBootRequest();
+    TeleBootControl(MANSCDPAgent *agent, Control *control);
+    virtual ~TeleBootControl();
+
+private:
+    bool deserialize(const XMLElement *xmlReq, Request& req);
+
+public:
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
 };
 
 /* A.2.3.1.4 录像控制命令 */
-class RecordRequest : public CmdTypesSpecRequest
+class RecordControl : public CmdTypeSpecRequest
 {
 public:
     struct Request : DeviceControlRequest::Request
@@ -109,6 +117,17 @@ public:
         /* <!-- 码流类型：0-主码流，1-子码流，2-子码流2，以此类推（可选），缺省为0 --> */
         integerType StreamNumber;
     };
+
+public:
+    RecordControl(MANSCDPAgent *agent, Control *control);
+    virtual ~RecordControl();
+
+private:
+    bool deserialize(const XMLElement *xmlReq, Request& req);
+
+public:
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
 };
 
 /* A.2.3.1.5 报警布防/撤防控制命令 */
@@ -146,14 +165,18 @@ public:
         /* <! -- 目标设备编码（必选） -> */
         deviceIDType DeviceID;
     };
+
+private:
+    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
     
 public:
-    DeviceConfigRequest(MANSCDPAgent *agent);
+    DeviceConfigRequest(MANSCDPAgent *agent, Control *control);
     virtual ~DeviceConfigRequest();
+    static bool deserialize(const XMLElement *xmlReq, Request& req);
 
 public:
-    virtual bool match(const std::string& name);
-    virtual bool dispatch(XMLElement *xml);
+    virtual bool match(const std::string& CmdType);
+    virtual bool dispatch(const XMLElement *xmlReq);
 };
 
 /* A.2.3.2.2 基本参数配置命令 */

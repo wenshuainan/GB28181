@@ -1,4 +1,5 @@
 #include "MediaAgent.h"
+#include "DevPlay.h"
 
 Media::Media(Session* session, const Attr& attr)
 {
@@ -40,7 +41,7 @@ Media::~Media()
 
 void Media::proc()
 {
-    Play *play = m_session->m_agent->play;
+    const std::shared_ptr<Play> &play = m_session->m_agent->play;
     if (play == nullptr)
     {
         return;
@@ -167,6 +168,8 @@ bool Session::start()
     {
         m->publish();
     }
+
+    return true;
 }
 
 bool Session::stop()
@@ -175,29 +178,103 @@ bool Session::stop()
     {
         m->unpublish();
     }
+
+    return true;
 }
 
 MediaAgent::MediaAgent(UA *ua) : Agent(ua)
 {
-    play = nullptr;
+    play = std::make_shared<DevPlay>();
 }
 
 MediaAgent::~MediaAgent()
 {}
 
-bool MediaAgent::agentReqINVITE(const SipMessageApp& req, SipMessageApp& res)
+bool MediaAgent::agentReqINVITE(const SipMessageApp& req)
 {
+    std::string name = req.getSdpSessionName();
+
+    if (strCaseCmp(name, "Play"))
+    {
+        Session::Attr attr;
+        Connection sessionCon;
+
+        sessionCon.ipv4 = req.getSdpSessionIpv4();
+        if (!sessionCon.ipv4.empty())
+        {
+            attr.conInfo = &sessionCon;
+        }
+
+        m_sessionPlay = std::make_shared<Session>(this, attr);
+
+        int32_t n = req.getSdpMediaNum();
+        for (int32_t i = 0; i < n; i++)
+        {
+            Media::Attr mattr;
+            Connection mCon;
+            uint32_t SSRC = 0;
+
+            mattr.port = req.getSdpMediaPort(i);
+            mattr.netType = parseNetType(req.getSdpMediaTransport(i));
+            mattr.payloadType = (RtpPayload::Type)req.getSdpMediaPayloadType(i);
+            mCon.ipv4 = req.getSdpMediaIpv4(i);
+            if (!mCon.ipv4.empty())
+            {
+                mattr.conInfo = &mCon;
+            }
+            SSRC = req.getSdpMediaSSRC(i);
+            mattr.SSRC = &SSRC;
+
+            m_sessionPlay->addMedia(mattr);
+        }
+    }
+    else if (strCaseCmp(name, "Playback"))
+    {
+        /* add code */
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool MediaAgent::agentReqACK(const SipMessageApp& req)
+{
+    if (m_sessionPlay != nullptr)
+    {
+        m_sessionPlay->start();
+        return true;
+    }
+
     return false;
 }
 
-bool MediaAgent::agentReqACK()
+bool MediaAgent::agentReqBYE(const SipMessageApp& req)
 {
+    if (m_sessionPlay != nullptr)
+    {
+        m_sessionPlay->stop();
+        m_sessionPlay = nullptr;
+        return true;
+    }
+
     return false;
 }
 
-bool MediaAgent::agentReqBYE()
+RtpNet::Type MediaAgent::parseNetType(const std::string& str) const
 {
-    return false;
+    if (strCaseCmp(str, "RTP/AVP"))
+    {
+        return RtpNet::UDP;
+    }
+    else if (strCaseCmp(str, "TCP/RTP/AVP"))
+    {
+        return RtpNet::TCP_ACTIVE;
+    }
+    else
+    {
+        return RtpNet::UDP;
+    }
 }
 
 bool MediaAgent::match(const std::string& method, const std::string& contentType)
@@ -218,11 +295,17 @@ bool MediaAgent::agent(const SipMessageApp& message)
     const char* method = message.getMethod();
 
     if (strCaseCmp(method, "INVITE") == 0)
-    {}
+    {
+        return agentReqINVITE(message);
+    }
     else if (strCaseCmp(method, "ACK") == 0)
-    {}
+    {
+        return agentReqACK(message);
+    }
     else if (strCaseCmp(method, "BYE") == 0)
-    {}
+    {
+        return agentReqBYE(message);
+    }
 
     return false;
 }

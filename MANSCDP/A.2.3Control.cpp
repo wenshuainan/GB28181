@@ -1,123 +1,118 @@
 #include "A.2.3Control.h"
 #include "MANSCDPAgent.h"
 
-ControlReuest::ControlReuest(MANSCDPAgent *agent) : CmdTypeRequest(agent)
+ControlReuest::ControlReuest(MANSCDPAgent *agent, Control *control)
 {
-    element.push_back(new DeviceControlRequest(agent));
-    element.push_back(new DeviceConfigRequest(agent));
+    spec.push_back(std::make_shared<DeviceControlRequest>(agent, control));
+    spec.push_back(std::make_shared<DeviceConfigRequest>(agent, control));
 }
 
 ControlReuest::~ControlReuest()
 {
-    for (auto& i : element)
-    {
-        delete i;
-    }
+    spec.clear();
 }
 
-bool ControlReuest::match(const std::string& name)
+bool ControlReuest::match(const std::string& ReqType)
 {
-    return name == "Control";
+    return ReqType == "Control";
 }
 
-bool ControlReuest::dispatch(XMLElement *xml)
+bool ControlReuest::dispatch(const XMLElement *xmlReq)
 {
-    XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (!xmlCmdType)
     {
         return false;
     }
 
     std::string CmdType = xmlCmdType->GetText();
-    for (auto& i : element)
+    for (auto& i : spec)
     {
         if (i->match(CmdType))
         {
-            return i->dispatch(xml);
+            return i->dispatch(xmlReq);
         }
     }
 
     return false;
 }
 
-DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent) : CmdTypeControl(agent)
+DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent, Control *control)
 {
-    element.push_back(new PTZCmdRequest(agent));
+    spec.push_back(std::make_shared<PTZCmdControl>(agent, control));
 }
 
 DeviceControlRequest::~DeviceControlRequest()
 {
-    for (auto& i : element)
-    {
-        delete i;
-    }
+    spec.clear();
 }
 
-bool DeviceControlRequest::deserialize(const XMLElement *xml, Request& request)
+bool DeviceControlRequest::deserialize(const XMLElement *xmlReq, Request& req)
 {
-    const XMLElement *xmlCmdType = xml->FirstChildElement("CmdType");
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (!xmlCmdType)
     {
         return false;
     }
 
-    const XMLElement *xmlSN = xml->FirstChildElement("SN");
+    const XMLElement *xmlSN = xmlReq->FirstChildElement("SN");
     if (!xmlSN)
     {
         return false;
     }
 
-    const XMLElement *xmlDeviceID = xml->FirstChildElement("DeviceID");
+    const XMLElement *xmlDeviceID = xmlReq->FirstChildElement("DeviceID");
     if (!xmlDeviceID)
     {
         return false;
     }
 
-    request.CmdType = xmlCmdType->GetText();
-    request.SN = xmlSN->GetText();
-    request.DeviceID = xmlDeviceID->GetText();
+    req.CmdType = xmlCmdType->GetText();
+    req.SN = xmlSN->GetText();
+    req.DeviceID = xmlDeviceID->GetText();
 
     return true;
 }
 
-bool DeviceControlRequest::match(const std::string& name)
+bool DeviceControlRequest::match(const std::string& CmdType)
 {
-    return name == "DeviceControl";
+    return CmdType == "DeviceControl";
 }
 
-bool DeviceControlRequest::dispatch(XMLElement *xml)
+bool DeviceControlRequest::dispatch(const XMLElement *xmlReq)
 {
-    for (auto& i : element)
+    for (auto& i : spec)
     {
-        if (i->match(xml))
+        if (i->match(xmlReq))
         {
-            return i->dispatch(xml);
+            return i->handle(xmlReq);
         }
     }
 
     return false;
 }
 
-PTZCmdRequest::PTZCmdRequest(MANSCDPAgent *agent) : CmdTypesSpecRequest(agent)
+PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent, Control *control)
+    : CmdTypeSpecRequest(agent, control)
 {}
 
-PTZCmdRequest::~PTZCmdRequest()
+PTZCmdControl::~PTZCmdControl()
 {}
 
-bool PTZCmdRequest::deserialize(const XMLElement *xml, Request& request)
+bool PTZCmdControl::deserialize(const XMLElement *xmlReq, Request& req)
 {
-    if (!DeviceControlRequest::deserialize(xml, request))
+    if (!DeviceControlRequest::deserialize(xmlReq, req))
     {
         return false;
     }
 
-    const XMLElement *xmlPTZCmd = xml->FirstChildElement("PTZCmd");
+    const XMLElement *xmlPTZCmd = xmlReq->FirstChildElement("PTZCmd");
     if (xmlPTZCmd)
     {
-        request.PTZCmd = xmlPTZCmd->GetText();
+        req.PTZCmd = xmlPTZCmd->GetText();
     }
 
-    const XMLElement *xmlPTZCmdParams = xml->FirstChildElement("PTZCmdParams");
+    const XMLElement *xmlPTZCmdParams = xmlReq->FirstChildElement("PTZCmdParams");
     if (xmlPTZCmdParams)
     {
         const XMLElement *xmlPresetName = xmlPTZCmdParams->FirstChildElement("PresetName");
@@ -125,47 +120,56 @@ bool PTZCmdRequest::deserialize(const XMLElement *xml, Request& request)
 
         if (xmlPresetName)
         {
-            request.PTZCmdParams.PresetName = xmlPresetName->GetText();
+            req.PTZCmdParams.PresetName = xmlPresetName->GetText();
         }
 
         if (xmlCruiseTrackName)
         {
-            request.PTZCmdParams.CruiseTrackName = xmlCruiseTrackName->GetText();
+            req.PTZCmdParams.CruiseTrackName = xmlCruiseTrackName->GetText();
         }
     }
 
     return true;
 }
 
-bool PTZCmdRequest::match(XMLElement *xml)
+bool PTZCmdControl::match(const XMLElement *xmlReq)
 {
-    return xml->FirstChildElement("PTZCmd") != nullptr;
+    return xmlReq->FirstChildElement("PTZCmd") != nullptr;
 }
 
-bool PTZCmdRequest::dispatch(XMLElement *xml)
+bool PTZCmdControl::handle(const XMLElement *xmlReq)
 {
     Request req;
-
-    if (!deserialize(xml, req))
+    if (!deserialize(xmlReq, req))
     {
         return false;
     }
 
-    return m_agent->agentControl(req);
+    DeviceControlResponse::Response res;
+    if (m_control->process(req, res))
+    {
+        XMLDocument doc;
+        DeviceControlResponse::serialize(res, &doc);
+        return m_agent->sendResponse(doc);
+    }
+
+    return false;
 }
 
-DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent) : CmdTypeControl(agent)
+DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)
 {}
 
 DeviceConfigRequest::~DeviceConfigRequest()
-{}
-
-bool DeviceConfigRequest::match(const std::string& name)
 {
-    return name == "DeviceConfig";
+    spec.clear();
 }
 
-bool DeviceConfigRequest::dispatch(XMLElement *xml)
+bool DeviceConfigRequest::match(const std::string& CmdType)
+{
+    return CmdType == "DeviceConfig";
+}
+
+bool DeviceConfigRequest::dispatch(const XMLElement *xmlReq)
 {
     return false;
 }

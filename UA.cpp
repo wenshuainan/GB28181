@@ -1,11 +1,9 @@
 #include <iostream>
 #include <unistd.h>
 #include "UA.h"
-#include "MANSCDPAgent.h"
 #include "RegistrationAgent.h"
+#include "MANSCDPAgent.h"
 #include "MediaAgent.h"
-#include "DevControl.h"
-#include "DevRegistration.h"
 
 UA::UA()
 {}
@@ -58,51 +56,44 @@ bool UA::postRecved(const SipMessageApp& message)
 
 bool UA::start(const Info& info)
 {
-    /* 创建register代理 */
-    RegistrationAgent *regAgent = new RegistrationAgent(this);
-    if (regAgent != nullptr)
-    {
-        regAgent->registration = new DevRegistration(); // 创建register设备处理对象
-        agents.push_back(regAgent);
-    }
-
+    /* 创建注册协议代理 */
+    agents.push_back(std::make_shared<RegistrationAgent>(this));
     /* 创建MANSCDP协议代理 */
-    MANSCDPAgent *cdpAgent = new MANSCDPAgent(this);
-    if (cdpAgent != nullptr)
-    {
-        cdpAgent->control = new DevControl(); // 创建MANSCDP设备处理对象
-        agents.push_back(cdpAgent);
-    }
-
-    /* 创建媒体代理 */
-    MediaAgent *mediaAgent = new MediaAgent(this);
-    if (mediaAgent != nullptr)
-    {
-        agents.push_back(mediaAgent);
-    }
+    agents.push_back(std::make_shared<MANSCDPAgent>(this));
+    /* 创建媒体协议代理 */
+    agents.push_back(std::make_shared<MediaAgent>(this));
 
     /* 创建sip用户代理 */
     sip = SipUserAgent::create(this, info.sipInfo);
     if (sip == nullptr)
     {
+        agents.clear();
         return false;
     }
 
     /* 初始化sip用户代理 */
-    sip->init();
+    if (sip->init() == false)
+    {
+        sip->destroy();
+        agents.clear();
+        return false;
+    }
 
     /* 发起注册 */
-    regAgent->start();
-
-    return true;
+    const std::shared_ptr<RegistrationAgent> regAgent = std::dynamic_pointer_cast<RegistrationAgent>(agents[0]);
+    if (regAgent != nullptr)
+    {
+        return regAgent->start();
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool UA::stop()
 {
-    for (auto agent : agents)
-    {
-        delete agent;
-    }
-
+    agents.clear();
+    sip->destroy();
     return true;
 }
