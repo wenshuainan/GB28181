@@ -16,12 +16,7 @@ RegistrationAgent::~RegistrationAgent()
 
 bool RegistrationAgent::match(const std::string& method, const std::string& contentType)
 {
-    return false; //只做为Register Client，不处理Register请求
-}
-
-bool RegistrationAgent::match(const std::string& callID)
-{
-    return outCallID == callID;
+    return false; //只作为Register Client，不处理Register请求
 }
 
 bool RegistrationAgent::agent(const SipMessageApp& message)
@@ -36,11 +31,9 @@ bool RegistrationAgent::start()
 
     SipMessageApp message;
     sip->genReqMessage(message, "REGISTER");
-    // message.print(); //debug
 
     /* 添加GB版本号扩展头域（附录I） */
     message.addField(GBVerName, GBVerValue);
-    // message.print(); //debug
 
     if (sip->send(message))
     {

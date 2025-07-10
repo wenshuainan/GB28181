@@ -5,6 +5,7 @@
 #include "Agent.h"
 #include "Process/9.3Control.h"
 #include "Process/9.5Query.h"
+#include "Process/9.6Status.h"
 
 class MANSCDPAgent : public Agent
 {
@@ -13,6 +14,7 @@ class MANSCDPAgent : public Agent
 private:
     std::shared_ptr<Control> control;
     std::shared_ptr<Query> query;
+    std::shared_ptr<Status> status;
 
 private:
     /* 
@@ -28,7 +30,6 @@ public:
 
 public:
     bool match(const std::string& method, const std::string& contentType);
-    bool match(const std::string& callID);
     bool agent(const SipMessageApp& message);
     bool agent(const XMLDocument& xmldocReq);
 

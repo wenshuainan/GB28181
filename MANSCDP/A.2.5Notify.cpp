@@ -94,3 +94,8 @@ bool KeepAliveNotify::handle(const XMLElement *xmlReq)
 {
     m_agent->sendRequest(xmlReq);
 }
+
+bool KeepAliveNotify::handle(int32_t code)
+{
+    m_status;
+}

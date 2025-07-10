@@ -285,11 +285,6 @@ bool MediaAgent::match(const std::string& method, const std::string& contentType
             || strCaseCmp(contentType, "application/sdp") == 0;
 }
 
-bool MediaAgent::match(const std::string& callID)
-{
-    return outCallID == callID;
-}
-
 bool MediaAgent::agent(const SipMessageApp& message)
 {
     const char* method = message.getMethod();

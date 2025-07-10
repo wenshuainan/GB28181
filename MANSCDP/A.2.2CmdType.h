@@ -60,22 +60,33 @@ protected:
     MANSCDPAgent *m_agent;
     Control *m_control;
     Query *m_query;
+    Status *m_status;
 
 public:
-    CmdTypeSpecRequest(MANSCDPAgent *agent)
-        : m_agent(agent), m_control(nullptr), m_query(nullptr)
-    {}
     CmdTypeSpecRequest(MANSCDPAgent *agent, Control *control)
-        : m_agent(agent), m_control(control), m_query(nullptr)
+        : m_agent(agent)
+        , m_control(control)
+        , m_query(nullptr)
+        , m_status(nullptr)
     {}
     CmdTypeSpecRequest(MANSCDPAgent *agent, Query *query)
-        : m_agent(agent), m_control(nullptr), m_query(query)
+        : m_agent(agent)
+        , m_control(nullptr)
+        , m_query(query)
+        , m_status(nullptr)
+    {}
+    CmdTypeSpecRequest(MANSCDPAgent *agent, Status *status)
+        : m_agent(agent)
+        , m_control(nullptr)
+        , m_query(nullptr)
+        , m_status(status)
     {}
     virtual ~CmdTypeSpecRequest() {}
 
 public:
     virtual bool match(const XMLElement *xmlReq) = 0;
     virtual bool handle(const XMLElement *xmlReq) = 0;
+    virtual bool handle(int32_t code) { return true; } // 用于需要处理回复的命令，设备主动发出的请求，例如心跳
 };
 
 #endif

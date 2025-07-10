@@ -53,6 +53,7 @@ public:
 public:
     virtual bool match(const XMLElement *xmlReq);
     virtual bool handle(const XMLElement *xmlReq);
+    virtual bool handle(int32_t code);
 };
 
 /* A.2.5.3 报警通知 */

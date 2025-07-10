@@ -7,7 +7,6 @@
 #include "SipAdapter.h"
 #include "Agent.h"
 #include "A.2.5Notify.h"
-#include "9.6Status.h"
 
 #define DEBUG_LOG std::cout << "GB28181: " << __FILE__ << ":" << __LINE__ << " "
 
@@ -25,7 +24,6 @@ private:
     std::shared_ptr<SipUserAgent> sip;
     std::thread *keepaliveThread;
     bool bKeepaliveRunning;
-    std::shared_ptr<Status> statusProcess;
 
 public:
     UA();
@@ -35,7 +33,10 @@ private:
     void keepaliveProc();
 
 public:
-    bool postRecved(const SipMessageApp& message);
+    bool postRegistrationResponse(const SipMessageApp& message);
+    bool postInviteSessionRequest(const SipMessageApp& message);
+    bool postOutDialogRequest(const SipMessageApp& request);
+    bool postOutDialogResponse(const SipMessageApp& response, const SipMessageApp& request);
     const std::shared_ptr<SipUserAgent>& getSip() { return sip; }
     bool startKeepalive();
     bool stopKeepalive();

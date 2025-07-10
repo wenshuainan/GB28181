@@ -10,10 +10,11 @@ MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
     control = std::make_shared<DevControl>();
     query = std::make_shared<DevQuery>();
+    status = std::make_shared<DevStatus>();
 
     requests.push_back(std::make_shared<ControlReuest>(this, control.get()));
     requests.push_back(std::make_shared<QueryRequest>(this, query.get()));
-    requests.push_back(std::make_shared<NotifyRequest>(this));
+    requests.push_back(std::make_shared<NotifyRequest>(this, status.get()));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
@@ -24,11 +25,6 @@ MANSCDPAgent::~MANSCDPAgent()
 bool MANSCDPAgent::match(const std::string& method, const std::string& contentType)
 {
     return contentType == "Application/MANSCDP+xml";
-}
-
-bool MANSCDPAgent::match(const std::string& callID)
-{
-    return outCallID == callID;
 }
 
 bool MANSCDPAgent::agent(const SipMessageApp& message)
