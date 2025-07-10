@@ -13,7 +13,7 @@ class BasicClientCmdLineParser
 {
 public:
    BasicClientCmdLineParser(int argc, char** argv);
-   BasicClientCmdLineParser(const SipUserAgent::Info& info);
+   BasicClientCmdLineParser(const SipUserAgent::ClientInfo& info);
    static resip::Uri toUri(const char* input, const char* description);
 
    Data mLogType;

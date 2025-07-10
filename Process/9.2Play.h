@@ -15,8 +15,8 @@ public:
     };
     
 public:
-    Play();
-    virtual ~Play();
+    Play() {}
+    virtual ~Play() {}
 
 public:
     virtual bool getVideo(Coded &coded) = 0;

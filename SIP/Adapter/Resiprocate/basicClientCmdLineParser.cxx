@@ -132,14 +132,14 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 #endif
 }
 
-BasicClientCmdLineParser::BasicClientCmdLineParser(const SipUserAgent::Info& info) :
+BasicClientCmdLineParser::BasicClientCmdLineParser(const SipUserAgent::ClientInfo& info) :
    BasicClientCmdLineParser(0, nullptr)
 {
-   mAor.user() = info.client.id;
-   mPassword = info.client.passwd;
-   mRegisterDuration = info.client.expire;
-   mAor.host() = info.server.domain;
-   mUdpPort = info.server.port; // TODO: support other transports
+   mAor.user() = info.id;
+   mAor.host() = (!info.ipv4.empty()) ? Data(info.ipv4) : DnsUtil::getLocalIpAddress();
+   mUdpPort = info.port > 0 ? info.port : 5060;
+   mPassword = info.passwd;
+   mRegisterDuration = info.expire;
 }
 
 resip::Uri 

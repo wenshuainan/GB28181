@@ -3,9 +3,10 @@
 #include "ResipUserAgent.h"
 #include "UA.h"
 
-std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *app, const Info& info)
+std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *app, const ClientInfo& client, const ServerInfo& server)
 {
-    std::shared_ptr<SipUserAgent> sip = std::make_shared<ResipUserAgent>(info);
+    std::shared_ptr<SipUserAgent> sip = std::make_shared<ResipUserAgent>(client, server);
+
     if (sip != nullptr)
     {
         sip->app = app;
@@ -22,10 +23,14 @@ bool SipUserAgent::postApp(UA *app, const SipMessageApp& message)
     return app->postRecved(message);
 }
 
-ResipUserAgent::ResipUserAgent(const SipUserAgent::Info& info)
-    : BasicClientUserAgent(info)
+ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
+    : BasicClientUserAgent(client)
 {
-    mRegistrationRetryDelayTime = info.interval;
+    mRegistrationRetryDelayTime = client.interval;
+
+    mServerUri.user() = server.id;
+    mServerUri.host() = server.ipv4;
+    mServerUri.port() = server.port;
 }
 
 ResipUserAgent::~ResipUserAgent()
@@ -67,7 +72,7 @@ bool ResipUserAgent::send(const SipMessageApp& message)
     return true;
 }
 
-bool ResipUserAgent::genReqMessage(SipMessageApp& req, const std::string& method, const std::string& requestUri)
+bool ResipUserAgent::genReqMessage(SipMessageApp& req, const std::string& method)
 {
     if (req.getAdapter() == nullptr)
     {
@@ -76,27 +81,31 @@ bool ResipUserAgent::genReqMessage(SipMessageApp& req, const std::string& method
 
     if (method == "REGISTER")
     {
-        SipMessageAdapter adapter;
-        adapter.instance = mDum->makeRegistration(resip::NameAddr(mAor), nullptr);
+        std::shared_ptr<resip::SipMessage> message = mDum->makeRegistration(resip::NameAddr(mAor));
+        if (message == nullptr)
+        {
+            return false;
+        }
+
+        /* set with GB28181 required format */
+        message->header(resip::h_RequestLine).uri() = mServerUri;
+
+        SipMessageAdapter adapter = {
+            .instance = message
+        };
         req.setAdapter(adapter);
     }
     else
     {
-        resip::Uri uri = resip::BasicClientCmdLineParser::toUri(requestUri.c_str(), "");
-        resip::NameAddr target(uri);
-        resip::MethodTypes meth;
-
-        if (method == "MESSAGE")
+        std::shared_ptr<resip::SipMessage> message = mDum->makeOutOfDialogRequest(resip::NameAddr(mServerUri), resip::MESSAGE);
+        if (message == nullptr)
         {
-            meth = resip::MESSAGE;
-        }
-        else if (method == "INFO")
-        {
-            meth = resip::INFO;
+            return false;
         }
 
-        SipMessageAdapter adapter;
-        adapter.instance = mDum->makeOutOfDialogRequest(target, meth, nullptr);
+        SipMessageAdapter adapter = {
+            .instance = message
+        };
         req.setAdapter(adapter);
     }
 

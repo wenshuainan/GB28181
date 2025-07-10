@@ -1,13 +1,59 @@
 #ifndef A_2_5_NOTIFY_H
 #define A_2_5_NOTIFY_H
 
-#include "A.2.1GlobalTypes.h"
+#include "A.2.2CmdType.h"
 
 /* A.2.5 通知命令 */
 
 /* A.2.5.1 通知命令消息体 */
+class NotifyRequest : public CmdTypeRequest
+{
+public:
+    struct Request
+    {};
+
+private:
+    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
+
+public:
+    NotifyRequest(MANSCDPAgent *agent);
+    virtual ~NotifyRequest();
+
+public:
+    static bool serialize(const Request& req, XMLDocument *xmldocReq);
+
+public:
+    virtual bool match(const std::string& ReqType);
+    virtual bool dispatch(const XMLElement *xmlReq);
+};
 
 /* A.2.5.2 状态信息报送 */
+class KeepAliveNotify : public CmdTypeSpecRequest
+{
+public:
+    struct Request : NotifyRequest::Request
+    {
+        /* 〈! -- 命令类型:设备状态信息报送(必选)--〉 */
+        stringType cmdType;
+        /* 〈! -- 命令序列号(必选)--〉 */
+        SNType SN;
+        /* 〈! -- 源设备/系统编码(必选)--〉 */
+        deviceIDType DeviceID;
+        /* 〈! -- 是否正常工作(必选)--〉 */
+        resultType Status;
+    };
+
+public:
+    KeepAliveNotify(MANSCDPAgent *agent);
+    virtual ~KeepAliveNotify();
+
+public:
+    static bool serialize(const Request& req, XMLDocument *xmldocReq);
+
+public:
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
+};
 
 /* A.2.5.3 报警通知 */
 

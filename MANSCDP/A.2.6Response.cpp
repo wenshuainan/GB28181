@@ -1,7 +1,25 @@
 #include "A.2.6Response.h"
 
+bool CmdTypeResponse::serialize(const Response& res, XMLDocument *xmldocRes)
+{
+    XMLElement *rootElement = xmldocRes->NewElement("Response");
+    if (rootElement != nullptr)
+    {
+        return xmldocRes->InsertEndChild(rootElement) != nullptr;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 bool DeviceControlResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
+    if (!CmdTypeResponse::serialize(res, xmldocRes))
+    {
+        return false;
+    }
+
     XMLNode *rootElement = xmldocRes->FirstChild();
     if (rootElement == nullptr)
     {
@@ -29,6 +47,11 @@ bool DeviceControlResponse::serialize(const Response& res, XMLDocument *xmldocRe
 
 bool CatalogQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
+    if (!CmdTypeResponse::serialize(res, xmldocRes))
+    {
+        return false;
+    }
+
     XMLNode *rootElement = xmldocRes->FirstChild();
     if (rootElement == nullptr)
     {
@@ -70,6 +93,11 @@ bool CatalogQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes
 
 bool DeviceInfoQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
+    if (!CmdTypeResponse::serialize(res, xmldocRes))
+    {
+        return false;
+    }
+
     XMLNode *rootElement = xmldocRes->FirstChild();
     if (rootElement == nullptr)
     {

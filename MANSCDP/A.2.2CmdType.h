@@ -62,6 +62,9 @@ protected:
     Query *m_query;
 
 public:
+    CmdTypeSpecRequest(MANSCDPAgent *agent)
+        : m_agent(agent), m_control(nullptr), m_query(nullptr)
+    {}
     CmdTypeSpecRequest(MANSCDPAgent *agent, Control *control)
         : m_agent(agent), m_control(control), m_query(nullptr)
     {}

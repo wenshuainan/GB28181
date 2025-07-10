@@ -78,23 +78,20 @@ public:
     struct ClientInfo
     {
         std::string id;
+        std::string ipv4;
+        int32_t port;
         std::string passwd;
-        int expire;
+        Transport transport;
+        int32_t expire;
+        int32_t interval;
     };
 
     struct ServerInfo
     {
         std::string id;
         std::string domain;
-        Transport transport;
-        int port;
-    };
-
-    struct Info
-    {
-        ClientInfo client;
-        ServerInfo server;
-        int interval;
+        std::string ipv4;
+        int32_t port;
     };
 
 protected:
@@ -109,7 +106,7 @@ public:
     virtual bool send(const SipMessageApp& message) = 0;
 
     /* 根据method和requestUri生成请求消息，自动填充头域，输出req */
-    virtual bool genReqMessage(SipMessageApp& req, const std::string& method, const std::string& requestUri = "") = 0;
+    virtual bool genReqMessage(SipMessageApp& req, const std::string& method) = 0;
 
     /* 根据req生成响应消息，自动填充头域，输出res */
     virtual bool genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "") = 0;
@@ -119,7 +116,7 @@ public:
     virtual ~SipUserAgent() {}
 
 public:
-    static std::shared_ptr<SipUserAgent> create(UA *app, const Info& info);
+    static std::shared_ptr<SipUserAgent> create(UA *app, const ClientInfo& client, const ServerInfo& server);
     bool destroy();
 };
 

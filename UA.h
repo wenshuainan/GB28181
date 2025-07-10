@@ -3,34 +3,49 @@
 
 #include <vector>
 #include <memory>
+#include <thread>
 #include "SipAdapter.h"
 #include "Agent.h"
+#include "A.2.5Notify.h"
+#include "9.6Status.h"
 
 #define DEBUG_LOG std::cout << "GB28181: " << __FILE__ << ":" << __LINE__ << " "
 
 class UA
 {
 public:
-    struct Info
+    struct KeepaliveInfo
     {
-        SipUserAgent::Info sipInfo;
+        int32_t interval;
+        int32_t retryCount;
     };
     
 private:
     std::vector<std::shared_ptr<Agent>> agents;
     std::shared_ptr<SipUserAgent> sip;
+    std::thread *keepaliveThread;
+    bool bKeepaliveRunning;
+    std::shared_ptr<Status> statusProcess;
 
 public:
     UA();
     ~UA();
 
-public:
-    bool postRecved(const SipMessageApp& message);
+private:
+    void keepaliveProc();
 
 public:
-    bool start(const Info& info);
-    bool stop();
+    bool postRecved(const SipMessageApp& message);
     const std::shared_ptr<SipUserAgent>& getSip() { return sip; }
+    bool startKeepalive();
+    bool stopKeepalive();
+
+public:
+    bool start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server);
+    bool stop();
+
+    // 需要设备主动向服务器发送的
+    bool updateStatus(const KeepAliveNotify &notify); // 9.6.1 立即发送状态信息
 };
 
 #endif

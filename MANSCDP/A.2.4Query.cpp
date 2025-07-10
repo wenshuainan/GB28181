@@ -95,7 +95,7 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
     {
         XMLDocument doc;
         CatalogQueryResponse::serialize(res, &doc);
-        return m_agent->sendResponse(doc);
+        return m_agent->sendResponseCmd(doc);
     }
 
     return false;
@@ -167,7 +167,7 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     {
         XMLDocument doc;
         DeviceInfoQueryResponse::serialize(res, &doc);
-        return m_agent->sendResponse(doc);
+        return m_agent->sendResponseCmd(doc);
     }
 
     return false;

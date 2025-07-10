@@ -7,11 +7,22 @@
 
 /* A.2.6 应答命令 */
 
+/* A.2.6.1 应答命令消息体 */
+class CmdTypeResponse
+{
+public:
+    struct Response
+    {};
+
+public:
+    static bool serialize(const Response& res, XMLDocument *xmldocRes);
+};
+
 /*  A.2.6.2 设备控制应答 */
 class DeviceControlResponse
 {
 public:
-    struct Response
+    struct Response : CmdTypeResponse::Response
     {
         /* 〈! -- 命令类型:设备控制(必选)--〉 */
         stringType CmdType;
@@ -33,7 +44,7 @@ public:
 class CatalogQueryResponse
 {
 public:
-    struct Response
+    struct Response : CmdTypeResponse::Response
     {
         /* 〈!-- 命令类型:设备目录查询(必选)--〉 */
         stringType CmdType;
@@ -60,7 +71,7 @@ public:
 class DeviceInfoQueryResponse
 {
 public:
-    struct Response
+    struct Response : CmdTypeResponse::Response
     {
         /* 〈! -- 命令类型:设备信息查询(必选)--〉 */
         stringType CmdType;

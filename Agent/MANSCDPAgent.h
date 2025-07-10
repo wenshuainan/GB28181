@@ -13,7 +13,6 @@ class MANSCDPAgent : public Agent
 private:
     std::shared_ptr<Control> control;
     std::shared_ptr<Query> query;
-    std::shared_ptr<const SipMessageApp> lastReqMessage;
 
 private:
     /* 
@@ -31,9 +30,12 @@ public:
     bool match(const std::string& method, const std::string& contentType);
     bool match(const std::string& callID);
     bool agent(const SipMessageApp& message);
+    bool agent(const XMLDocument& xmldocReq);
 
 public:
-    bool sendResponse(const XMLDocument& xmldocRes) const;
+    bool sendResponse200(const SipMessageApp& req) const; //无应答命令
+    bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
+    bool sendRequest(const XMLDocument& xmldocReq) const;
 };
 
 #endif

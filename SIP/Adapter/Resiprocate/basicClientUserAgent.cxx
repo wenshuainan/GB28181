@@ -114,7 +114,7 @@ class NotifyTimer : public resip::DumCommand
 };
 } // end namespace
 
-BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) : 
+BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info) : 
    BasicClientCmdLineParser(info),
    mProfile(new MasterProfile),
 #if defined(USE_SSL)
@@ -166,33 +166,33 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) :
    //mProfile->addSupportedMethod(UPDATE);
    mProfile->addSupportedMethod(INFO);
    mProfile->addSupportedMethod(MESSAGE);
-   mProfile->addSupportedMethod(PRACK);
+   // mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
-   mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
-   mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
+   // mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
+   // mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
 
    // Support Languages
-   mProfile->clearSupportedLanguages();
-   mProfile->addSupportedLanguage(Token("en"));  
+   // mProfile->clearSupportedLanguages();
+   // mProfile->addSupportedLanguage(Token("en"));  
 
    // Support Mime Types
    mProfile->clearSupportedMimeTypes();
    mProfile->addSupportedMimeType(INVITE, Mime("application", "sdp"));
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
    mProfile->addSupportedMimeType(OPTIONS,Mime("application", "sdp"));
    mProfile->addSupportedMimeType(OPTIONS,Mime("multipart", "mixed"));  
    mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "signed"));  
    mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
    mProfile->addSupportedMimeType(MESSAGE, Mime("text","plain")); // Invite session in-dialog routing testing
    mProfile->addSupportedMimeType(NOTIFY, Mime("text","plain"));  // subscription testing
    //mProfile->addSupportedMimeType(NOTIFY, Mime("message", "sipfrag"));  
@@ -225,8 +225,8 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) :
    mProfile->clearAdvertisedCapabilities(); // Remove Profile Defaults, then add our preferences
    mProfile->addAdvertisedCapability(Headers::Allow);  
    //mProfile->addAdvertisedCapability(Headers::AcceptEncoding);  // This can be misleading - it might specify what is expected in response
-   mProfile->addAdvertisedCapability(Headers::AcceptLanguage);  
-   mProfile->addAdvertisedCapability(Headers::Supported);  
+   // mProfile->addAdvertisedCapability(Headers::AcceptLanguage);  
+   // mProfile->addAdvertisedCapability(Headers::Supported);  
    mProfile->setMethodsParamEnabled(true);
 
    // Install Sdp Message Decorator
@@ -293,9 +293,9 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::Info& info) :
 
    // Install Managers
    mDum->setClientAuthManager(std::unique_ptr<ClientAuthManager>(new ClientAuthManager));
-   mDum->setKeepAliveManager(std::unique_ptr<KeepAliveManager>(new KeepAliveManager));
-   mProfile->setKeepAliveTimeForDatagram(30);
-   mProfile->setKeepAliveTimeForStream(120);
+   // mDum->setKeepAliveManager(std::unique_ptr<KeepAliveManager>(new KeepAliveManager));
+   // mProfile->setKeepAliveTimeForDatagram(30);
+   // mProfile->setKeepAliveTimeForStream(120);
 
    // Install Handlers
    mDum->setInviteSessionHandler(this);

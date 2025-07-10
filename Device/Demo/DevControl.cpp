@@ -7,7 +7,7 @@ DevControl::DevControl()
 DevControl::~DevControl()
 {}
 
-bool DevControl::process(const PTZCmdControl::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const PTZCmdControl::Request& req)
 {
     std::cout << "DevControl::process" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
@@ -17,15 +17,10 @@ bool DevControl::process(const PTZCmdControl::Request& req, DeviceControlRespons
     std::cout << "PresetName:" << req.PTZCmdParams.PresetName.getValue() << std::endl;
     std::cout << "CruiseTrackName:" << req.PTZCmdParams.CruiseTrackName.getValue() << std::endl;
 
-    res.CmdType = req.CmdType;
-    res.SN = req.SN;
-    res.DeviceID = req.DeviceID;
-    res.Result = resultType::OK;
-
     return true;
 }
 
-bool DevControl::process(const TeleBootControl::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::process(const TeleBootControl::Request& req)
 {
     return false;
 }

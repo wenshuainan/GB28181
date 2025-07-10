@@ -54,7 +54,7 @@ bool UA::postRecved(const SipMessageApp& message)
     return false;
 }
 
-bool UA::start(const Info& info)
+bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
 {
     /* 创建注册协议代理 */
     agents.push_back(std::make_shared<RegistrationAgent>(this));
@@ -64,7 +64,7 @@ bool UA::start(const Info& info)
     agents.push_back(std::make_shared<MediaAgent>(this));
 
     /* 创建sip用户代理 */
-    sip = SipUserAgent::create(this, info.sipInfo);
+    sip = SipUserAgent::create(this, client, server);
     if (sip == nullptr)
     {
         agents.clear();
@@ -96,4 +96,46 @@ bool UA::stop()
     agents.clear();
     sip->destroy();
     return true;
+}
+
+void UA::keepaliveProc()
+{
+    while (bKeepaliveRunning)
+    {
+        KeepAliveNotify::Request req;
+        statusProcess->getStatus(req);
+        XMLDocument xmldocReq;
+        KeepAliveNotify::serialize(req, xmldocReq);
+        const std::shared_ptr<MANSCDPAgent> agent = std::dynamic_pointer_cast<MANSCDPAgent>(agents[1]);
+        agent->agent(xmldocReq);
+    }
+}
+
+bool UA::startKeepalive()
+{
+    bKeepaliveRunning = true;
+    keepaliveThread = new std::thread(&UA::keepaliveProc, this);
+    return true;
+}
+
+bool UA::stopKeepalive()
+{
+    bKeepaliveRunning = false;
+    if (keepaliveThread != nullptr)
+    {
+        if (keepaliveThread->joinable())
+        {
+            keepaliveThread->join();
+        }
+        delete keepaliveThread;
+    }
+    return true;
+}
+
+bool UA::updateStatus(const KeepAliveNotify &notify)
+{
+    XMLDocument xmldocReq;
+    KeepAliveNotify::serialize(req, xmldocReq);
+    const std::shared_ptr<MANSCDPAgent> agent = std::dynamic_pointer_cast<MANSCDPAgent>(agents[1]);
+    agent->agent(xmldocReq);
 }

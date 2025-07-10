@@ -10,8 +10,8 @@ public:
     ~DevControl();
 
 public:
-    bool process(const PTZCmdControl::Request& req, DeviceControlResponse::Response& res);
-    bool process(const TeleBootControl::Request& req, DeviceControlResponse::Response& res);
+    bool process(const PTZCmdControl::Request& req);
+    bool process(const TeleBootControl::Request& req);
     bool process(const RecordControl::Request& req, DeviceControlResponse::Response& res);
 };
 

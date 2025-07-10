@@ -35,7 +35,7 @@ class BasicClientUserAgent : public BasicClientCmdLineParser,
                              public ServerPagerMessageHandler
 {
 public:
-   BasicClientUserAgent(const SipUserAgent::Info& info);
+   BasicClientUserAgent(const SipUserAgent::ClientInfo& info);
    virtual ~BasicClientUserAgent();
 
    virtual void startup();

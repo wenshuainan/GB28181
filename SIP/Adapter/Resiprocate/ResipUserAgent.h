@@ -13,16 +13,17 @@ class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
 private:
     bool bInit;
+    resip::Uri mServerUri;
     
 public:
-    ResipUserAgent(const SipUserAgent::Info& info);
+    ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
     virtual ~ResipUserAgent();
 
 public:
     virtual bool init();
     virtual bool recv(SipMessageApp& message);
     virtual bool send(const SipMessageApp& message);
-    virtual bool genReqMessage(SipMessageApp& req, const std::string& method, const std::string& requestUri = "");
+    virtual bool genReqMessage(SipMessageApp& req, const std::string& method);
     virtual bool genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "");
 
 public:

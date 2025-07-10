@@ -145,15 +145,7 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    DeviceControlResponse::Response res;
-    if (m_control->process(req, res))
-    {
-        XMLDocument doc;
-        DeviceControlResponse::serialize(res, &doc);
-        return m_agent->sendResponse(doc);
-    }
-
-    return false;
+    return m_control->process(req);
 }
 
 DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)

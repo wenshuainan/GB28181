@@ -91,21 +91,25 @@ void ps_stream_callback(const uint8_t *data, int32_t size)
 
 int main()
 {
-#if 0
+#if 1
     UA ua;
 
-    UA::Info info;
-    info.sipInfo.server.id = "000";
-    info.sipInfo.server.domain = "10.12.13.136";
-    info.sipInfo.server.transport = SipUserAgent::TRANSPORT_UDP;
-    info.sipInfo.server.port = 5060;
-    info.sipInfo.client.id = "102";
-    info.sipInfo.client.passwd = "102";
-    info.sipInfo.client.expire = 86400;
-    info.sipInfo.interval = 60;
+    SipUserAgent::ClientInfo client;
+    client.id = "34020000001110000001";
+    client.port = 5160;
+    client.passwd = "12345678";
+    client.transport = SipUserAgent::TRANSPORT_UDP;
+    client.expire = 86400;
+    client.interval = 60;
 
-    ua.start(info);
-#elif 1
+    SipUserAgent::ServerInfo server;
+    server.id = "34020000002000000001";
+    server.domain = "3402000000";
+    server.ipv4 = "192.168.137.1";
+    server.port = 5060;
+
+    ua.start(client, server);
+#elif 0
     RtpParticipant::Participant participant = {
         .destination = {"10.12.13.136", 1000},
         .netType = RtpNet::Type::UDP,
