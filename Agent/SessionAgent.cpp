@@ -1,4 +1,4 @@
-#include "MediaAgent.h"
+#include "SessionAgent.h"
 #include "DevPlay.h"
 
 Media::Media(Session* session, const Attr& attr)
@@ -141,7 +141,7 @@ bool Media::unpublish()
     return true;
 }
 
-Session::Session(MediaAgent *agent, const Attr& attr)
+Session::Session(SessionAgent *agent, const Attr& attr)
 {
     m_agent = agent;
 
@@ -182,15 +182,15 @@ bool Session::stop()
     return true;
 }
 
-MediaAgent::MediaAgent(UA *ua) : Agent(ua)
+SessionAgent::SessionAgent(UA *ua) : Agent(ua)
 {
     play = std::make_shared<DevPlay>();
 }
 
-MediaAgent::~MediaAgent()
+SessionAgent::~SessionAgent()
 {}
 
-bool MediaAgent::agentReqINVITE(const SipMessageApp& req)
+bool SessionAgent::agentReqINVITE(const SipMessageApp& req)
 {
     std::string name = req.getSdpSessionName();
 
@@ -238,7 +238,7 @@ bool MediaAgent::agentReqINVITE(const SipMessageApp& req)
     }
 }
 
-bool MediaAgent::agentReqACK(const SipMessageApp& req)
+bool SessionAgent::agentReqACK(const SipMessageApp& req)
 {
     if (m_sessionPlay != nullptr)
     {
@@ -249,7 +249,7 @@ bool MediaAgent::agentReqACK(const SipMessageApp& req)
     return false;
 }
 
-bool MediaAgent::agentReqBYE(const SipMessageApp& req)
+bool SessionAgent::agentReqBYE(const SipMessageApp& req)
 {
     if (m_sessionPlay != nullptr)
     {
@@ -261,7 +261,7 @@ bool MediaAgent::agentReqBYE(const SipMessageApp& req)
     return false;
 }
 
-RtpNet::Type MediaAgent::parseNetType(const std::string& str) const
+RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
 {
     if (strCaseCmp(str, "RTP/AVP"))
     {
@@ -277,7 +277,7 @@ RtpNet::Type MediaAgent::parseNetType(const std::string& str) const
     }
 }
 
-bool MediaAgent::match(const std::string& method, const std::string& contentType)
+bool SessionAgent::match(const std::string& method, const std::string& contentType)
 {
     return strCaseCmp(method, "INVITE") == 0
             || strCaseCmp(method, "ACK") == 0
@@ -285,7 +285,7 @@ bool MediaAgent::match(const std::string& method, const std::string& contentType
             || strCaseCmp(contentType, "application/sdp") == 0;
 }
 
-bool MediaAgent::agent(const SipMessageApp& message)
+bool SessionAgent::agent(const SipMessageApp& message)
 {
     const char* method = message.getMethod();
 

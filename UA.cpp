@@ -1,67 +1,56 @@
 #include <iostream>
 #include <unistd.h>
+#include <sys/time.h>
 #include "UA.h"
-#include "RegistrationAgent.h"
-#include "MANSCDPAgent.h"
-#include "MediaAgent.h"
 
 UA::UA()
-{}
+{
+    bOnline = false;
+}
 
 UA::~UA()
 {}
 
-bool UA::postRecved(const SipMessageApp& message)
+bool UA::recvRegistrationResponse(const SipMessageApp& res)
 {
-    auto type = message.getType();
-
-    if (type == SipMessageApp::Request)
-    {
-        const std::string method = message.getMethod();
-        const std::string contentType = message.getContentType();
-        DEBUG_LOG << "Method: " << method << " Content-Type: " << contentType << std::endl;
-
-        for (auto agent : agents)
-        {
-            if (agent->match(method, contentType))
-            {
-                return agent->agent(message);
-            }
-        }
-
-        DEBUG_LOG << "Dismatched request body: " << std::endl << "===" << message.getBody() << "===" << std::endl;
-    }
-    else if (type == SipMessageApp::Response)
-    {
-        const std::string callID = message.getCallID();
-        DEBUG_LOG << "Call-ID: " << callID << std::endl;
-
-        for (auto agent : agents)
-        {
-            if (agent->match(callID))
-            {
-                return agent->agent(message);
-            }
-        }
-
-        DEBUG_LOG << "Dismatched response" << std::endl;
-    }
-    else
-    {
-        DEBUG_LOG << "Unknown message type" << std::endl;
-    }
-
-    return false;
+    return regAgent->agent(res);
 }
 
-bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
+bool UA::recvOutDialogRequest(const SipMessageApp& req)
 {
+    return mansAgent->agent(req);
+}
+
+bool UA::recvOutDialogResponse(const SipMessageApp& res, const SipMessageApp& req)
+{
+    return mansAgent->agent(res, req);
+}
+
+bool UA::recvSessionRequest(const SipMessageApp& req)
+{
+    return sessionAgent->agent(req);
+}
+
+void UA::setOnline()
+{
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
+    bOnline = true;
+    startKeepalive();
+}
+
+bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server, const KeepaliveInfo &keepalive)
+{
+    keepaliveInfo = keepalive;
+    
     /* 创建注册协议代理 */
-    agents.push_back(std::make_shared<RegistrationAgent>(this));
+    regAgent = std::make_shared<RegistrationAgent>(this);
+    agents.push_back(regAgent);
     /* 创建MANSCDP协议代理 */
-    agents.push_back(std::make_shared<MANSCDPAgent>(this));
+    mansAgent = std::make_shared<MANSCDPAgent>(this);
+    agents.push_back(mansAgent);
     /* 创建媒体协议代理 */
-    agents.push_back(std::make_shared<MediaAgent>(this));
+    sessionAgent = std::make_shared<SessionAgent>(this);
+    agents.push_back(sessionAgent);
 
     /* 创建sip用户代理 */
     sip = SipUserAgent::create(this, client, server);
@@ -79,8 +68,8 @@ bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::Serve
         return false;
     }
 
+#if 1
     /* 发起注册 */
-    const std::shared_ptr<RegistrationAgent> regAgent = std::dynamic_pointer_cast<RegistrationAgent>(agents[0]);
     if (regAgent != nullptr)
     {
         return regAgent->start();
@@ -89,6 +78,12 @@ bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::Serve
     {
         return false;
     }
+#else
+    XMLDocument doc;
+    doc.Parse("<Notify><CmdType>Keepalive</CmdType><SN>43</SN><DeviceID>34020000001110000001</DeviceID><Status>OK</Status></Notify>");
+    mansAgent->sendRequest(doc);
+    return false;
+#endif
 }
 
 bool UA::stop()
@@ -100,14 +95,25 @@ bool UA::stop()
 
 void UA::keepaliveProc()
 {
+    int32_t tick = 0x0FFFFFFF;
+
     while (bKeepaliveRunning)
     {
-        KeepAliveNotify::Request req;
-        statusProcess->getStatus(req);
-        XMLDocument xmldocReq;
-        KeepAliveNotify::serialize(req, xmldocReq);
-        const std::shared_ptr<MANSCDPAgent> agent = std::dynamic_pointer_cast<MANSCDPAgent>(agents[1]);
-        agent->agent(xmldocReq);
+        auto timeoutCount = mansAgent->getKeepaliveTimeoutCount();
+        if (timeoutCount > keepaliveInfo.timeoutCount)
+        {
+            // offline
+        }
+
+        if (tick - 3 > keepaliveInfo.interval)
+        {
+            tick = 0;
+            printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
+            mansAgent->sendKeepalive();
+        }
+
+        usleep(1000000);
+        tick++;
     }
 }
 
@@ -132,10 +138,7 @@ bool UA::stopKeepalive()
     return true;
 }
 
-bool UA::updateStatus(const KeepAliveNotify &notify)
+bool UA::updateStatus(const KeepAliveNotify::Request &notify)
 {
-    XMLDocument xmldocReq;
-    KeepAliveNotify::serialize(req, xmldocReq);
-    const std::shared_ptr<MANSCDPAgent> agent = std::dynamic_pointer_cast<MANSCDPAgent>(agents[1]);
-    agent->agent(xmldocReq);
+    return mansAgent->sendKeepalive(&notify);
 }

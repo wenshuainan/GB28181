@@ -1,11 +1,15 @@
 #include <strings.h>
 #include <iostream>
 #include "SipAdapter.h"
+// #include "rutil/Logger.hxx"
 #include "resip/stack/SipMessage.hxx"
 #include "resip/stack/OctetContents.hxx"
 #include "resip/stack/SdpContents.hxx"
 #include "resip/stack/PlainContents.hxx"
 #include "ResipUserAgent.h"
+#include "MANSCDPContents.h"
+
+// #define RESIPROCATE_SUBSYSTEM resip::Subsystem::APP
 
 SipMessageApp::SipMessageApp()
     : m_adapter(std::make_shared<SipMessageAdapter>())
@@ -19,6 +23,8 @@ void SipMessageApp::print() const
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
         m_adapter->instance->encode(std::cout);
+        // std::count << m_adapter->instance->brief() << std::endl;
+        // InfoLog(<< m_adapter->instance->brief() << std::endl);
     }
 }
 
@@ -73,75 +79,22 @@ const char* SipMessageApp::getReasonPhrase() const
     }
 }
 
-const char* SipMessageApp::getContentType() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Mime& type = m_adapter->instance->header(resip::h_ContentType);
-
-        if (type == resip::Mime("MANSCDP", "xml"))
-        {
-            return "MANSCDP/xml";
-        }
-        else if (type == resip::Mime("application", "sdp"))
-        {
-            return "application/sdp";
-        }
-        else if (type == resip::Mime("text", "plain"))
-        {
-            return "text/plain";
-        }
-    }
-
-    return "";
-}
-
-const char* SipMessageApp::getCallID() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        return m_adapter->instance->header(resip::h_CallId).value().c_str();
-    }
-    else
-    {
-        return "";
-    }
-}
-
-const char* SipMessageApp::getBody() const
+const char* SipMessageApp::getMANSCDPContents() const
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
         resip::Contents *contents = m_adapter->instance->getContents();
         if (contents)
         {
-            const resip::Mime& type = contents->getType();
-
-            if (type == resip::Mime("application", "octet-stream"))
+            MANSCDPContents *mans = dynamic_cast<MANSCDPContents*>(contents);
+            if (mans)
             {
-                resip::OctetContents *octet = dynamic_cast<resip::OctetContents*>(contents);
-                if (octet)
-                {
-                    return octet->octets().c_str();
-                }
-            }
-            else if (type == resip::Mime("application", "sdp"))
-            {
-            }
-            else if (type == resip::Mime("text", "plain"))
-            {
-                resip::PlainContents *plain = dynamic_cast<resip::PlainContents*>(contents);
-                if (plain)
-                {
-                    return plain->text().c_str();
-                }
+                return mans->xml().c_str();
             }
         }
     }
-    else
-    {
-        return "";
-    }
+    
+    return "";
 }
 
 int32_t SipMessageApp::getSdpSessionVersion() const
@@ -343,67 +296,81 @@ uint32_t SipMessageApp::getSdpMediaSSRC(int32_t index) const
     return 0;
 }
 
-void SipMessageApp::setAdapter(const SipMessageAdapter& adapter)
+bool SipMessageApp::setAdapter(const SipMessageAdapter& adapter)
 {
     if (m_adapter != nullptr)
     {
         m_adapter->instance = adapter.instance;
+        return true;
     }
+
+    return false;
 }
 
-void SipMessageApp::addField(const std::string& name, const std::string& value)
+bool SipMessageApp::setContentType(const std::string& type, const std::string& subtype)
 {
-    if (name.empty() || value.empty())
+    if (type.empty() || subtype.empty())
     {
-        return;
+        return false;
     }
-
-    const char *headerName = name.c_str();
-    int headerLen = name.length();
-    const char *start = value.c_str();
-    int len = value.length();
 
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        resip::Headers::Type type = resip::Headers::UNKNOWN;
-
-        if (strcasecmp(headerName, "Authorization") == 0)
-        {
-            type = resip::Headers::Authorization;
-        }
-        else if (strcasecmp(headerName, "Content-Type") == 0)
-        {
-            type = resip::Headers::ContentType;
-        }
-        else if (strcasecmp(headerName, "Content-Length") == 0)
-        {
-            type = resip::Headers::ContentLength;
-        }
-        else
-        {
-            type = resip::Headers::UNKNOWN;
-        }
-
-        /* 先移除现有的再添加 */
-        m_adapter->instance->remove(type);
-        m_adapter->instance->addHeader(type, headerName, headerLen, start, len);
+        m_adapter->instance->header(resip::h_ContentType) = resip::Mime(resip::Data(type), resip::Data(subtype));
+        return true;
     }
+
+    return false;
 }
 
-void SipMessageApp::addParameter(const std::string& fieldName, const std::string& parameterName, const std::string& value)
-{}
-
-void SipMessageApp::setBody(const std::string& body)
+bool SipMessageApp::setExpires(int32_t expires)
 {
-    if (body.empty())
+    if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        return;
+        m_adapter->instance->header(resip::h_Expires).value() = expires;
+        return true;
+    }
+
+    return false;
+}
+
+bool SipMessageApp::addExtensionField(const std::string& name, const std::string& value)
+{
+    if (name.empty() || value.empty())
+    {
+        return false;
+    }
+
+    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    {
+        const char *headerName = name.c_str();
+        int headerLen = name.length();
+        const char *start = value.c_str();
+        int len = value.length();
+
+        m_adapter->instance->addHeader(resip::Headers::UNKNOWN, headerName, headerLen, start, len);
+        return true;
+    }
+
+    return false;
+}
+
+bool SipMessageApp::setMANSCDPContents(const std::string& data)
+{
+    if (data.empty())
+    {
+        return false;
     }
     
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
-        m_adapter->instance->setBody(body.c_str(), body.length());
+        resip::Mime type("Application", "MANSCDP+xml");
+        MANSCDPContents contents(data, type);
+        m_adapter->instance->setContents(&contents);
+        return true;
     }
+
+    return false;
 }
 
 bool SipMessageApp::setSdp(int32_t version, const std::string& owner, const std::string& name)

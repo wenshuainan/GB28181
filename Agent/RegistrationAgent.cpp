@@ -30,23 +30,12 @@ bool RegistrationAgent::start()
     auto sip = m_ua->getSip();
 
     SipMessageApp message;
-    sip->genReqMessage(message, "REGISTER");
+    sip->makeReqMessage(message, "REGISTER");
 
     /* 添加GB版本号扩展头域（附录I） */
-    message.addField(GBVerName, GBVerValue);
+    message.addExtensionField(GBVerName, GBVerValue);
 
-    if (sip->send(message))
-    {
-        outCallID = message.getCallID();
-        DEBUG_LOG << "Call-ID: " << outCallID << std::endl;
-
-        return true;
-    }
-    else
-    {
-        outCallID.clear();
-        return false;
-    }
+    return sip->send(message);
 }
 
 bool RegistrationAgent::stop()
@@ -54,16 +43,11 @@ bool RegistrationAgent::stop()
     auto sip = m_ua->getSip();
 
     SipMessageApp message;
-    sip->genReqMessage(message, "REGISTER");
+    sip->makeReqMessage(message, "REGISTER");
 
-    message.addField("Expires", "0");
+    message.setExpires(0);
 
-    if (sip->send(message))
-    {
-        outCallID = message.getCallID();
-    }
-
-    return true;
+    return sip->send(message);
 }
 
 void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
@@ -74,6 +58,8 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
     switch (code)
     {
     case 200:
+        m_ua->setOnline(); //注册成功，设置在线状态
+
         if (oldState == Registration::REGISTERED)
         {
             newState = Registration::UNREGISTERED;

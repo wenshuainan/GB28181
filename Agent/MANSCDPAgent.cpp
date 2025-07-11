@@ -1,10 +1,11 @@
 #include "MANSCDPAgent.h"
 #include "tinyxml2.h"
 #include "UA.h"
+#include "A.2.5Notify.h"
 #include "A.2.6Response.h"
 #include "DevControl.h"
 #include "DevQuery.h"
-#include "A.2.5Notify.h"
+#include "DevStatus.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
@@ -29,37 +30,15 @@ bool MANSCDPAgent::match(const std::string& method, const std::string& contentTy
 
 bool MANSCDPAgent::agent(const SipMessageApp& message)
 {
-    auto type = message.getType();
+    /* 收到命令后返回 200 OK */
+    sendResponse200(message);
 
-    if (type == SipMessageApp::Type::Request)
+    XMLDocument doc;
+    if (doc.Parse(message.getMANSCDPContents()) != XML_SUCCESS)
     {
-        /* 收到命令后返回 200 OK */
-        sendResponse200(message);
-
-        XMLDocument doc;
-        if (doc.Parse(message.getBody()) != XML_SUCCESS)
-        {
-            return false;
-        }
-
-        std::string rootName = doc.RootElement()->Name();
-        for (auto i : requests)
-        {
-            if (i->match(rootName))
-            {
-                return i->dispatch(doc.FirstChildElement());
-            }
-        }
-    }
-    else
-    {
+        return false;
     }
 
-    return false;
-}
-
-bool MANSCDPAgent::agent(const XMLDocument& xmldocReq)
-{
     std::string rootName = doc.RootElement()->Name();
     for (auto i : requests)
     {
@@ -72,11 +51,36 @@ bool MANSCDPAgent::agent(const XMLDocument& xmldocReq)
     return false;
 }
 
+bool MANSCDPAgent::agent(const SipMessageApp& res, const SipMessageApp& req)
+{
+    XMLDocument doc;
+    if (doc.Parse(req.getMANSCDPContents()) != XML_SUCCESS)
+    {
+        return false;
+    }
+
+    std::string rootName = doc.RootElement()->Name();
+    for (auto i : requests)
+    {
+        if (i->match(rootName))
+        {
+            return i->dispatch(doc.FirstChildElement(), res.getCode());
+        }
+    }
+
+    return false;
+}
+
+int32_t MANSCDPAgent::getKeepaliveTimeoutCount() const
+{
+    return status->getTimeoutCount();
+}
+
 bool MANSCDPAgent::sendResponse200(const SipMessageApp& req) const
 {
     SipMessageApp message;
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->genResMessage(message, req, 200, "OK");
+    sip->makeResMessage(message, req, 200, "OK");
 
     return sip->send(message);
 }
@@ -85,12 +89,12 @@ bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
 {
     SipMessageApp message;
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->genReqMessage(message, "MESSAGE");
-    message.addField("Content-Type", "Application/MANSCDP+xml");
+    sip->makeReqMessage(message, "MESSAGE");
+    // message.setContentType("Application", "MANSCDP+xml");
 
     XMLPrinter printer;
     xmldocRes.Print(&printer);
-    message.setBody(printer.CStr());
+    message.setMANSCDPContents(printer.CStr());
 
     return sip->send(message);
 }
@@ -99,12 +103,49 @@ bool MANSCDPAgent::sendRequest(const XMLDocument& xmldocReq) const
 {
     SipMessageApp message;
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->genReqMessage(message, "MESSAGE");
-    message.addField("Content-Type", "Application/MANSCDP+xml");
+    sip->makeReqMessage(message, "MESSAGE");
+    // message.setContentType("Application", "MANSCDP+xml");
 
     XMLPrinter printer;
     xmldocReq.Print(&printer);
-    message.setBody(printer.CStr());
+    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
+
+    message.setMANSCDPContents(printer.CStr());
+
+    // printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
+    // message.print();
+    // return false;
 
     return sip->send(message);
+}
+
+bool MANSCDPAgent::sendKeepalive(const KeepAliveNotify::Request *notify) const
+{
+    KeepAliveNotify::Request req;
+
+    if (notify == nullptr)
+    {
+        status->getStatus(req);
+    }
+    else
+    {
+        req = *notify;
+    }
+
+    XMLDocument xmldocReq;
+    KeepAliveNotify::serialize(req, &xmldocReq);
+    XMLPrinter printer;
+    xmldocReq.Print(&printer);
+    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
+
+    std::string rootName = xmldocReq.RootElement()->Name();
+    for (auto i : requests)
+    {
+        if (i->match(rootName))
+        {
+            return i->dispatch(xmldocReq.FirstChildElement());
+        }
+    }
+
+    return false;
 }

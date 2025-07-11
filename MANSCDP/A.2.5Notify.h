@@ -1,6 +1,8 @@
 #ifndef A_2_5_NOTIFY_H
 #define A_2_5_NOTIFY_H
 
+#include <vector>
+#include <memory>
 #include "A.2.2CmdType.h"
 
 /* A.2.5 通知命令 */
@@ -16,7 +18,7 @@ private:
     std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    NotifyRequest(MANSCDPAgent *agent);
+    NotifyRequest(MANSCDPAgent *agent, Status *status);
     virtual ~NotifyRequest();
 
 public:
@@ -25,6 +27,7 @@ public:
 public:
     virtual bool match(const std::string& ReqType);
     virtual bool dispatch(const XMLElement *xmlReq);
+    virtual bool dispatch(const XMLElement *xmlReq, int32_t code);
 };
 
 /* A.2.5.2 状态信息报送 */
@@ -34,7 +37,7 @@ public:
     struct Request : NotifyRequest::Request
     {
         /* 〈! -- 命令类型:设备状态信息报送(必选)--〉 */
-        stringType cmdType;
+        stringType CmdType;
         /* 〈! -- 命令序列号(必选)--〉 */
         SNType SN;
         /* 〈! -- 源设备/系统编码(必选)--〉 */
@@ -44,7 +47,7 @@ public:
     };
 
 public:
-    KeepAliveNotify(MANSCDPAgent *agent);
+    KeepAliveNotify(MANSCDPAgent *agent, Status *status);
     virtual ~KeepAliveNotify();
 
 public:

@@ -108,7 +108,38 @@ int main()
     server.ipv4 = "192.168.137.1";
     server.port = 5060;
 
-    ua.start(client, server);
+    UA::KeepaliveInfo keepalive;
+    keepalive.interval = 60;
+    keepalive.timeoutCount = 3;
+
+    ua.start(client, server, keepalive);
+#elif 0
+    XMLDocument doc;
+    doc.Parse("<? xmlversion=\"1.0\"?> \
+                <Control> \
+                <CmdType>DeviceControl</CmdType> \
+                <SN>11</SN> \
+                <DeviceID>64010000041310000345</DeviceID> \
+                <PTZCmd>A50F4D1000001021</PTZCmd> \
+                <Info> \
+                <ControlPriority>5</ControlPriority> \
+                </Info> \
+                </Control>");
+
+    printf("rootelementname=%s\n", doc.RootElement()->Name());
+    XMLElement *first = doc.FirstChildElement();
+    printf("first element name=%s\n", first->Name());
+
+    XMLDocument seri;
+    XMLElement *rootele = seri.NewElement("Response");
+    seri.InsertEndChild(rootele);
+    XMLElement *first2 = seri.FirstChildElement();
+    XMLElement *cmd = seri.NewElement("CmdType");
+    cmd->SetText("DeviceControl");
+    first2->InsertEndChild(cmd);
+    XMLPrinter printer;
+    seri.Print(&printer);
+    printf("\n%s\n", printer.CStr());
 #elif 0
     RtpParticipant::Participant participant = {
         .destination = {"10.12.13.136", 1000},

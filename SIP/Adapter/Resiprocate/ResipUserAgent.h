@@ -23,8 +23,8 @@ public:
     virtual bool init();
     virtual bool recv(SipMessageApp& message);
     virtual bool send(const SipMessageApp& message);
-    virtual bool genReqMessage(SipMessageApp& req, const std::string& method);
-    virtual bool genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "");
+    virtual bool makeReqMessage(SipMessageApp& req, const std::string& method);
+    virtual bool makeResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "");
 
 public:
     void makeResponse(resip::SipMessage& response, 
@@ -34,16 +34,18 @@ public:
 
 private:
     void threadProc();
-    void postAdapter(const resip::SipMessage& sipMessage);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////
-    void onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
-    void onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
-    void onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
-    int onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg);
+    virtual void onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    virtual void onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    virtual void onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
+    virtual int onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg);
 
-    void onMessageArrived(resip::ServerPagerMessageHandle, const resip::SipMessage& message);
+    // OutOfDialogHandler //////////////////////////////////////////////////////////
+    virtual void onSuccess(resip::ClientOutOfDialogReqHandle, const resip::SipMessage& response);
+    virtual void onFailure(resip::ClientOutOfDialogReqHandle, const resip::SipMessage& response);
+    virtual void onReceivedRequest(resip::ServerOutOfDialogReqHandle, const resip::SipMessage& request);
 };
 
 #endif

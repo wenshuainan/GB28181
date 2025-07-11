@@ -314,8 +314,6 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mDum->setMasterProfile(mProfile);
 
    mDum->registerForConnectionTermination(this);
-
-   mDum->setServerPagerMessageHandler(this);
 }
 
 BasicClientUserAgent::~BasicClientUserAgent()

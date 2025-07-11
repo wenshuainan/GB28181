@@ -34,10 +34,7 @@ public:
     const char* getMethod() const;
     int getCode() const;
     const char* getReasonPhrase() const;
-    const char* getContentType() const;
-
-    const char* getCallID() const;
-    const char* getBody() const;
+    const char* getMANSCDPContents() const;
 
     int32_t getSdpSessionVersion() const;
     const char* getSdpSessionOwner() const;
@@ -50,12 +47,12 @@ public:
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
 
-    void setAdapter(const SipMessageAdapter& adapter);
+    bool setAdapter(const SipMessageAdapter& adapter);
 
-    void addField(const std::string& name, const std::string& value);
-    void addParameter(const std::string& fName, const std::string& pName, const std::string& value);
-
-    void setBody(const std::string& body);
+    bool setContentType(const std::string& type, const std::string& subtype);
+    bool setExpires(int32_t expires);
+    bool addExtensionField(const std::string& name, const std::string& value);
+    bool setMANSCDPContents(const std::string& data);
 
     bool setSdp(int32_t version, const std::string& owner, const std::string& name);
     bool setSdpConnectionIpv4(const std::string& ipv4);
@@ -98,7 +95,10 @@ protected:
     UA *app;
 
 protected:
-    bool postApp(UA *app, const SipMessageApp& message);
+    bool postRegistrationResponse(const SipMessageApp& res);
+    bool postOutDialogRequest(const SipMessageApp& req);
+    bool postOutDialogResponse(const SipMessageApp& res, const SipMessageApp& req);
+    bool postSessionRequest(const SipMessageApp& req);
 
 public:
     virtual bool init() = 0;
@@ -106,10 +106,10 @@ public:
     virtual bool send(const SipMessageApp& message) = 0;
 
     /* 根据method和requestUri生成请求消息，自动填充头域，输出req */
-    virtual bool genReqMessage(SipMessageApp& req, const std::string& method) = 0;
+    virtual bool makeReqMessage(SipMessageApp& req, const std::string& method) = 0;
 
     /* 根据req生成响应消息，自动填充头域，输出res */
-    virtual bool genResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "") = 0;
+    virtual bool makeResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "") = 0;
 
 public:
     SipUserAgent() {}

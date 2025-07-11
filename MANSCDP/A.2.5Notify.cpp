@@ -1,9 +1,9 @@
 #include "A.2.5Notify.h"
 #include "MANSCDPAgent.h"
 
-NotifyRequest::NotifyRequest(MANSCDPAgent *agent)
+NotifyRequest::NotifyRequest(MANSCDPAgent *agent, Status *status)
 {
-    spec.push_back(std::make_shared<KeepAliveNotify>(agent));
+    spec.push_back(std::make_shared<KeepAliveNotify>(agent, status));
 }
 
 NotifyRequest::~NotifyRequest()
@@ -13,10 +13,16 @@ NotifyRequest::~NotifyRequest()
 
 bool NotifyRequest::serialize(const Request& req, XMLDocument *xmldocReq)
 {
-    XMLElement *rootElement = xmldocRes->NewElement("Notify");
+    XMLDeclaration *dec = xmldocReq->NewDeclaration("xml version=\"1.0\"");
+    if (dec != nullptr)
+    {
+        xmldocReq->InsertFirstChild(dec);
+    }
+
+    XMLElement *rootElement = xmldocReq->NewElement("Notify");
     if (rootElement != nullptr)
     {
-        return xmldocRes->InsertEndChild(rootElement) != nullptr;
+        return xmldocReq->InsertEndChild(rootElement) != nullptr;
     }
     else
     {
@@ -38,10 +44,25 @@ bool NotifyRequest::dispatch(const XMLElement *xmlReq)
             return i->handle(xmlReq);
         }
     }
+
+    return false;
 }
 
-KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent)
-    : CmdTypeSpecRequest(agent)
+bool NotifyRequest::dispatch(const XMLElement *xmlReq, int32_t code)
+{
+    for (auto i : spec)
+    {
+        if (i->match(xmlReq))
+        {
+            return i->handle(code);
+        }
+    }
+
+    return false;
+}
+
+KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent, Status *status)
+    : CmdTypeSpecRequest(agent, status)
 {}
 
 KeepAliveNotify::~KeepAliveNotify()
@@ -50,6 +71,12 @@ KeepAliveNotify::~KeepAliveNotify()
 bool KeepAliveNotify::serialize(const Request& req, XMLDocument *xmldocReq)
 {
     if (!NotifyRequest::serialize(req, xmldocReq))
+    {
+        return false;
+    }
+
+    XMLElement *rootElement = xmldocReq->LastChildElement();
+    if (rootElement == nullptr)
     {
         return false;
     }
@@ -75,14 +102,15 @@ bool KeepAliveNotify::serialize(const Request& req, XMLDocument *xmldocReq)
 
 bool KeepAliveNotify::match(const XMLElement *xmlReq)
 {
-    XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (xmlCmdType == nullptr)
     {
         return false;
     }
     if (xmlCmdType->GetText() != nullptr)
     {
-        return xmlCmdType->GetText() == "Keepalive";
+        std::string CmdType = xmlCmdType->GetText();
+        return CmdType == "Keepalive";
     }
     else
     {
@@ -92,10 +120,20 @@ bool KeepAliveNotify::match(const XMLElement *xmlReq)
 
 bool KeepAliveNotify::handle(const XMLElement *xmlReq)
 {
-    m_agent->sendRequest(xmlReq);
+    XMLPrinter printer;
+    xmlReq->GetDocument()->Print(&printer);
+    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
+    if (m_agent->sendRequest(*(xmlReq->GetDocument())))
+    {
+        m_status->addSentCount();
+        return true;
+    }
+
+    return false;
 }
 
 bool KeepAliveNotify::handle(int32_t code)
 {
-    m_status;
+    m_status->addRecvedCount();
+    return true;
 }

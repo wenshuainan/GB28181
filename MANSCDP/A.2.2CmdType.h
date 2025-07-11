@@ -6,6 +6,7 @@
 class MANSCDPAgent;
 class Control;
 class Query;
+class Status;
 
 /*  A.2.2.1 请求命令结构头文件定义
    〈elementref="tg:Control"/〉
@@ -21,6 +22,7 @@ public:
 public:
     virtual bool match(const std::string& ReqType) = 0;
     virtual bool dispatch(const XMLElement *xmlReq) = 0;
+    virtual bool dispatch(const XMLElement *xmlReq, int32_t code) { return true; } // 分发处理回复
 };
 
 /* A.2.3 控制命令

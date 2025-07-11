@@ -1,5 +1,5 @@
-#ifndef MEDIA_AGENT_H
-#define MEDIA_AGENT_H
+#ifndef SESSION_AGENT_H
+#define SESSION_AGENT_H
 
 #include <memory>
 #include <thread>
@@ -10,7 +10,7 @@
 #include "PS/Packetizer/PacketizedES.h"
 #include "RTP/RtpParticipant.h"
 
-class MediaAgent;
+class SessionAgent;
 class Session;
 
 struct Connection
@@ -20,7 +20,7 @@ struct Connection
 
 class Media : public PSCallback
 {
-    friend class MediaAgent;
+    friend class SessionAgent;
     friend class Session;
 
 public:
@@ -62,7 +62,7 @@ public:
 
 class Session
 {
-    friend class MediaAgent; // 允许MediaAgent访问Session的私有成员
+    friend class SessionAgent; // 允许MediaAgent访问Session的私有成员
     friend class Media;
 
 public:
@@ -76,11 +76,11 @@ public:
 
 private:
     std::vector<std::shared_ptr<Media>> media;
-    MediaAgent *m_agent;
+    SessionAgent *m_agent;
     std::shared_ptr<Connection> m_conInfo;
 
 public:
-    Session(MediaAgent *agent, const Attr& attr);
+    Session(SessionAgent *agent, const Attr& attr);
     virtual ~Session();
 
 private:
@@ -91,7 +91,7 @@ public:
     bool stop();
 };
 
-class MediaAgent : public Agent
+class SessionAgent : public Agent
 {
     friend class UA;
     friend class Session; // 允许Session访问MediaAgent的私有成员play
@@ -102,8 +102,8 @@ private:
     std::shared_ptr<Session> m_sessionPlay; //实时视音频点播
 
 public:
-    MediaAgent(UA *ua);
-    ~MediaAgent();
+    SessionAgent(UA *ua);
+    ~SessionAgent();
 
 private:
     bool agentReqINVITE(const SipMessageApp& req);

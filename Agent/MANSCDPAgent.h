@@ -31,12 +31,14 @@ public:
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipMessageApp& message);
-    bool agent(const XMLDocument& xmldocReq);
+    bool agent(const SipMessageApp& res, const SipMessageApp& req);
+    int32_t getKeepaliveTimeoutCount() const;
 
 public:
     bool sendResponse200(const SipMessageApp& req) const; //无应答命令
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
     bool sendRequest(const XMLDocument& xmldocReq) const;
+    bool sendKeepalive(const KeepAliveNotify::Request *notify = nullptr) const;
 };
 
 #endif

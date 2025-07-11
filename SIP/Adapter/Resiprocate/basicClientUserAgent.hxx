@@ -14,8 +14,8 @@
 #include "resip/dum/OutOfDialogHandler.hxx"
 #include "resip/dum/InviteSessionHandler.hxx"
 #include "resip/dum/DialogUsageManager.hxx"
-#include "resip/dum/PagerMessageHandler.hxx"
 #include "resip/dum/Postable.hxx"
+#include "resip/dum/PagerMessageHandler.hxx"
 
 namespace resip
 {
@@ -31,8 +31,7 @@ class BasicClientUserAgent : public BasicClientCmdLineParser,
                              public OutOfDialogHandler, 
                              public InviteSessionHandler,
                              public DumShutdownHandler,
-                             public RedirectHandler,
-                             public ServerPagerMessageHandler
+                             public RedirectHandler
 {
 public:
    BasicClientUserAgent(const SipUserAgent::ClientInfo& info);

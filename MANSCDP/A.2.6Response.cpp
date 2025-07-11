@@ -2,6 +2,12 @@
 
 bool CmdTypeResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
+    XMLDeclaration *dec = xmldocRes->NewDeclaration("xml version=\"1.0\"");
+    if (dec != nullptr)
+    {
+        xmldocRes->InsertFirstChild(dec);
+    }
+
     XMLElement *rootElement = xmldocRes->NewElement("Response");
     if (rootElement != nullptr)
     {
@@ -20,7 +26,7 @@ bool DeviceControlResponse::serialize(const Response& res, XMLDocument *xmldocRe
         return false;
     }
 
-    XMLNode *rootElement = xmldocRes->FirstChild();
+    XMLElement *rootElement = xmldocRes->LastChildElement();
     if (rootElement == nullptr)
     {
         return false;
@@ -52,7 +58,7 @@ bool CatalogQueryResponse::serialize(const Response& res, XMLDocument *xmldocRes
         return false;
     }
 
-    XMLNode *rootElement = xmldocRes->FirstChild();
+    XMLElement *rootElement = xmldocRes->LastChildElement();
     if (rootElement == nullptr)
     {
         return false;
@@ -98,7 +104,7 @@ bool DeviceInfoQueryResponse::serialize(const Response& res, XMLDocument *xmldoc
         return false;
     }
 
-    XMLNode *rootElement = xmldocRes->FirstChild();
+    XMLElement *rootElement = xmldocRes->LastChildElement();
     if (rootElement == nullptr)
     {
         return false;
