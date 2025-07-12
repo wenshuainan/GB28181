@@ -125,7 +125,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::Serve
 
 bool UA::stop()
 {
-    startKeepalive();
+    stopKeepalive();
     m_agents.clear();
     m_sip->destroy();
     m_bOnline = false;
