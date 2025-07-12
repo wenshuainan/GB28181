@@ -4,7 +4,7 @@
 #include "SipAdapter.h"
 #include "basicClientUserAgent.hxx"
 
-struct SipMessageAdapter
+struct SipAdapterMessage
 {
     std::shared_ptr<resip::SipMessage> instance;
 };
@@ -12,28 +12,24 @@ struct SipMessageAdapter
 class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
 private:
-    bool bInit;
+    bool mbInit;
     resip::Uri mServerUri;
+    resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
+    resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
     
 public:
     ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
     virtual ~ResipUserAgent();
 
-public:
-    virtual bool init();
-    virtual bool recv(SipMessageApp& message);
-    virtual bool send(const SipMessageApp& message);
-    virtual bool makeReqMessage(SipMessageApp& req, const std::string& method);
-    virtual bool makeResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "");
-
-public:
-    void makeResponse(resip::SipMessage& response, 
-                        const resip::SipMessage& request, 
-                        int responseCode, 
-                        const resip::Data& reason = resip::Data::Empty) const;
-
 private:
     void threadProc();
+
+public:
+    virtual bool init();
+    virtual bool makeRegistrationRequest(SipUserMessage& req);
+    virtual bool sendRegistration(const SipUserMessage& req);
+    virtual bool sendKeepaliveRequest(const XMLDocument& notify);
+    virtual bool sendMANSCDPResponse(const XMLDocument& res);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////
@@ -42,10 +38,10 @@ protected:
     virtual void onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
     virtual int onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg);
 
-    // OutOfDialogHandler //////////////////////////////////////////////////////////
-    virtual void onSuccess(resip::ClientOutOfDialogReqHandle, const resip::SipMessage& response);
-    virtual void onFailure(resip::ClientOutOfDialogReqHandle, const resip::SipMessage& response);
-    virtual void onReceivedRequest(resip::ServerOutOfDialogReqHandle, const resip::SipMessage& request);
+    // PagerMessageHandler //////////////////////////////////////////////////////////
+    virtual void onSuccess(resip::ClientPagerMessageHandle, const resip::SipMessage& status);
+    virtual void onFailure(resip::ClientPagerMessageHandle, const resip::SipMessage& status, std::unique_ptr<resip::Contents> contents);
+    virtual void onMessageArrived(resip::ServerPagerMessageHandle, const resip::SipMessage& message);
 };
 
 #endif

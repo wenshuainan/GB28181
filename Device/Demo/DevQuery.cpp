@@ -20,16 +20,17 @@ bool DevQuery::process(const CatalogQuery::Request& req, CatalogQueryResponse::R
     res.SumNum = 1;
     res.DeviceList.Num = 1;
     res.DeviceList.item.resize(res.DeviceList.Num.getValue());
-    res.DeviceList.item[0].DeviceID = req.DeviceID;
+    res.DeviceList.item[0].DeviceID = "34020000001310000001";
     res.DeviceList.item[0].Name = "DemoDev";
-    res.DeviceList.item[0].Manufacturer = "???";
-    res.DeviceList.item[0].Model = "???";
-    res.DeviceList.item[0].CivilCode = "12345678";
-    res.DeviceList.item[0].Address = "???";
-    res.DeviceList.item[0].Parental = 0;
-    res.DeviceList.item[0].ParentID = "1234567890";
+    res.DeviceList.item[0].Manufacturer = "Manufacturer 1";
+    res.DeviceList.item[0].Model = "Model 1";
+    res.DeviceList.item[0].CivilCode = "CivilCode 1";
+    res.DeviceList.item[0].Address = "Address 1";
+    res.DeviceList.item[0].Parental = 1;
+    res.DeviceList.item[0].ParentID = req.DeviceID.getStr();
     res.DeviceList.item[0].RegisterWay = 1;
     res.DeviceList.item[0].Secrecy = 0;
+    res.DeviceList.item[0].Status = statusType::ON;
 
     return true;
 }
@@ -46,9 +47,9 @@ bool DevQuery::process(const DeviceInfoQuery::Request& req, DeviceInfoQueryRespo
     res.DeviceID = req.DeviceID;
     res.DeviceName = "DemoDev";
     res.Result = resultType::OK;
-    res.Manufacturer = "???";
-    res.Model = "???";
-    res.Firmware = "1.0";
+    res.Manufacturer = "Manufacturer 1";
+    res.Model = "Model 1";
+    res.Firmware = "Firmware 1.0";
 
     return true;
 }

@@ -31,10 +31,17 @@ MANSCDPContents::MANSCDPContents()
      mXml()
 {}
 
-MANSCDPContents::MANSCDPContents(const Data& xml)
-   : Contents(getStaticType()),
-     mXml(xml)
-{}
+MANSCDPContents::MANSCDPContents(const XMLDocument& xml)
+   : Contents(getStaticType())
+{
+   xml.DeepCopy(&mXml);
+}
+
+MANSCDPContents::MANSCDPContents(const Data& text)
+   : Contents(getStaticType())
+{
+   mXml.Parse(text.c_str());
+}
 
 MANSCDPContents::MANSCDPContents(const HeaderFieldValue& hfv, const Mime& contentsType)
    : Contents(hfv, contentsType),
@@ -42,16 +49,18 @@ MANSCDPContents::MANSCDPContents(const HeaderFieldValue& hfv, const Mime& conten
 {
 }
  
-MANSCDPContents::MANSCDPContents(const Data& xml, const Mime& contentsType)
+MANSCDPContents::MANSCDPContents(const Data& text, const Mime& contentsType)
    : Contents(contentsType),
-     mXml(xml)
+     mXml()
 {
+   mXml.Parse(text.c_str());
 }
 
 MANSCDPContents::MANSCDPContents(const MANSCDPContents& rhs)
    : Contents(rhs),
-     mXml(rhs.mXml)
+     mXml()
 {
+   rhs.mXml.DeepCopy(&mXml);
 }
 
 MANSCDPContents::~MANSCDPContents()
@@ -64,7 +73,7 @@ MANSCDPContents::operator=(const MANSCDPContents& rhs)
    if (this != &rhs)
    {
       Contents::operator=(rhs);
-      mXml = rhs.mXml;
+      rhs.mXml.DeepCopy(&mXml);
    }
    return *this;
 }
@@ -86,7 +95,10 @@ EncodeStream&
 MANSCDPContents::encodeParsed(EncodeStream& str) const
 {
    //DebugLog(<< "MANSCDPContents::encodeParsed " << mXml);
-   str << mXml;
+
+   XMLPrinter printer;
+   mXml.Print(&printer);
+   str << printer.CStr();
    return str;
 }
 
@@ -95,9 +107,11 @@ MANSCDPContents::parse(ParseBuffer& pb)
 {
    //DebugLog(<< "MANSCDPContents::parse: " << pb.position());
 
+   Data data;
    const char* anchor = pb.position();
    pb.skipToEnd();
-   pb.data(mXml, anchor);
+   pb.data(data, anchor);
+   mXml.Parse(data.c_str());
 
    //DebugLog("MANSCDPContents::parsed <" << mXml << ">" );
 }

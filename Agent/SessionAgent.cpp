@@ -190,7 +190,7 @@ SessionAgent::SessionAgent(UA *ua) : Agent(ua)
 SessionAgent::~SessionAgent()
 {}
 
-bool SessionAgent::agentReqINVITE(const SipMessageApp& req)
+bool SessionAgent::agentReqINVITE(const SipUserMessage& req)
 {
     std::string name = req.getSdpSessionName();
 
@@ -238,7 +238,7 @@ bool SessionAgent::agentReqINVITE(const SipMessageApp& req)
     }
 }
 
-bool SessionAgent::agentReqACK(const SipMessageApp& req)
+bool SessionAgent::agentReqACK(const SipUserMessage& req)
 {
     if (m_sessionPlay != nullptr)
     {
@@ -249,7 +249,7 @@ bool SessionAgent::agentReqACK(const SipMessageApp& req)
     return false;
 }
 
-bool SessionAgent::agentReqBYE(const SipMessageApp& req)
+bool SessionAgent::agentReqBYE(const SipUserMessage& req)
 {
     if (m_sessionPlay != nullptr)
     {
@@ -285,7 +285,7 @@ bool SessionAgent::match(const std::string& method, const std::string& contentTy
             || strCaseCmp(contentType, "application/sdp") == 0;
 }
 
-bool SessionAgent::agent(const SipMessageApp& message)
+bool SessionAgent::agent(const SipUserMessage& message)
 {
     const char* method = message.getMethod();
 

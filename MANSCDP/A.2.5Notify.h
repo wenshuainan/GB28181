@@ -27,7 +27,6 @@ public:
 public:
     virtual bool match(const std::string& ReqType);
     virtual bool dispatch(const XMLElement *xmlReq);
-    virtual bool dispatch(const XMLElement *xmlReq, int32_t code);
 };
 
 /* A.2.5.2 状态信息报送 */
@@ -56,7 +55,6 @@ public:
 public:
     virtual bool match(const XMLElement *xmlReq);
     virtual bool handle(const XMLElement *xmlReq);
-    virtual bool handle(int32_t code);
 };
 
 /* A.2.5.3 报警通知 */

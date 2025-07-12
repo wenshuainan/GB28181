@@ -19,7 +19,7 @@ bool RegistrationAgent::match(const std::string& method, const std::string& cont
     return false; //只作为Register Client，不处理Register请求
 }
 
-bool RegistrationAgent::agent(const SipMessageApp& message)
+bool RegistrationAgent::agent(const SipUserMessage& message)
 {
     changeDevState(message.getCode(), message.getReasonPhrase());
     return true;
@@ -29,25 +29,25 @@ bool RegistrationAgent::start()
 {
     auto sip = m_ua->getSip();
 
-    SipMessageApp message;
-    sip->makeReqMessage(message, "REGISTER");
+    SipUserMessage message;
+    sip->makeRegistrationRequest(message);
 
     /* 添加GB版本号扩展头域（附录I） */
     message.addExtensionField(GBVerName, GBVerValue);
 
-    return sip->send(message);
+    return sip->sendRegistration(message);
 }
 
 bool RegistrationAgent::stop()
 {
     auto sip = m_ua->getSip();
 
-    SipMessageApp message;
-    sip->makeReqMessage(message, "REGISTER");
+    SipUserMessage message;
+    sip->makeRegistrationRequest(message);
 
     message.setExpires(0);
 
-    return sip->send(message);
+    return sip->sendRegistration(message);
 }
 
 void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
@@ -74,7 +74,6 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
         break;
     
     default:
-        DEBUG_LOG << "Unkown code: " << code << std::endl;
         newState = Registration::REGISTER_FAILED;
         break;
     }

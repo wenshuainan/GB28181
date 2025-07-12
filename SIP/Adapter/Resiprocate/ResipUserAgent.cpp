@@ -2,41 +2,45 @@
 #include <thread>
 #include "ResipUserAgent.h"
 #include "UA.h"
-#include "resip/dum/ClientOutOfDialogReq.hxx"
+#include "MANSCDPContents.h"
+#include "resip/dum/ClientPagerMessage.hxx"
+#include "resip/dum/ServerPagerMessage.hxx"
 
-std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *app, const ClientInfo& client, const ServerInfo& server)
+bool SipUserAgent::postRegistrationResponse(const SipUserMessage& res)
+{
+    return m_user->dispatchRegistrationResponse(res);
+}
+
+bool SipUserAgent::postKeepaliveResponse(int32_t code)
+{
+    return m_user->dispatchKeepaliveResponse(code);
+}
+
+bool SipUserAgent::postMANSCDPRequest(const XMLDocument &req)
+{
+    return m_user->dispatchMANSCDPRequest(req);
+}
+
+bool SipUserAgent::postSessionRequest(const SipUserMessage& req)
+{
+    return m_user->dispatchSessionRequest(req);
+}
+
+std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *user, const ClientInfo& client, const ServerInfo& server)
 {
     std::shared_ptr<SipUserAgent> sip = std::make_shared<ResipUserAgent>(client, server);
 
     if (sip != nullptr)
     {
-        sip->app = app;
+        sip->m_user = user;
     }
 
     return sip;
 }
 
 bool SipUserAgent::destroy()
-{}
-
-bool SipUserAgent::postRegistrationResponse(const SipMessageApp& res)
 {
-    return app->recvRegistrationResponse(res);
-}
-
-bool SipUserAgent::postOutDialogRequest(const SipMessageApp& req)
-{
-    return app->recvOutDialogRequest(req);
-}
-
-bool SipUserAgent::postOutDialogResponse(const SipMessageApp& res, const SipMessageApp& req)
-{
-    return app->recvOutDialogResponse(res, req);
-}
-
-bool SipUserAgent::postSessionRequest(const SipMessageApp& req)
-{
-    return app->recvSessionRequest(req);
+    return false;
 }
 
 ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
@@ -54,7 +58,7 @@ ResipUserAgent::~ResipUserAgent()
 
 void ResipUserAgent::threadProc()
 {
-    while (bInit)
+    while (mbInit)
     {
         process(1000);
     }
@@ -62,119 +66,85 @@ void ResipUserAgent::threadProc()
 
 bool ResipUserAgent::init()
 {
+    mKeepaliveHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
+    mMANSCDPResponseHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
+
     startup();
 
-    bInit = true;
+    mbInit = true;
     std::thread t(&ResipUserAgent::threadProc, this);
     t.detach();
 
     return true;
 }
 
-bool ResipUserAgent::recv(SipMessageApp& message)
+bool ResipUserAgent::makeRegistrationRequest(SipUserMessage& req)
 {
-    return false;
+    std::shared_ptr<resip::SipMessage> reg = mDum->makeRegistration(resip::NameAddr(mAor));
+    if (reg == nullptr)
+    {
+        return false;
+    }
+
+    /* set with GB28181 required format */
+    reg->header(resip::h_RequestLine).uri() = mServerUri;
+
+    SipAdapterMessage adapter = {
+        .instance = reg
+    };
+    req.setAdapter(adapter);
+    return true;
 }
 
-bool ResipUserAgent::send(const SipMessageApp& message)
+bool ResipUserAgent::sendRegistration(const SipUserMessage& req)
 {
-    const std::shared_ptr<SipMessageAdapter> &adapter = message.getAdapter();
+    const std::shared_ptr<SipAdapterMessage> &adapter = req.getAdapter();
     if (adapter == nullptr || adapter->instance == nullptr)
     {
         return false;
     }
 
-    std::cout << "Debug: SipMessageAdapter reference count = " << adapter.use_count() << std::endl;
     mDum->send(adapter->instance);
     return true;
 }
 
-bool ResipUserAgent::makeReqMessage(SipMessageApp& req, const std::string& method)
+bool ResipUserAgent::sendKeepaliveRequest(const XMLDocument &notify)
 {
-    if (req.getAdapter() == nullptr)
+    if (!mKeepaliveHandle.isValid())
     {
         return false;
     }
 
-    if (method == "REGISTER")
-    {
-        std::shared_ptr<resip::SipMessage> message = mDum->makeRegistration(resip::NameAddr(mAor));
-        if (message == nullptr)
-        {
-            return false;
-        }
-
-        /* set with GB28181 required format */
-        message->header(resip::h_RequestLine).uri() = mServerUri;
-
-        SipMessageAdapter adapter = {
-            .instance = message
-        };
-        req.setAdapter(adapter);
-        return true;
-    }
-    else
-    {
-        std::shared_ptr<resip::SipMessage> message = mDum->makeOutOfDialogRequest(resip::NameAddr(mServerUri), resip::MESSAGE);
-        if (message == nullptr)
-        {
-            return false;
-        }
-
-        SipMessageAdapter adapter = {
-            .instance = message
-        };
-        req.setAdapter(adapter);
-        return true;
-    }
-
-    return false;
+    std::unique_ptr<resip::Contents> contents(new MANSCDPContents(notify));
+    mKeepaliveHandle.get()->page(std::move(contents));
+    return true;
 }
 
-bool ResipUserAgent::makeResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase)
+bool ResipUserAgent::sendMANSCDPResponse(const XMLDocument &res)
 {
-    const std::shared_ptr<SipMessageAdapter> &reqAdapter = req.getAdapter();
-    if (reqAdapter == nullptr || reqAdapter->instance == nullptr)
+    if (!mMANSCDPResponseHandle.isValid())
     {
         return false;
     }
 
-    SipMessageAdapter adapter;
-    adapter.instance = std::make_shared<resip::SipMessage>();
-    if (adapter.instance != nullptr)
-    {
-        makeResponse(*(adapter.instance), *(reqAdapter->instance), code, reasonPhrase);
-        res.setAdapter(adapter);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void
-ResipUserAgent::makeResponse(resip::SipMessage& response,
-                                 const resip::SipMessage& request,
-                                 int responseCode,
-                                 const resip::Data& reason) const
-{
-   resip_assert(request.isRequest());
-   resip::Helper::makeResponse(response, request, responseCode, reason);
+    std::unique_ptr<resip::Contents> contents(new MANSCDPContents(res));
+    mMANSCDPResponseHandle.get()->page(std::move(contents));
+    return true;
 }
 
 void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
 {
     
-    SipMessageAdapter messageAdapter = {
+    SipAdapterMessage messageAdapter = {
         .instance = std::make_shared<resip::SipMessage>(response)
     };
     
-    SipMessageApp messageApp;
+    SipUserMessage messageApp;
     messageApp.setAdapter(messageAdapter);
     postRegistrationResponse(messageApp);
 }
 
+// Registration Handler ////////////////////////////////////////////////////////
 void ResipUserAgent::onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
 {
     onSuccess(h, response);
@@ -192,34 +162,27 @@ int ResipUserAgent::onRequestRetry(resip::ClientRegistrationHandle h, int retryM
     return mRegistrationRetryDelayTime;
 }
 
-void ResipUserAgent::onSuccess(resip::ClientOutOfDialogReqHandle h, const resip::SipMessage& response)
+// PagerMessageHandler //////////////////////////////////////////////////////////
+void ResipUserAgent::onSuccess(ClientPagerMessageHandle h, const SipMessage& status)
 {
-    SipMessageAdapter adapterRes = {
-        .instance = std::make_shared<resip::SipMessage>(response)
-    };
-    SipMessageAdapter adapterReq = {
-        .instance = std::make_shared<resip::SipMessage>(h->getRequest())
-    };
-    
-    SipMessageApp AppRes;
-    AppRes.setAdapter(adapterRes);
-    SipMessageApp AppReq;
-    AppReq.setAdapter(adapterReq);
-    postOutDialogResponse(AppRes, AppReq);
+    if (h == mKeepaliveHandle)
+    {
+        postKeepaliveResponse(status.header(resip::h_StatusLine).statusCode());
+    }
 }
 
-void ResipUserAgent::onFailure(resip::ClientOutOfDialogReqHandle h, const resip::SipMessage& response)
-{
-    onSuccess(h, response);
-}
+void ResipUserAgent::onFailure(ClientPagerMessageHandle h, const SipMessage& status, std::unique_ptr<Contents> contents)
+{}
 
-void ResipUserAgent::onReceivedRequest(resip::ServerOutOfDialogReqHandle h, const resip::SipMessage& request)
+void ResipUserAgent::onMessageArrived(ServerPagerMessageHandle h, const SipMessage& message)
 {
-    SipMessageAdapter adapterReq = {
-        .instance = std::make_shared<resip::SipMessage>(request)
-    };
-    
-    SipMessageApp AppReq;
-    AppReq.setAdapter(adapterReq);
-    postOutDialogRequest(AppReq);
+    auto ok = h->accept();
+    h->send(std::move(ok));
+
+    Contents *contents = message.getContents();
+    if (contents != nullptr)
+    {
+        MANSCDPContents *mans = dynamic_cast<MANSCDPContents *>(contents);
+        postMANSCDPRequest(mans->xml());
+    }
 }

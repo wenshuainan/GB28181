@@ -20,7 +20,7 @@ public:
 
 public:
     bool match(const std::string& method, const std::string& contentType);
-    bool agent(const SipMessageApp& message);
+    bool agent(const SipUserMessage& message);
 
 private:
     void changeDevState(int code, const std::string& reasonPhrase);

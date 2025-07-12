@@ -1,7 +1,6 @@
 #include <strings.h>
 #include <iostream>
 #include "SipAdapter.h"
-// #include "rutil/Logger.hxx"
 #include "resip/stack/SipMessage.hxx"
 #include "resip/stack/OctetContents.hxx"
 #include "resip/stack/SdpContents.hxx"
@@ -9,57 +8,280 @@
 #include "ResipUserAgent.h"
 #include "MANSCDPContents.h"
 
-// #define RESIPROCATE_SUBSYSTEM resip::Subsystem::APP
-
-SipMessageApp::SipMessageApp()
-    : m_adapter(std::make_shared<SipMessageAdapter>())
+SipUserMessage::SipUserMessage()
+    : m_adapter(std::make_shared<SipAdapterMessage>())
 {}
 
-SipMessageApp::~SipMessageApp()
+SipUserMessage::~SipUserMessage()
 {}
 
-void SipMessageApp::print() const
+void SipUserMessage::print() const
 {
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
-        m_adapter->instance->encode(std::cout);
-        // std::count << m_adapter->instance->brief() << std::endl;
-        // InfoLog(<< m_adapter->instance->brief() << std::endl);
+        return;
     }
+
+    m_adapter->instance->encode(std::cout);
 }
 
-const std::shared_ptr<SipMessageAdapter>& SipMessageApp::getAdapter() const
+bool SipUserMessage::setAdapter(const SipAdapterMessage& adapter)
+{
+    if (m_adapter == nullptr)
+    {
+        return false;
+    }
+    
+    m_adapter->instance = adapter.instance;
+    return true;
+}
+
+const std::shared_ptr<SipAdapterMessage>& SipUserMessage::getAdapter() const
 {
     return m_adapter;
 }
 
-SipMessageApp::Type SipMessageApp::getType() const
+const char* SipUserMessage::getMethod() const
 {
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        return m_adapter->instance->isRequest() ?
-                SipMessageApp::Type::Request
-                : SipMessageApp::Type::Response;
-    }
-}
-
-const char* SipMessageApp::getMethod() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        return m_adapter->instance->methodStr().c_str();
-    }
-    else
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
         return "";
     }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (!instance->isRequest())
+    {
+        return "";
+    }
+
+    return instance->methodStr().c_str();
 }
 
-int SipMessageApp::getCode() const
+int SipUserMessage::getCode() const
 {
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
-        return m_adapter->instance->header(resip::h_StatusLine).statusCode();
+        return 0;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (!instance->isResponse())
+    {
+        return 0;
+    }
+    
+    return instance->header(resip::h_StatusLine).statusCode();
+}
+
+const char* SipUserMessage::getReasonPhrase() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (!instance->isResponse())
+    {
+        return "";
+    }
+    
+    return instance->header(resip::h_StatusLine).reason().c_str();
+}
+
+int32_t SipUserMessage::getSdpSessionVersion() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return 0;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return 0;
+    }
+    
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return 0;
+    }
+    else
+    {
+        const resip::SdpContents::Session &session = sdp->session();
+        return session.version();
+    }
+}
+
+const char* SipUserMessage::getSdpSessionOwner() const
+{
+    return "";
+}
+
+const char* SipUserMessage::getSdpSessionName() const
+{
+    return "";
+}
+
+const char* SipUserMessage::getSdpSessionIpv4() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+    
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+    
+    const resip::SdpContents::Session &session = sdp->session();
+    if (session.isConnection())
+    {
+        const resip::SdpContents::Session::Connection &connection = session.connection();
+        return (connection.getAddressType() == resip::SdpContents::IP4)
+                ? connection.getAddress().c_str()
+                : "";
+    }
+}
+
+int32_t SipUserMessage::getSdpMediaNum() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return 0;
+    }
+    
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return 0;
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return 0;
+    }
+    
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    return container.size();
+}
+
+int32_t SipUserMessage::getSdpMediaPort(int32_t index) const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return -1;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return -1;
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return -1;
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if (index >= 0 && index < container.size())
+    {
+        auto m = container.begin();
+        std::advance(m, index);
+        return m != container.end() ? m->port() : -1;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+const char* SipUserMessage::getSdpMediaTransport(int32_t index) const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if (index < 0 || index >= container.size())
+    {
+        return "";
+    }
+    auto m = container.begin();
+    std::advance(m, index);
+    return m != container.end() ? m->protocol().c_str() : "";
+}
+
+int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index) const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return 0;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return 0;
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return 0;
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if (index < 0 || index >= container.size())
+    {
+        return 0;
+    }
+    auto m = container.begin();
+    std::advance(m, index);
+    if (m != container.end())
+    {
+        const resip::SdpContents::Session::Medium::CodecContainer &codecs = m->codecs();
+        if (codecs.size() > 0)
+        {
+            auto c = codecs.begin();
+            std::advance(c, 0);
+            return c != codecs.end() ? c->payloadType() : 0;
+        }
     }
     else
     {
@@ -67,11 +289,45 @@ int SipMessageApp::getCode() const
     }
 }
 
-const char* SipMessageApp::getReasonPhrase() const
+const char* SipUserMessage::getSdpMediaIpv4(int32_t index) const
 {
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
-        return m_adapter->instance->header(resip::h_StatusLine).reason().c_str();
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if (index < 0 || index >= container.size())
+    {
+        return "";
+    }
+    auto m = container.begin();
+    std::advance(m, index);
+    if (m != container.end())
+    {
+        const std::list<resip::SdpContents::Session::Connection> &connections = m->getConnections();
+        if (connections.size() > 0)
+        {
+            auto c = connections.begin();
+            std::advance(c, 0);
+            return (c != connections.end() && c->getAddressType() == resip::SdpContents::IP4)
+                    ? c->getAddress().c_str()
+                    : "";
+        }
     }
     else
     {
@@ -79,251 +335,12 @@ const char* SipMessageApp::getReasonPhrase() const
     }
 }
 
-const char* SipMessageApp::getMANSCDPContents() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            MANSCDPContents *mans = dynamic_cast<MANSCDPContents*>(contents);
-            if (mans)
-            {
-                return mans->xml().c_str();
-            }
-        }
-    }
-    
-    return "";
-}
-
-int32_t SipMessageApp::getSdpSessionVersion() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                return session.version();
-            }
-        }
-    }
-
-    return 0;
-}
-
-const char* SipMessageApp::getSdpSessionOwner() const
-{
-    return "";
-}
-
-const char* SipMessageApp::getSdpSessionName() const
-{
-    return "";
-}
-
-const char* SipMessageApp::getSdpSessionIpv4() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                if (session.isConnection())
-                {
-                    const resip::SdpContents::Session::Connection &connection = session.connection();
-                    return (connection.getAddressType() == resip::SdpContents::IP4)
-                            ? connection.getAddress().c_str()
-                            : "";
-                }
-            }
-        }
-    }
-
-    return "";
-}
-
-int32_t SipMessageApp::getSdpMediaNum() const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                const resip::SdpContents::Session::MediumContainer &container = session.media();
-                return container.size();
-            }
-        }
-    }
-
-    return 0;
-}
-
-int32_t SipMessageApp::getSdpMediaPort(int32_t index) const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                const resip::SdpContents::Session::MediumContainer &container = session.media();
-                if (index >= 0 && index < container.size())
-                {
-                    auto m = container.begin();
-                    std::advance(m, index);
-                    return m != container.end() ? m->port() : 0;
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-const char* SipMessageApp::getSdpMediaTransport(int32_t index) const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                const resip::SdpContents::Session::MediumContainer &container = session.media();
-                if (index >= 0 && index < container.size())
-                {
-                    auto m = container.begin();
-                    std::advance(m, index);
-                    return m != container.end() ? m->protocol().c_str() : "";
-                }
-            }
-        }
-    }
-
-    return "";
-}
-
-int32_t SipMessageApp::getSdpMediaPayloadType(int32_t index) const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                const resip::SdpContents::Session::MediumContainer &container = session.media();
-                if (index >= 0 && index < container.size())
-                {
-                    auto m = container.begin();
-                    std::advance(m, index);
-                    if (m != container.end())
-                    {
-                        const resip::SdpContents::Session::Medium::CodecContainer &codecs = m->codecs();
-                        if (codecs.size() > 0)
-                        {
-                            auto c = codecs.begin();
-                            std::advance(c, 0);
-                            return c != codecs.end() ? c->payloadType() : 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-const char* SipMessageApp::getSdpMediaIpv4(int32_t index) const
-{
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Contents *contents = m_adapter->instance->getContents();
-        if (contents)
-        {
-            resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
-            if (sdp)
-            {
-                const resip::SdpContents::Session &session = sdp->session();
-                const resip::SdpContents::Session::MediumContainer &container = session.media();
-                if (index >= 0 && index < container.size())
-                {
-                    auto m = container.begin();
-                    std::advance(m, index);
-                    if (m != container.end())
-                    {
-                        const std::list<resip::SdpContents::Session::Connection> &connections = m->getConnections();
-                        if (connections.size() > 0)
-                        {
-                            auto c = connections.begin();
-                            std::advance(c, 0);
-                            return (c != connections.end() && c->getAddressType() == resip::SdpContents::IP4)
-                                    ? c->getAddress().c_str()
-                                    : "";
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return "";
-}
-
-uint32_t SipMessageApp::getSdpMediaSSRC(int32_t index) const
+uint32_t SipUserMessage::getSdpMediaSSRC(int32_t index) const
 {
     return 0;
 }
 
-bool SipMessageApp::setAdapter(const SipMessageAdapter& adapter)
-{
-    if (m_adapter != nullptr)
-    {
-        m_adapter->instance = adapter.instance;
-        return true;
-    }
-
-    return false;
-}
-
-bool SipMessageApp::setContentType(const std::string& type, const std::string& subtype)
-{
-    if (type.empty() || subtype.empty())
-    {
-        return false;
-    }
-
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        m_adapter->instance->header(resip::h_ContentType) = resip::Mime(resip::Data(type), resip::Data(subtype));
-        return true;
-    }
-
-    return false;
-}
-
-bool SipMessageApp::setExpires(int32_t expires)
+bool SipUserMessage::setExpires(int32_t expires)
 {
     if (m_adapter != nullptr && m_adapter->instance != nullptr)
     {
@@ -334,7 +351,7 @@ bool SipMessageApp::setExpires(int32_t expires)
     return false;
 }
 
-bool SipMessageApp::addExtensionField(const std::string& name, const std::string& value)
+bool SipUserMessage::addExtensionField(const std::string& name, const std::string& value)
 {
     if (name.empty() || value.empty())
     {
@@ -354,39 +371,3 @@ bool SipMessageApp::addExtensionField(const std::string& name, const std::string
 
     return false;
 }
-
-bool SipMessageApp::setMANSCDPContents(const std::string& data)
-{
-    if (data.empty())
-    {
-        return false;
-    }
-    
-    if (m_adapter != nullptr && m_adapter->instance != nullptr)
-    {
-        resip::Mime type("Application", "MANSCDP+xml");
-        MANSCDPContents contents(data, type);
-        m_adapter->instance->setContents(&contents);
-        return true;
-    }
-
-    return false;
-}
-
-bool SipMessageApp::setSdp(int32_t version, const std::string& owner, const std::string& name)
-{}
-
-bool SipMessageApp::setSdpConnectionIpv4(const std::string& ipv4)
-{}
-
-bool SipMessageApp::addSdpMedia(int32_t num)
-{}
-
-bool SipMessageApp::setSdpMediaPort(int32_t index, int32_t port)
-{}
-
-bool SipMessageApp::setSdpMediaTransport(int32_t index, const std::string& transport)
-{}
-
-bool SipMessageApp::setSdpMediaPayloadType(int32_t index, int32_t payloadType)
-{}

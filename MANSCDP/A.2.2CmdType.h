@@ -22,7 +22,6 @@ public:
 public:
     virtual bool match(const std::string& ReqType) = 0;
     virtual bool dispatch(const XMLElement *xmlReq) = 0;
-    virtual bool dispatch(const XMLElement *xmlReq, int32_t code) { return true; } // 分发处理回复
 };
 
 /* A.2.3 控制命令
@@ -88,7 +87,6 @@ public:
 public:
     virtual bool match(const XMLElement *xmlReq) = 0;
     virtual bool handle(const XMLElement *xmlReq) = 0;
-    virtual bool handle(int32_t code) { return true; } // 用于需要处理回复的命令，设备主动发出的请求，例如心跳
 };
 
 #endif

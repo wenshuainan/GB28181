@@ -106,15 +106,15 @@ public:
     ~SessionAgent();
 
 private:
-    bool agentReqINVITE(const SipMessageApp& req);
-    bool agentReqACK(const SipMessageApp& req);
-    bool agentReqBYE(const SipMessageApp& req);
+    bool agentReqINVITE(const SipUserMessage& req);
+    bool agentReqACK(const SipUserMessage& req);
+    bool agentReqBYE(const SipUserMessage& req);
 
     RtpNet::Type parseNetType(const std::string& str) const;
 
 public:
     bool match(const std::string& method, const std::string& contentType);
-    bool agent(const SipMessageApp& message);
+    bool agent(const SipUserMessage& message);
 };
 
 #endif

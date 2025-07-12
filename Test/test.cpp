@@ -114,18 +114,42 @@ int main()
 
     ua.start(client, server, keepalive);
 #elif 0
-    XMLDocument doc;
-    doc.Parse("<? xmlversion=\"1.0\"?> \
-                <Control> \
-                <CmdType>DeviceControl</CmdType> \
-                <SN>11</SN> \
-                <DeviceID>64010000041310000345</DeviceID> \
-                <PTZCmd>A50F4D1000001021</PTZCmd> \
-                <Info> \
-                <ControlPriority>5</ControlPriority> \
-                </Info> \
-                </Control>");
+    const char *str = "<?xml version=\"1.0\"?> \
+                    <Response> \
+                        <CmdType>Catalog</CmdType> \
+                        <SN>2</SN> \
+                        <DeviceID>34020000001110000001</DeviceID> \
+                        <SumNum>1</SumNum> \
+                        <DeviceList Num=\"1\"> \
+                            <Item> \
+                                <DeviceID>34020000001310000001</DeviceID> \
+                                <Name>DemoDev</Name> \
+                                <Manufacturer>Manufacturer 1</Manufacturer> \
+                                <Model>Model 1</Model> \
+                                <CivilCode>CivilCode 1</CivilCode> \
+                                <Address>Address 1</Address> \
+                                <Parental>1</Parental> \
+                                <ParentID>34020000001110000001</ParentID> \
+                                <RegisterWay>1</RegisterWay> \
+                                <Secrecy>0</Secrecy> \
+                            </Item> \
+                        </DeviceList> \
+                    </Response>";
 
+    XMLDocument doc;
+    // doc.Parse("<? xmlversion=\"1.0\"?> \
+    //             <Control> \
+    //             <CmdType>DeviceControl</CmdType> \
+    //             <SN>11</SN> \
+    //             <DeviceID>64010000041310000345</DeviceID> \
+    //             <PTZCmd>A50F4D1000001021</PTZCmd> \
+    //             <Info> \
+    //             <ControlPriority>5</ControlPriority> \
+    //             </Info> \
+    //             </Control>");
+
+    XMLError err = doc.Parse(str);
+    printf("error=%d\n", err);
     printf("rootelementname=%s\n", doc.RootElement()->Name());
     XMLElement *first = doc.FirstChildElement();
     printf("first element name=%s\n", first->Name());

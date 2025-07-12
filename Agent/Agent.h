@@ -24,11 +24,10 @@ protected:
     }
 
 public:
-    /* 匹配Request，UA先遍历所有agent，调用match，匹配成功则调用Agent的agent方法处理SIP数据 */
+    /* 匹配Request，UA遍历所有agent，调用match，匹配成功则调用Agent的agent方法处理请求消息 */
     virtual bool match(const std::string& method, const std::string& contentType) = 0;
-
-    /* UA调用agent将raw数据传给Agent，Agent解析成自己的格式后处理 */
-    virtual bool agent(const SipMessageApp& message) = 0;
+    /* UA调用agent将请求消息传给Agent，Agent解析成自己的格式后处理 */
+    virtual bool agent(const SipUserMessage& message) = 0;
 };
 
 #endif

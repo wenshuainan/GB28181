@@ -28,43 +28,19 @@ bool MANSCDPAgent::match(const std::string& method, const std::string& contentTy
     return contentType == "Application/MANSCDP+xml";
 }
 
-bool MANSCDPAgent::agent(const SipMessageApp& message)
+bool MANSCDPAgent::agent(const SipUserMessage& message)
 {
-    /* 收到命令后返回 200 OK */
-    sendResponse200(message);
-
-    XMLDocument doc;
-    if (doc.Parse(message.getMANSCDPContents()) != XML_SUCCESS)
-    {
-        return false;
-    }
-
-    std::string rootName = doc.RootElement()->Name();
-    for (auto i : requests)
-    {
-        if (i->match(rootName))
-        {
-            return i->dispatch(doc.FirstChildElement());
-        }
-    }
-
     return false;
 }
 
-bool MANSCDPAgent::agent(const SipMessageApp& res, const SipMessageApp& req)
+bool MANSCDPAgent::agent(const XMLDocument &xmldocReq) const
 {
-    XMLDocument doc;
-    if (doc.Parse(req.getMANSCDPContents()) != XML_SUCCESS)
-    {
-        return false;
-    }
-
-    std::string rootName = doc.RootElement()->Name();
+    std::string rootName = xmldocReq.RootElement()->Name();
     for (auto i : requests)
     {
         if (i->match(rootName))
         {
-            return i->dispatch(doc.FirstChildElement(), res.getCode());
+            return i->dispatch(xmldocReq.FirstChildElement());
         }
     }
 
@@ -76,50 +52,19 @@ int32_t MANSCDPAgent::getKeepaliveTimeoutCount() const
     return status->getTimeoutCount();
 }
 
-bool MANSCDPAgent::sendResponse200(const SipMessageApp& req) const
+bool MANSCDPAgent::recvedKeepaliveResponse(int32_t code) const
 {
-    SipMessageApp message;
-    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->makeResMessage(message, req, 200, "OK");
-
-    return sip->send(message);
+    status->addRecvedCount();
+    return true;
 }
 
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
 {
-    SipMessageApp message;
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->makeReqMessage(message, "MESSAGE");
-    // message.setContentType("Application", "MANSCDP+xml");
-
-    XMLPrinter printer;
-    xmldocRes.Print(&printer);
-    message.setMANSCDPContents(printer.CStr());
-
-    return sip->send(message);
+    return sip->sendMANSCDPResponse(xmldocRes);
 }
 
-bool MANSCDPAgent::sendRequest(const XMLDocument& xmldocReq) const
-{
-    SipMessageApp message;
-    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    sip->makeReqMessage(message, "MESSAGE");
-    // message.setContentType("Application", "MANSCDP+xml");
-
-    XMLPrinter printer;
-    xmldocReq.Print(&printer);
-    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
-
-    message.setMANSCDPContents(printer.CStr());
-
-    // printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
-    // message.print();
-    // return false;
-
-    return sip->send(message);
-}
-
-bool MANSCDPAgent::sendKeepalive(const KeepAliveNotify::Request *notify) const
+bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) const
 {
     KeepAliveNotify::Request req;
 
@@ -134,18 +79,7 @@ bool MANSCDPAgent::sendKeepalive(const KeepAliveNotify::Request *notify) const
 
     XMLDocument xmldocReq;
     KeepAliveNotify::serialize(req, &xmldocReq);
-    XMLPrinter printer;
-    xmldocReq.Print(&printer);
-    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
 
-    std::string rootName = xmldocReq.RootElement()->Name();
-    for (auto i : requests)
-    {
-        if (i->match(rootName))
-        {
-            return i->dispatch(xmldocReq.FirstChildElement());
-        }
-    }
-
-    return false;
+    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
+    return sip->sendKeepaliveRequest(xmldocReq);
 }

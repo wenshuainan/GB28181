@@ -1,40 +1,32 @@
-/*
- * sip adapter for resiprocate
- */
-
 #ifndef SIP_ADAPTER_H
 #define SIP_ADAPTER_H
 
 #include <string>
 #include <memory>
+#include "tinyxml2.h"
 
-struct SipMessageAdapter;
+using namespace tinyxml2;
+
+struct SipAdapterMessage;
 
 class UA;
 
-class SipMessageApp
+class SipUserMessage
 {
-public:
-    enum Type
-    {
-        Request,
-        Response,
-    };
-
 private:
-    std::shared_ptr<SipMessageAdapter> m_adapter;
+    std::shared_ptr<SipAdapterMessage> m_adapter;
 
 public:
-    SipMessageApp();
-    ~SipMessageApp();
+    SipUserMessage();
+    ~SipUserMessage();
     void print() const;
 
-    const std::shared_ptr<SipMessageAdapter>& getAdapter() const;
-    Type getType() const;
+    bool setAdapter(const SipAdapterMessage& adapter);
+    const std::shared_ptr<SipAdapterMessage>& getAdapter() const;
+
     const char* getMethod() const;
     int getCode() const;
     const char* getReasonPhrase() const;
-    const char* getMANSCDPContents() const;
 
     int32_t getSdpSessionVersion() const;
     const char* getSdpSessionOwner() const;
@@ -47,19 +39,8 @@ public:
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
 
-    bool setAdapter(const SipMessageAdapter& adapter);
-
-    bool setContentType(const std::string& type, const std::string& subtype);
     bool setExpires(int32_t expires);
     bool addExtensionField(const std::string& name, const std::string& value);
-    bool setMANSCDPContents(const std::string& data);
-
-    bool setSdp(int32_t version, const std::string& owner, const std::string& name);
-    bool setSdpConnectionIpv4(const std::string& ipv4);
-    bool addSdpMedia(int32_t num);
-    bool setSdpMediaPort(int32_t index, int32_t port);
-    bool setSdpMediaTransport(int32_t index, const std::string& transport);
-    bool setSdpMediaPayloadType(int32_t index, int32_t payloadType);
 };
 
 class SipUserAgent
@@ -92,31 +73,27 @@ public:
     };
 
 protected:
-    UA *app;
-
-protected:
-    bool postRegistrationResponse(const SipMessageApp& res);
-    bool postOutDialogRequest(const SipMessageApp& req);
-    bool postOutDialogResponse(const SipMessageApp& res, const SipMessageApp& req);
-    bool postSessionRequest(const SipMessageApp& req);
-
-public:
-    virtual bool init() = 0;
-    virtual bool recv(SipMessageApp& message) = 0;
-    virtual bool send(const SipMessageApp& message) = 0;
-
-    /* 根据method和requestUri生成请求消息，自动填充头域，输出req */
-    virtual bool makeReqMessage(SipMessageApp& req, const std::string& method) = 0;
-
-    /* 根据req生成响应消息，自动填充头域，输出res */
-    virtual bool makeResMessage(SipMessageApp& res, const SipMessageApp& req, int code, const std::string& reasonPhrase = "") = 0;
+    UA *m_user;
 
 public:
     SipUserAgent() {}
     virtual ~SipUserAgent() {}
 
 public:
-    static std::shared_ptr<SipUserAgent> create(UA *app, const ClientInfo& client, const ServerInfo& server);
+    virtual bool init() = 0;
+    virtual bool makeRegistrationRequest(SipUserMessage& req) = 0;
+    virtual bool sendRegistration(const SipUserMessage& req) = 0;
+    virtual bool sendKeepaliveRequest(const XMLDocument& notify) = 0;
+    virtual bool sendMANSCDPResponse(const XMLDocument& res) = 0;
+
+protected:
+    bool postRegistrationResponse(const SipUserMessage& res);
+    bool postKeepaliveResponse(int32_t code);
+    bool postMANSCDPRequest(const XMLDocument& req);
+    bool postSessionRequest(const SipUserMessage& req);
+
+public:
+    static std::shared_ptr<SipUserAgent> create(UA *user, const ClientInfo& client, const ServerInfo& server);
     bool destroy();
 };
 

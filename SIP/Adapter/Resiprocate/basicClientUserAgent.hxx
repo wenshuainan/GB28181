@@ -31,7 +31,9 @@ class BasicClientUserAgent : public BasicClientCmdLineParser,
                              public OutOfDialogHandler, 
                              public InviteSessionHandler,
                              public DumShutdownHandler,
-                             public RedirectHandler
+                             public RedirectHandler,
+                             public ClientPagerMessageHandler,
+                             public ServerPagerMessageHandler
 {
 public:
    BasicClientUserAgent(const SipUserAgent::ClientInfo& info);
@@ -126,6 +128,11 @@ protected:
    // RedirectHandler /////////////////////////////////////////////////////////////
    virtual void onRedirectReceived(resip::AppDialogSetHandle, const resip::SipMessage& response);
    virtual bool onTryingNextTarget(resip::AppDialogSetHandle, const resip::SipMessage& request);
+
+   // PagerMessageHandler //////////////////////////////////////////////////////////
+   virtual void onSuccess(ClientPagerMessageHandle, const SipMessage& status);
+   virtual void onFailure(ClientPagerMessageHandle, const SipMessage& status, std::unique_ptr<Contents> contents);
+   virtual void onMessageArrived(ServerPagerMessageHandle, const SipMessage& message);
 
 protected:
    void addTransport(TransportType type, int port);

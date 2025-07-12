@@ -48,19 +48,6 @@ bool NotifyRequest::dispatch(const XMLElement *xmlReq)
     return false;
 }
 
-bool NotifyRequest::dispatch(const XMLElement *xmlReq, int32_t code)
-{
-    for (auto i : spec)
-    {
-        if (i->match(xmlReq))
-        {
-            return i->handle(code);
-        }
-    }
-
-    return false;
-}
-
 KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent, Status *status)
     : CmdTypeSpecRequest(agent, status)
 {}
@@ -120,20 +107,5 @@ bool KeepAliveNotify::match(const XMLElement *xmlReq)
 
 bool KeepAliveNotify::handle(const XMLElement *xmlReq)
 {
-    XMLPrinter printer;
-    xmlReq->GetDocument()->Print(&printer);
-    printf(">>>>>> %s:%d\n%s\n", __FILE__, __LINE__, printer.CStr());
-    if (m_agent->sendRequest(*(xmlReq->GetDocument())))
-    {
-        m_status->addSentCount();
-        return true;
-    }
-
     return false;
-}
-
-bool KeepAliveNotify::handle(int32_t code)
-{
-    m_status->addRecvedCount();
-    return true;
 }

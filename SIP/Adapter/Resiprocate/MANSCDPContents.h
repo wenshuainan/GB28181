@@ -2,8 +2,10 @@
 #define MANSCDP_CONTENTS_H
 
 #include "resip/stack/Contents.hxx"
+#include "tinyxml2.h"
 
 using namespace resip;
+using namespace tinyxml2;
 
 /**
    @ingroup sip_payload
@@ -15,9 +17,10 @@ class MANSCDPContents : public Contents
       static const MANSCDPContents Empty;
 
       MANSCDPContents();
+      MANSCDPContents(const XMLDocument& xml);
       MANSCDPContents(const Data& text);
       MANSCDPContents(const HeaderFieldValue& hfv, const Mime& contentType);
-      MANSCDPContents(const Data& data, const Mime& contentType);
+      MANSCDPContents(const Data& text, const Mime& contentType);
       MANSCDPContents(const MANSCDPContents& rhs);
       virtual ~MANSCDPContents();
       MANSCDPContents& operator=(const MANSCDPContents& rhs);
@@ -32,12 +35,12 @@ class MANSCDPContents : public Contents
       virtual EncodeStream& encodeParsed(EncodeStream& str) const;
       virtual void parse(ParseBuffer& pb);
 
-      const Data& xml() const {checkParsed(); return mXml;}
-      Data& xml() {checkParsed(); return mXml;}
+      const XMLDocument& xml() const {checkParsed(); return mXml;}
+      XMLDocument& xml() {checkParsed(); return mXml;}
 
       static bool init();
    private:
-      Data mXml;
+      XMLDocument mXml;
 };
 
 static bool invokePlainContentsInit = MANSCDPContents::init();

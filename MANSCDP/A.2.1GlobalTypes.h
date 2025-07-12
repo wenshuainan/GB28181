@@ -59,7 +59,7 @@ public:
 
     integerType& operator=(const std::string& str)
     {
-        value = std::stoi(str); // WARN: will crash if str is not number
+        value = std::stoi(str); // WARN: will crash if str is not a number
         strValue = str;
         bValid = true;
 
@@ -112,6 +112,66 @@ public:
     stringType& operator=(const int& num)
     {
         value = std::to_string(num);
+        bValid = true;
+
+        return *this;
+    }
+};
+
+class doubleType
+{
+protected:
+    double value;
+    std::string strValue;
+    bool bValid; // 可选/必选
+
+public:
+    doubleType() : bValid(false) {}
+    virtual ~doubleType() {}
+
+public:
+    bool isValid() const
+    {
+        return bValid;
+    }
+
+    int getValue() const
+    {
+        return value;
+    }
+
+    int getInt() const
+    {
+        return value;
+    }
+
+    const std::string& getStr() const
+    {
+        return strValue;
+    }
+
+    doubleType& operator=(const doubleType& other)
+    {
+        value = other.value;
+        strValue = other.strValue;
+        bValid = other.bValid;
+
+        return *this;
+    }
+
+    doubleType& operator=(const int& num)
+    {
+        value = num;
+        strValue = std::to_string(num);
+        bValid = true;
+
+        return *this;
+    }
+
+    doubleType& operator=(const std::string& str)
+    {
+        value = std::stod(str); // WARN: will crash if str is not a number
+        strValue = str;
         bValid = true;
 
         return *this;
@@ -381,7 +441,7 @@ public:
     /* <! -- 当为设备时，设备型号（必选） --> */
     stringType Model;
     /* <! -- 行政区域，可为2、4、6、8位（必选） --> */
-    SNType CivilCode;
+    stringType CivilCode;
     /* <! -- 警区（可选） --> */
     stringType Block;
     /* <! -- 当为设备时，安装地址（必选） --> */
@@ -408,6 +468,16 @@ public:
     integerType Secrecy;
     /* 〈! -- 设备/系统IPv4/IPv6地址(可选)--〉 */
     stringType IPAddress;
+    /* 〈! -- 设备/系统端口(可选)--〉 */
+    integerType Port;
+    /* 〈! -- 设备口令(可选)--〉 */
+    stringType Password;
+    /* 〈! -- 设备状态(必选)--〉 */
+    statusType Status;
+    /* 〈! -- 当为设备时,经度(一类、二类视频监控点必选)WGS-84坐标系--〉 */
+    doubleType Longitude;
+    /* 〈! -- 当为设备时,纬度(一类、二类视频监控点必选)WGS-84坐标系--〉 */
+    doubleType Latitude;
 
 public:
     virtual bool toXml(XMLElement *parent)
@@ -478,6 +548,10 @@ public:
             xmlIPAddress->SetText(IPAddress.getStr().c_str());
             parent->InsertEndChild(xmlIPAddress);
         }
+
+        XMLElement *xmlStatus = doc->NewElement("Status");
+        xmlStatus->SetText(Status.getStr().c_str());
+        parent->InsertEndChild(xmlStatus);
 
         return true;
     }

@@ -166,10 +166,10 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    //mProfile->addSupportedMethod(UPDATE);
    mProfile->addSupportedMethod(INFO);
    mProfile->addSupportedMethod(MESSAGE);
-   // mProfile->addSupportedMethod(PRACK);
+   mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
-   // mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
-   // mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
+   mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
+   mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
 
    // Support Languages
    // mProfile->clearSupportedLanguages();
@@ -178,24 +178,25 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    // Support Mime Types
    mProfile->clearSupportedMimeTypes();
    mProfile->addSupportedMimeType(INVITE, Mime("application", "sdp"));
-   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
-   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
-   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
+   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
+   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
+   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
    mProfile->addSupportedMimeType(OPTIONS,Mime("application", "sdp"));
    mProfile->addSupportedMimeType(OPTIONS,Mime("multipart", "mixed"));  
    mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "signed"));  
    mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "alternative"));  
-   // mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
-   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
-   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
-   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
-   // mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
-   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
-   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
-   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
+   mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
+   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
+   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
+   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
+   mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
+   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
+   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
+   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
    mProfile->addSupportedMimeType(MESSAGE, Mime("text","plain")); // Invite session in-dialog routing testing
    mProfile->addSupportedMimeType(NOTIFY, Mime("text","plain"));  // subscription testing
    //mProfile->addSupportedMimeType(NOTIFY, Mime("message", "sipfrag"));  
+   mProfile->addSupportedMimeType(MESSAGE, Mime("Application", "MANSCDP+xml"));
 
    // Supported Options Tags
    mProfile->clearSupportedOptionTags();
@@ -306,6 +307,8 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mDum->setClientRegistrationHandler(this);   
    mDum->addClientSubscriptionHandler("basicClientTest", this);   // fabricated test event package
    mDum->addServerSubscriptionHandler("basicClientTest", this);
+   mDum->setClientPagerMessageHandler(this);
+   mDum->setServerPagerMessageHandler(this);
 
    // Set AppDialogSetFactory
    std::unique_ptr<AppDialogSetFactory> dsf(new ClientAppDialogSetFactory(*this));
@@ -1090,7 +1093,26 @@ BasicClientUserAgent::onTryingNextTarget(AppDialogSetHandle, const SipMessage& m
    return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// PagerMessageHandler /////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void
+BasicClientUserAgent::onSuccess(ClientPagerMessageHandle, const SipMessage& status)
+{
+   InfoLog(<< "onSuccess(ClientPagerMessageHandle): " << status.brief());
+}
 
+void
+BasicClientUserAgent::onFailure(ClientPagerMessageHandle, const SipMessage& status, std::unique_ptr<Contents> contents)
+{
+   InfoLog(<< "onFailure(ClientPagerMessageHandle): " << status.brief());
+}
+
+void
+BasicClientUserAgent::onMessageArrived(ServerPagerMessageHandle, const SipMessage& message)
+{
+   InfoLog(<< "onMessageArrived(ServerPagerMessageHandle): " << message.brief());
+}
 
 
 /* ====================================================================
