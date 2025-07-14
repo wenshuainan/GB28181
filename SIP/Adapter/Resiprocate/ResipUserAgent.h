@@ -16,6 +16,7 @@ private:
     resip::Uri mServerUri;
     resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
     resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
+    resip::InviteSessionHandle mInviteSessionHandle;
     
 public:
     ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
@@ -30,6 +31,8 @@ public:
     virtual bool sendRegistration(const SipUserMessage& req);
     virtual bool sendKeepaliveRequest(const XMLDocument& notify);
     virtual bool sendMANSCDPResponse(const XMLDocument& res);
+    virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code);
+    virtual bool sendSessionResponse(const SipUserMessage& res);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////
@@ -37,6 +40,12 @@ protected:
     virtual void onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
     virtual void onRemoved(resip::ClientRegistrationHandle h, const resip::SipMessage& response);
     virtual int onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg);
+
+    // Invite Session Handler /////////////////////////////////////////////////////
+    virtual void onNewSession(resip::ServerInviteSessionHandle h, resip::InviteSession::OfferAnswerType oat, const resip::SipMessage& msg);
+    virtual void onConnectedConfirmed(resip::InviteSessionHandle, const resip::SipMessage &msg);
+    virtual void onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg);
+    virtual void onOffer(resip::InviteSessionHandle handle, const resip::SipMessage& msg, const resip::SdpContents& offer);
 
     // PagerMessageHandler //////////////////////////////////////////////////////////
     virtual void onSuccess(resip::ClientPagerMessageHandle, const resip::SipMessage& status);

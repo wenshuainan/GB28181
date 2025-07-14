@@ -135,12 +135,12 @@ public:
         return bValid;
     }
 
-    int getValue() const
+    double getValue() const
     {
         return value;
     }
 
-    int getInt() const
+    double getDouble() const
     {
         return value;
     }

@@ -6,7 +6,8 @@
 #include <sys/uio.h>
 #include "RtpOverUdp.h"
 
-RtpOverUdp::RtpOverUdp()
+RtpOverUdp::RtpOverUdp(int localPort)
+    : RtpNet(localPort)
 {}
 
 RtpOverUdp::~RtpOverUdp()

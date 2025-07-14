@@ -2,6 +2,7 @@
 
 bool CmdTypeResponse::serialize(const Response& res, XMLDocument *xmldocRes)
 {
+    (void) res;
     XMLDeclaration *dec = xmldocRes->NewDeclaration("xml version=\"1.0\"");
     if (dec != nullptr)
     {

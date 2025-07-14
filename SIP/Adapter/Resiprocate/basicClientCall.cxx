@@ -157,6 +157,7 @@ BasicClientCall::makeOffer(SdpContents& offer)
 void
 BasicClientCall::onNewSession(ClientInviteSessionHandle h, InviteSession::OfferAnswerType oat, const SipMessage& msg)
 {
+   (void) oat;
    InfoLog(<< "onNewSession(ClientInviteSessionHandle): msg=" << msg.brief());
    mInviteSessionHandle = h->getSessionHandle();  // Note:  each forked leg will update mInviteSession - need to set mInviteSessionHandle for final answering leg on 200
    if(mInviteSessionHandleReplaced.isValid())
@@ -169,6 +170,7 @@ BasicClientCall::onNewSession(ClientInviteSessionHandle h, InviteSession::OfferA
 void
 BasicClientCall::onNewSession(ServerInviteSessionHandle h, InviteSession::OfferAnswerType oat, const SipMessage& msg)
 {
+   (void) oat;
    InfoLog(<< "onNewSession(ServerInviteSessionHandle):  msg=" << msg.brief());
    mInviteSessionHandle = h->getSessionHandle();
 
@@ -206,6 +208,7 @@ BasicClientCall::onNewSession(ServerInviteSessionHandle h, InviteSession::OfferA
 void
 BasicClientCall::onFailure(ClientInviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    WarningLog(<< "onFailure: msg=" << msg.brief());
 
    if (msg.isResponse()) 
@@ -227,6 +230,7 @@ BasicClientCall::onFailure(ClientInviteSessionHandle h, const SipMessage& msg)
 void
 BasicClientCall::onEarlyMedia(ClientInviteSessionHandle h, const SipMessage& msg, const SdpContents& sdp)
 {
+   (void) h;
    InfoLog(<< "onEarlyMedia: msg=" << msg.brief() << ", sdp=" << sdp);
 }
 
@@ -270,12 +274,14 @@ BasicClientCall::onConnected(ClientInviteSessionHandle h, const SipMessage& msg)
 void
 BasicClientCall::onConnected(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onConnected: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onStaleCallTimeout(ClientInviteSessionHandle h)
 {
+   (void) h;
    WarningLog(<< "onStaleCallTimeout");
 }
 
@@ -345,6 +351,7 @@ BasicClientCall::onTerminated(InviteSessionHandle h, InviteSessionHandler::Termi
 void
 BasicClientCall::onRedirected(ClientInviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    // DUM will recurse on redirect requests, so nothing to do here
    InfoLog(<< "onRedirected: msg=" << msg.brief());
 }
@@ -430,6 +437,7 @@ BasicClientCall::onOfferRejected(InviteSessionHandle h, const SipMessage* msg)
 void
 BasicClientCall::onOfferRequestRejected(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onOfferRequestRejected: msg=" << msg.brief());
    // This is called when we are waiting to resend a INVITE with no sdp after a glare condition, and we 
    // instead receive an inbound INVITE or UPDATE
@@ -438,6 +446,7 @@ BasicClientCall::onOfferRequestRejected(InviteSessionHandle h, const SipMessage&
 void
 BasicClientCall::onRemoteSdpChanged(InviteSessionHandle h, const SipMessage& msg, const SdpContents& sdp)
 {
+   (void) h;
    /// called when a modified SDP is received in a 2xx response to a
    /// session-timer reINVITE. Under normal circumstances where the response
    /// SDP is unchanged from current remote SDP no handler is called
@@ -460,18 +469,22 @@ BasicClientCall::onInfo(InviteSessionHandle h, const SipMessage& msg)
 void
 BasicClientCall::onInfoSuccess(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onInfoSuccess: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onInfoFailure(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    WarningLog(<< "onInfoFailure: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onRefer(InviteSessionHandle h, ServerSubscriptionHandle ss, const SipMessage& msg)
 {
+   (void) h;
+   (void) ss;
    InfoLog(<< "onRefer: msg=" << msg.brief());
 
    // Handle Refer request here
@@ -480,18 +493,22 @@ BasicClientCall::onRefer(InviteSessionHandle h, ServerSubscriptionHandle ss, con
 void
 BasicClientCall::onReferAccepted(InviteSessionHandle h, ClientSubscriptionHandle csh, const SipMessage& msg)
 {
+   (void) h;
+   (void) csh;
    InfoLog(<< "onReferAccepted: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onReferRejected(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    WarningLog(<< "onReferRejected: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onReferNoSub(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onReferNoSub: msg=" << msg.brief());
 
    // Handle Refer request with (no-subscription indication) here
@@ -516,25 +533,28 @@ BasicClientCall::onMessage(InviteSessionHandle h, const SipMessage& msg)
 void
 BasicClientCall::onMessageSuccess(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onMessageSuccess: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onMessageFailure(InviteSessionHandle h, const SipMessage& msg)
 {
+   (void) h;
    WarningLog(<< "onMessageFailure: msg=" << msg.brief());
 }
 
 void
 BasicClientCall::onForkDestroyed(ClientInviteSessionHandle h)
 {
+   (void) h;
    InfoLog(<< "onForkDestroyed:");
 }
 
-void 
-BasicClientCall::onReadyToSend(InviteSessionHandle h, SipMessage& msg)
-{
-}
+// void 
+// BasicClientCall::onReadyToSend(InviteSessionHandle h, SipMessage& msg)
+// {
+// }
 
 void 
 BasicClientCall::onFlowTerminated(InviteSessionHandle h)
@@ -583,6 +603,7 @@ BasicClientCall::onFlowTerminated(InviteSessionHandle h)
 void 
 BasicClientCall::onTrying(AppDialogSetHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onTrying: msg=" << msg.brief());
    if(isUACConnected()) return;  // Ignore 100's if already connected
 
@@ -592,6 +613,7 @@ BasicClientCall::onTrying(AppDialogSetHandle h, const SipMessage& msg)
 void 
 BasicClientCall::onNonDialogCreatingProvisional(AppDialogSetHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onNonDialogCreatingProvisional: msg=" << msg.brief());
    if(isUACConnected()) return;  // Ignore provisionals if already connected
 
@@ -604,6 +626,7 @@ BasicClientCall::onNonDialogCreatingProvisional(AppDialogSetHandle h, const SipM
 void
 BasicClientCall::onUpdatePending(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
 {
+   (void) outOfOrder;
    InfoLog(<< "onUpdatePending(ClientSubscriptionHandle): " << msg.brief());
    if (msg.exists(h_Event) && msg.header(h_Event).value() == "refer")
    {
@@ -615,6 +638,7 @@ BasicClientCall::onUpdatePending(ClientSubscriptionHandle h, const SipMessage& m
 void
 BasicClientCall::onUpdateActive(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
 {
+   (void) outOfOrder;
    InfoLog(<< "onUpdateActive(ClientSubscriptionHandle): " << msg.brief());
    if (msg.exists(h_Event) && msg.header(h_Event).value() == "refer")
    {
@@ -626,6 +650,7 @@ BasicClientCall::onUpdateActive(ClientSubscriptionHandle h, const SipMessage& ms
 void
 BasicClientCall::onUpdateExtension(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
 {
+   (void) outOfOrder;
    InfoLog(<< "onUpdateExtension(ClientSubscriptionHandle): " << msg.brief());
    if (msg.exists(h_Event) && msg.header(h_Event).value() == "refer")
    {
@@ -644,6 +669,7 @@ BasicClientCall::onNotifyNotReceived(resip::ClientSubscriptionHandle h)
 void
 BasicClientCall::onTerminated(ClientSubscriptionHandle h, const SipMessage* msg)
 {
+   (void) h;
    if(msg)
    {
       InfoLog(<< "onTerminated(ClientSubscriptionHandle): " << msg->brief());
@@ -662,12 +688,15 @@ BasicClientCall::onTerminated(ClientSubscriptionHandle h, const SipMessage* msg)
 void
 BasicClientCall::onNewSubscription(ClientSubscriptionHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onNewSubscription(ClientSubscriptionHandle): " << msg.brief());
 }
 
 int 
 BasicClientCall::onRequestRetry(ClientSubscriptionHandle h, int retrySeconds, const SipMessage& msg)
 {
+   (void) h;
+   (void) retrySeconds;
    InfoLog(<< "onRequestRetry(ClientSubscriptionHandle): " << msg.brief());
    return -1;
 }
@@ -675,6 +704,7 @@ BasicClientCall::onRequestRetry(ClientSubscriptionHandle h, int retrySeconds, co
 void 
 BasicClientCall::onRedirectReceived(AppDialogSetHandle h, const SipMessage& msg)
 {
+   (void) h;
    InfoLog(<< "onRedirectReceived: msg=" << msg.brief());
 }
 

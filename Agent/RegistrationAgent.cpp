@@ -6,9 +6,9 @@
 
 RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
 {
-    registration = std::make_shared<DevRegistration>();
-    GBVerName = "X-GB-Ver";
-    GBVerValue = "3.0";
+    m_devRegistration = std::make_shared<DevRegistration>();
+    m_GBVerName = "X-GB-Ver";
+    m_GBVerValue = "3.0";
 }
 
 RegistrationAgent::~RegistrationAgent()
@@ -16,6 +16,7 @@ RegistrationAgent::~RegistrationAgent()
 
 bool RegistrationAgent::match(const std::string& method, const std::string& contentType)
 {
+    std::cout << "method=" << method << "content type=" << contentType << std::endl;
     return false; //只作为Register Client，不处理Register请求
 }
 
@@ -33,7 +34,7 @@ bool RegistrationAgent::start()
     sip->makeRegistrationRequest(message);
 
     /* 添加GB版本号扩展头域（附录I） */
-    message.addExtensionField(GBVerName, GBVerValue);
+    message.addExtensionField(m_GBVerName, m_GBVerValue);
 
     return sip->sendRegistration(message);
 }
@@ -53,7 +54,7 @@ bool RegistrationAgent::stop()
 void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
 {
     Registration::State newState;
-    Registration::State oldState = registration->getState();
+    Registration::State oldState = m_devRegistration->getState();
 
     switch (code)
     {
@@ -78,5 +79,5 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
         break;
     }
 
-    registration->processState(newState, reasonPhrase);
+    m_devRegistration->processState(newState, reasonPhrase);
 }

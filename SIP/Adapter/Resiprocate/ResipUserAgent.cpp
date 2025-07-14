@@ -5,6 +5,7 @@
 #include "MANSCDPContents.h"
 #include "resip/dum/ClientPagerMessage.hxx"
 #include "resip/dum/ServerPagerMessage.hxx"
+#include "resip/dum/ServerInviteSession.hxx"
 
 bool SipUserAgent::postRegistrationResponse(const SipUserMessage& res)
 {
@@ -132,19 +133,86 @@ bool ResipUserAgent::sendMANSCDPResponse(const XMLDocument &res)
     return true;
 }
 
-void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
+bool ResipUserAgent::makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code)
 {
-    
-    SipAdapterMessage messageAdapter = {
-        .instance = std::make_shared<resip::SipMessage>(response)
+    std::shared_ptr<SipAdapterMessage> reqAdapter = req.getAdapter();
+    if (reqAdapter == nullptr || reqAdapter->instance == nullptr)
+    {
+        return false;
+    }
+
+    resip::Contents *reqContents = reqAdapter->instance->getContents();
+    if (reqContents == nullptr)
+    {
+        return false;
+    }
+    resip::SdpContents *reqSdp = dynamic_cast<resip::SdpContents *>(reqContents);
+    if (reqSdp == nullptr)
+    {
+        return false;
+    }
+
+    std::shared_ptr<resip::SipMessage> instance = std::make_shared<resip::SipMessage>();
+    Helper::Helper::makeResponse(*instance, *(reqAdapter->instance), code);
+    // mDum->makeResponse(*instance, *(reqAdapter->instance), code);
+
+    resip::SdpContents sdp = *reqSdp;
+    instance->setContents(&sdp);
+
+    SipAdapterMessage adapter = {
+        .instance = instance
     };
-    
-    SipUserMessage messageApp;
-    messageApp.setAdapter(messageAdapter);
-    postRegistrationResponse(messageApp);
+    res.setAdapter(adapter);
+    return true;
+}
+
+bool ResipUserAgent::sendSessionResponse(const SipUserMessage& res)
+{
+    const std::shared_ptr<SipAdapterMessage> adapter = res.getAdapter();
+    if (adapter == nullptr || adapter->instance == nullptr)
+    {
+        return false;
+    }
+
+    const std::shared_ptr<resip::SipMessage> instance = adapter->instance;
+    const resip::Contents *contents = adapter->instance->getContents();
+    if (contents == nullptr)
+    {
+        return false;
+    }
+
+    const resip::SdpContents *sdp = dynamic_cast<const resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return false;
+    }
+
+    mInviteSessionHandle->provideAnswer(*sdp);
+    ServerInviteSession* uas = dynamic_cast<ServerInviteSession*>(mInviteSessionHandle.get());
+    if(uas && !uas->isAccepted())
+    {
+        uas->accept();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 // Registration Handler ////////////////////////////////////////////////////////
+void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
+{
+    (void) h;
+    SipAdapterMessage adapter = {
+        .instance = std::make_shared<resip::SipMessage>(response)
+    };
+    
+    SipUserMessage user;
+    user.setAdapter(adapter);
+    postRegistrationResponse(user);
+}
+
 void ResipUserAgent::onFailure(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
 {
     onSuccess(h, response);
@@ -157,9 +225,57 @@ void ResipUserAgent::onRemoved(resip::ClientRegistrationHandle h, const resip::S
 
 int ResipUserAgent::onRequestRetry(resip::ClientRegistrationHandle h, int retryMinimum, const resip::SipMessage& msg)
 {
+    std::cout << "retryMinimum=" << retryMinimum << std::endl;
+
     onSuccess(h, msg);
 
     return mRegistrationRetryDelayTime;
+}
+
+// Invite Session Handler /////////////////////////////////////////////////////
+// void ResipUserAgent::onNewSession(resip::ServerInviteSessionHandle h, resip::InviteSession::OfferAnswerType oat, const resip::SipMessage& msg)
+// {}
+
+void ResipUserAgent::onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg)
+{
+    SipAdapterMessage adapter = {
+        .instance = std::make_shared<resip::SipMessage>(msg)
+    };
+
+    SipUserMessage user;
+    user.setAdapter(adapter);
+    postSessionRequest(user);
+}
+
+void ResipUserAgent::onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg)
+{
+    if (h != mInviteSessionHandle)
+    {
+        return;
+    }
+    std::cout << "terminated reason: " << reason << std::endl;
+
+    SipAdapterMessage adapter = {
+        .instance = std::make_shared<resip::SipMessage>(*msg)
+    };
+
+    SipUserMessage user;
+    user.setAdapter(adapter);
+    postSessionRequest(user);
+}
+
+void ResipUserAgent::onOffer(resip::InviteSessionHandle handle, const resip::SipMessage& msg, const resip::SdpContents& offer)
+{
+    (void) offer;
+    mInviteSessionHandle = handle;
+
+    SipAdapterMessage adapter = {
+        .instance = std::make_shared<resip::SipMessage>(msg)
+    };
+
+    SipUserMessage user;
+    user.setAdapter(adapter);
+    postSessionRequest(user);
 }
 
 // PagerMessageHandler //////////////////////////////////////////////////////////
@@ -171,8 +287,8 @@ void ResipUserAgent::onSuccess(ClientPagerMessageHandle h, const SipMessage& sta
     }
 }
 
-void ResipUserAgent::onFailure(ClientPagerMessageHandle h, const SipMessage& status, std::unique_ptr<Contents> contents)
-{}
+// void ResipUserAgent::onFailure(ClientPagerMessageHandle h, const SipMessage& status, std::unique_ptr<Contents> contents)
+// {}
 
 void ResipUserAgent::onMessageArrived(ServerPagerMessageHandle h, const SipMessage& message)
 {

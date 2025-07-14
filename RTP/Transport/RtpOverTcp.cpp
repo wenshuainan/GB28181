@@ -7,7 +7,8 @@
 #include <errno.h>
 #include "RtpOverTcp.h"
 
-RtpOverTcp::RtpOverTcp()
+RtpOverTcp::RtpOverTcp(int localPort)
+    : RtpNet(localPort)
 {}
 
 RtpOverTcp::~RtpOverTcp()

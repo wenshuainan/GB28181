@@ -39,6 +39,12 @@ public:
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
 
+    bool setSdpMediaNum(int32_t num);
+    bool setSdpMediaPort(int32_t index, int32_t port);
+    bool setSdpMediaTransport(int32_t index, const char *transport);
+    bool setSdpMediaPayloadType(int32_t index, int32_t type);
+    bool setSdpMediaSSRC(int32_t index, uint32_t value);
+
     bool setExpires(int32_t expires);
     bool addExtensionField(const std::string& name, const std::string& value);
 };
@@ -85,6 +91,8 @@ public:
     virtual bool sendRegistration(const SipUserMessage& req) = 0;
     virtual bool sendKeepaliveRequest(const XMLDocument& notify) = 0;
     virtual bool sendMANSCDPResponse(const XMLDocument& res) = 0;
+    virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code) = 0;
+    virtual bool sendSessionResponse(const SipUserMessage& res) = 0;
 
 protected:
     bool postRegistrationResponse(const SipUserMessage& res);

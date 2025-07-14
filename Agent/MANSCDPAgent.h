@@ -12,9 +12,9 @@ class MANSCDPAgent : public Agent
     friend class UA;
 
 private:
-    std::shared_ptr<Control> control;
-    std::shared_ptr<Query> query;
-    std::shared_ptr<Status> status;
+    std::shared_ptr<Control> m_devControl;
+    std::shared_ptr<Query> m_devQuery;
+    std::shared_ptr<Status> m_devStatus;
 
 private:
     /* 
@@ -22,7 +22,7 @@ private:
      * Control、Query、Notify
      * 遍历所有请求命令，匹配成功则调用其dispach方法处理
      */
-    std::vector<std::shared_ptr<CmdTypeRequest>> requests;
+    std::vector<std::shared_ptr<CmdTypeRequest>> m_cmdRequests;
 
 public:
     MANSCDPAgent(UA *ua);

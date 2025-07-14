@@ -34,13 +34,13 @@ public:
     };
 
 private:
-    std::shared_ptr<PES> videoPES; // 视频分包器
-    std::shared_ptr<PES> audioPES; // 音频分包器
-    std::shared_ptr<PSMux> psMux; // PS复用器
-    std::shared_ptr<RtpParticipant> rtpParticipant; // RTP流发布
-    RtpPayload::Type rtpPayloadType;
-    std::thread *thread;
-    bool bRunning; // 是否正在运行
+    std::shared_ptr<PES> m_videoPES; // 视频分包器
+    std::shared_ptr<PES> m_audioPES; // 音频分包器
+    std::shared_ptr<PSMux> m_psMux; // PS复用器
+    std::shared_ptr<RtpParticipant> m_rtpParticipant; // RTP流发布
+    RtpPayload::Type m_rtpPayloadType;
+    std::thread *m_thread;
+    bool m_bRunning; // 是否正在运行
     Session *m_session;
 
 public:
@@ -52,6 +52,7 @@ private:
 
 public:
     void onProgramStream(const uint8_t *data, int32_t size);
+    const std::shared_ptr<RtpParticipant> getRtpParticipant() const;
 
 public:
     bool connect();
@@ -84,7 +85,7 @@ public:
     virtual ~Session();
 
 private:
-    bool addMedia(const Media::Attr& attr);
+    std::shared_ptr<Media> addMedia(const Media::Attr& attr);
 
 public:
     bool start();
@@ -98,7 +99,7 @@ class SessionAgent : public Agent
     friend class Media; // 允许Media访问MediaAgent的私有成员play
 
 private:
-    std::shared_ptr<Play> play;
+    std::shared_ptr<Play> m_devPlay;
     std::shared_ptr<Session> m_sessionPlay; //实时视音频点播
 
 public:
@@ -106,9 +107,9 @@ public:
     ~SessionAgent();
 
 private:
-    bool agentReqINVITE(const SipUserMessage& req);
-    bool agentReqACK(const SipUserMessage& req);
-    bool agentReqBYE(const SipUserMessage& req);
+    bool dispatchINVITE(const SipUserMessage& req);
+    bool dispatchACK();
+    bool dispatchBYE();
 
     RtpNet::Type parseNetType(const std::string& str) const;
 

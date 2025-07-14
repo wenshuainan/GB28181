@@ -22,10 +22,18 @@ bool DevControl::process(const PTZCmdControl::Request& req)
 
 bool DevControl::process(const TeleBootControl::Request& req)
 {
+    std::cout << "DevControl::process" << std::endl;
+    std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
+    
     return false;
 }
 
 bool DevControl::process(const RecordControl::Request& req, DeviceControlResponse::Response& res)
 {
+    std::cout << "DevControl::process" << std::endl;
+    std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
+
+    res.CmdType = req.CmdType;
+
     return false;
 }

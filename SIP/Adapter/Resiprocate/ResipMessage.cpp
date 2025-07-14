@@ -153,6 +153,10 @@ const char* SipUserMessage::getSdpSessionIpv4() const
                 ? connection.getAddress().c_str()
                 : "";
     }
+    else
+    {
+        return "";
+    }
 }
 
 int32_t SipUserMessage::getSdpMediaNum() const
@@ -202,7 +206,7 @@ int32_t SipUserMessage::getSdpMediaPort(int32_t index) const
 
     const resip::SdpContents::Session &session = sdp->session();
     const resip::SdpContents::Session::MediumContainer &container = session.media();
-    if (index >= 0 && index < container.size())
+    if (index >= 0 && (uint32_t)index < container.size())
     {
         auto m = container.begin();
         std::advance(m, index);
@@ -236,7 +240,7 @@ const char* SipUserMessage::getSdpMediaTransport(int32_t index) const
 
     const resip::SdpContents::Session &session = sdp->session();
     const resip::SdpContents::Session::MediumContainer &container = session.media();
-    if (index < 0 || index >= container.size())
+    if (index < 0 || (uint32_t)index >= container.size())
     {
         return "";
     }
@@ -267,7 +271,7 @@ int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index) const
 
     const resip::SdpContents::Session &session = sdp->session();
     const resip::SdpContents::Session::MediumContainer &container = session.media();
-    if (index < 0 || index >= container.size())
+    if (index < 0 || (uint32_t)index >= container.size())
     {
         return 0;
     }
@@ -283,10 +287,7 @@ int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index) const
             return c != codecs.end() ? c->payloadType() : 0;
         }
     }
-    else
-    {
-        return 0;
-    }
+    return 0;
 }
 
 const char* SipUserMessage::getSdpMediaIpv4(int32_t index) const
@@ -311,7 +312,7 @@ const char* SipUserMessage::getSdpMediaIpv4(int32_t index) const
 
     const resip::SdpContents::Session &session = sdp->session();
     const resip::SdpContents::Session::MediumContainer &container = session.media();
-    if (index < 0 || index >= container.size())
+    if (index < 0 || (uint32_t)index >= container.size())
     {
         return "";
     }
@@ -329,16 +330,29 @@ const char* SipUserMessage::getSdpMediaIpv4(int32_t index) const
                     : "";
         }
     }
-    else
-    {
-        return "";
-    }
+    
+    return "";
 }
 
-uint32_t SipUserMessage::getSdpMediaSSRC(int32_t index) const
-{
-    return 0;
-}
+// uint32_t SipUserMessage::getSdpMediaSSRC(int32_t index) const
+// {
+//     return 0;
+// }
+
+// bool SipUserMessage::setSdpMediaNum(int32_t num)
+// {}
+
+// bool SipUserMessage::setSdpMediaPort(int32_t index, int32_t port)
+// {}
+
+// bool SipUserMessage::setSdpMediaTransport(int32_t index, const char *transport)
+// {}
+
+// bool SipUserMessage::setSdpMediaPayloadType(int32_t index, int32_t type)
+// {}
+
+// bool SipUserMessage::setSdpMediaSSRC(int32_t index, uint32_t value)
+// {}
 
 bool SipUserMessage::setExpires(int32_t expires)
 {

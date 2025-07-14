@@ -32,10 +32,12 @@ bool DevPlay::getVideo(Coded &coded)
 
 bool DevPlay::getAudio(Coded &coded)
 {
+    (void) coded;
     return false;
 }
 
 bool DevPlay::putCoded(const Coded &coded)
 {
+    (void) coded;
     return true;
 }

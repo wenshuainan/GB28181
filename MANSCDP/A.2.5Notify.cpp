@@ -13,6 +13,7 @@ NotifyRequest::~NotifyRequest()
 
 bool NotifyRequest::serialize(const Request& req, XMLDocument *xmldocReq)
 {
+    (void) req;
     XMLDeclaration *dec = xmldocReq->NewDeclaration("xml version=\"1.0\"");
     if (dec != nullptr)
     {
@@ -107,5 +108,6 @@ bool KeepAliveNotify::match(const XMLElement *xmlReq)
 
 bool KeepAliveNotify::handle(const XMLElement *xmlReq)
 {
+    (void) xmlReq;
     return false;
 }

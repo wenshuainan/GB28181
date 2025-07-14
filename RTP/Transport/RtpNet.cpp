@@ -24,10 +24,10 @@ std::shared_ptr<RtpNet> RtpNet::create(Type type, int localPort)
     switch (type)
     {
     case UDP:
-        net = std::make_shared<RtpOverUdp>();
+        net = std::make_shared<RtpOverUdp>(localPort);
         break;
     case TCP_ACTIVE:
-        net = std::make_shared<RtpOverTcp>();
+        net = std::make_shared<RtpOverTcp>(localPort);
         break;
     case TCP_PASSIVE:
         break;

@@ -82,6 +82,7 @@ public:
                                 const Tuple &destination,
                                 const Data& sigcompId)
    {
+      (void) sigcompId;
       SdpContents* sdp = dynamic_cast<SdpContents*>(msg.getContents());
       if(sdp)  
       {
@@ -91,7 +92,7 @@ public:
          InfoLog( << "SdpMessageDecorator: src=" << source << ", dest=" << destination << ", msg=" << endl << msg.brief());
       }
    }
-   virtual void rollbackMessage(SipMessage& msg) {}  // Nothing to do
+   virtual void rollbackMessage(SipMessage& msg) { (void) msg; return; }  // Nothing to do
    virtual MessageDecorator* clone() const { return new SdpMessageDecorator; }
 };
 
@@ -592,6 +593,7 @@ BasicClientUserAgent::onRemoved(ClientRegistrationHandle h, const SipMessage&msg
 int 
 BasicClientUserAgent::onRequestRetry(ClientRegistrationHandle h, int retryMinimum, const SipMessage& msg)
 {
+   (void) retryMinimum;
    mRegHandle = h;
    mStack->logDnsCache();
    if(mShuttingdown)
@@ -659,6 +661,10 @@ BasicClientUserAgent::onConnected(InviteSessionHandle h, const SipMessage& msg)
 {
    dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onConnected(h, msg);
 }
+
+// void
+// BasicClientUserAgent::onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg)
+// {}
 
 void
 BasicClientUserAgent::onStaleCallTimeout(ClientInviteSessionHandle h)
@@ -1012,6 +1018,7 @@ BasicClientUserAgent::onError(ServerSubscriptionHandle, const SipMessage& msg)
 void 
 BasicClientUserAgent::onExpiredByClient(ServerSubscriptionHandle, const SipMessage& sub, SipMessage& notify)
 {
+   (void) sub;
    InfoLog(<< "onExpiredByClient(ServerSubscriptionHandle): " << notify.brief());
 }
 
@@ -1045,6 +1052,7 @@ BasicClientUserAgent::onSuccess(ClientOutOfDialogReqHandle, const SipMessage& ms
 void 
 BasicClientUserAgent::onFailure(ClientOutOfDialogReqHandle h, const SipMessage& msg)
 {
+   (void) h;
    WarningLog(<< "onFailure(ClientOutOfDialogReqHandle): " << msg.brief());
 }
 
@@ -1105,6 +1113,7 @@ BasicClientUserAgent::onSuccess(ClientPagerMessageHandle, const SipMessage& stat
 void
 BasicClientUserAgent::onFailure(ClientPagerMessageHandle, const SipMessage& status, std::unique_ptr<Contents> contents)
 {
+   (void) contents;
    InfoLog(<< "onFailure(ClientPagerMessageHandle): " << status.brief());
 }
 

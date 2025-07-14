@@ -6,7 +6,7 @@
 class RtpOverUdp : public RtpNet
 {
 public:
-    RtpOverUdp();
+    RtpOverUdp(int localPort = 0);
     virtual ~RtpOverUdp();
 
 public:

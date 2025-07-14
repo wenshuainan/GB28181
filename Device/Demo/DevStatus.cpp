@@ -1,3 +1,4 @@
+#include <iostream>
 #include "DevStatus.h"
 
 DevStatus::DevStatus()
@@ -18,4 +19,6 @@ void DevStatus::onKeepaliveSuccess()
 {}
 
 void DevStatus::onKeepaliveTimeout(int32_t timeoutCount)
-{}
+{
+    std::cout << "Keepalive timeout: " << timeoutCount << std::endl;
+}

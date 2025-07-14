@@ -1,9 +1,10 @@
 #include "SessionAgent.h"
 #include "DevPlay.h"
+#include "UA.h"
 
 Media::Media(Session* session, const Attr& attr)
 {
-    bRunning = false;
+    m_bRunning = false;
     m_session = session;
     Connection *conInfo = attr.conInfo;
 
@@ -16,15 +17,15 @@ Media::Media(Session* session, const Attr& attr)
         return;
     }
 
-    rtpPayloadType = attr.payloadType;
+    m_rtpPayloadType = attr.payloadType;
 
-    if (rtpPayloadType == RtpPayload::PS)
+    if (m_rtpPayloadType == RtpPayload::PS)
     {
-        psMux = std::make_shared<PSMux>(this);
+        m_psMux = std::make_shared<PSMux>(this);
         
         //根据设备目前的视音频编码类型创建
-        videoPES = PES::create(PES::AVC, psMux.get());
-        audioPES = PES::create(PES::G711A, psMux.get());
+        m_videoPES = PES::create(PES::AVC, m_psMux.get());
+        m_audioPES = PES::create(PES::G711A, m_psMux.get());
     }
 
     RtpParticipant::Participant participant;
@@ -33,7 +34,7 @@ Media::Media(Session* session, const Attr& attr)
     participant.netType = attr.netType;
     participant.payloadType = attr.payloadType;
     participant.SSRC = attr.SSRC != NULL ? *attr.SSRC : 0;
-    rtpParticipant = std::make_shared<RtpParticipant>(participant);
+    m_rtpParticipant = std::make_shared<RtpParticipant>(participant);
 }
 
 Media::~Media()
@@ -41,33 +42,33 @@ Media::~Media()
 
 void Media::proc()
 {
-    const std::shared_ptr<Play> &play = m_session->m_agent->play;
+    const std::shared_ptr<Play> &play = m_session->m_agent->m_devPlay;
     if (play == nullptr)
     {
         return;
     }
 
-    while (bRunning)
+    while (m_bRunning)
     {
-        switch (rtpPayloadType)
+        switch (m_rtpPayloadType)
         {
         case RtpPayload::PS:
         {
-            if (videoPES)
+            if (m_videoPES)
             {
                 Play::Coded coded;
                 if (play->getVideo(coded))
                 {
-                    videoPES->packetized(coded.data, coded.size);
+                    m_videoPES->packetized(coded.data, coded.size);
                     play->putCoded(coded);
                 }
             }
-            if (audioPES)
+            if (m_audioPES)
             {
                 Play::Coded coded;
                 if (play->getAudio(coded))
                 {
-                    audioPES->packetized(coded.data, coded.size);
+                    m_audioPES->packetized(coded.data, coded.size);
                     play->putCoded(coded);
                 }
             }
@@ -78,7 +79,7 @@ void Media::proc()
             Play::Coded coded;
             if (play->getVideo(coded))
             {
-                rtpParticipant->format(coded.data, coded.size);
+                m_rtpParticipant->format(coded.data, coded.size);
                 play->putCoded(coded);
             }
             break;
@@ -88,7 +89,7 @@ void Media::proc()
             Play::Coded coded;
             if (play->getAudio(coded))
             {
-                rtpParticipant->format(coded.data, coded.size);
+                m_rtpParticipant->format(coded.data, coded.size);
                 play->putCoded(coded);
             }
             break;
@@ -102,40 +103,41 @@ void Media::proc()
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
 {
-    if (rtpParticipant != nullptr)
+    if (m_rtpParticipant != nullptr)
     {
-        rtpParticipant->format(data, size);
+        m_rtpParticipant->format(data, size);
     }
 }
 
 bool Media::connect()
 {
-    return rtpParticipant->connect();
+    return m_rtpParticipant->connect();
 }
 
 bool Media::disconnect()
 {
-    return rtpParticipant->disconnect();
+    return m_rtpParticipant->disconnect();
 }
 
 bool Media::publish()
 {
-    bRunning = true;
-    thread = new std::thread(&Media::proc, this);
+    m_bRunning = true;
+    m_thread = new std::thread(&Media::proc, this);
     return true;
 }
 
 bool Media::unpublish()
 {
-    bRunning = false;
+    m_bRunning = false;
 
-    if (thread != nullptr)
+    if (m_thread != nullptr)
     {
-        if (thread->joinable())
+        if (m_thread->joinable())
         {
-            thread->join();
+            m_thread->join();
         }
-        delete thread;
+        delete m_thread;
+        m_thread = nullptr;
     }
 
     return true;
@@ -154,12 +156,12 @@ Session::Session(SessionAgent *agent, const Attr& attr)
 Session::~Session()
 {}
 
-bool Session::addMedia(const Media::Attr& attr)
+std::shared_ptr<Media> Session::addMedia(const Media::Attr& attr)
 {
     std::shared_ptr<Media> m = std::make_shared<Media>(this, attr);
     m->connect();
     media.push_back(m);
-    return true;
+    return m;
 }
 
 bool Session::start()
@@ -184,14 +186,17 @@ bool Session::stop()
 
 SessionAgent::SessionAgent(UA *ua) : Agent(ua)
 {
-    play = std::make_shared<DevPlay>();
+    m_devPlay = std::make_shared<DevPlay>();
 }
 
 SessionAgent::~SessionAgent()
 {}
 
-bool SessionAgent::agentReqINVITE(const SipUserMessage& req)
+bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
 {
+    SipUserMessage res;
+    std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
+    sip->makeSessionResponse(req, res, 200);
     std::string name = req.getSdpSessionName();
 
     if (strCaseCmp(name, "Play"))
@@ -225,7 +230,12 @@ bool SessionAgent::agentReqINVITE(const SipUserMessage& req)
             SSRC = req.getSdpMediaSSRC(i);
             mattr.SSRC = &SSRC;
 
-            m_sessionPlay->addMedia(mattr);
+            std::shared_ptr<Media> m = m_sessionPlay->addMedia(mattr);
+            if (m != nullptr)
+            {
+                res.setSdpMediaNum(i + 1);
+                res.setSdpMediaPort(i, m->getRtpParticipant()->getLocalPort());
+            }
         }
     }
     else if (strCaseCmp(name, "Playback"))
@@ -236,9 +246,11 @@ bool SessionAgent::agentReqINVITE(const SipUserMessage& req)
     {
         return false;
     }
+
+    return sip->sendSessionResponse(res);
 }
 
-bool SessionAgent::agentReqACK(const SipUserMessage& req)
+bool SessionAgent::dispatchACK()
 {
     if (m_sessionPlay != nullptr)
     {
@@ -249,7 +261,7 @@ bool SessionAgent::agentReqACK(const SipUserMessage& req)
     return false;
 }
 
-bool SessionAgent::agentReqBYE(const SipUserMessage& req)
+bool SessionAgent::dispatchBYE()
 {
     if (m_sessionPlay != nullptr)
     {
@@ -291,16 +303,18 @@ bool SessionAgent::agent(const SipUserMessage& message)
 
     if (strCaseCmp(method, "INVITE") == 0)
     {
-        return agentReqINVITE(message);
+        return dispatchINVITE(message);
     }
     else if (strCaseCmp(method, "ACK") == 0)
     {
-        return agentReqACK(message);
+        return dispatchACK();
     }
     else if (strCaseCmp(method, "BYE") == 0)
     {
-        return agentReqBYE(message);
+        return dispatchBYE();
     }
-
-    return false;
+    else
+    {
+        return false;
+    }
 }

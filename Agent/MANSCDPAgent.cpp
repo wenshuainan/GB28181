@@ -1,3 +1,4 @@
+#include <iostream>
 #include "MANSCDPAgent.h"
 #include "tinyxml2.h"
 #include "UA.h"
@@ -9,34 +10,37 @@
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
-    control = std::make_shared<DevControl>();
-    query = std::make_shared<DevQuery>();
-    status = std::make_shared<DevStatus>();
+    m_devControl = std::make_shared<DevControl>();
+    m_devQuery = std::make_shared<DevQuery>();
+    m_devStatus = std::make_shared<DevStatus>();
 
-    requests.push_back(std::make_shared<ControlReuest>(this, control.get()));
-    requests.push_back(std::make_shared<QueryRequest>(this, query.get()));
-    requests.push_back(std::make_shared<NotifyRequest>(this, status.get()));
+    m_cmdRequests.push_back(std::make_shared<ControlReuest>(this, m_devControl.get()));
+    m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get()));
+    m_cmdRequests.push_back(std::make_shared<NotifyRequest>(this, m_devStatus.get()));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
 {
-    requests.clear();
+    m_cmdRequests.clear();
 }
 
 bool MANSCDPAgent::match(const std::string& method, const std::string& contentType)
 {
-    return contentType == "Application/MANSCDP+xml";
+    return strCaseCmp(method, "MESSAGE")
+            && strCaseCmp(contentType, "Application/MANSCDP+xml");
 }
 
 bool MANSCDPAgent::agent(const SipUserMessage& message)
 {
+    std::cout << "not agent:" << std::endl;
+    message.print();
     return false;
 }
 
 bool MANSCDPAgent::agent(const XMLDocument &xmldocReq) const
 {
     std::string rootName = xmldocReq.RootElement()->Name();
-    for (auto i : requests)
+    for (auto i : m_cmdRequests)
     {
         if (i->match(rootName))
         {
@@ -49,13 +53,20 @@ bool MANSCDPAgent::agent(const XMLDocument &xmldocReq) const
 
 int32_t MANSCDPAgent::getKeepaliveTimeoutCount() const
 {
-    return status->getTimeoutCount();
+    return m_devStatus->getTimeoutCount();
 }
 
 bool MANSCDPAgent::recvedKeepaliveResponse(int32_t code) const
 {
-    status->addRecvedCount();
-    return true;
+    if (code == 200)
+    {
+        m_devStatus->addRecvedCount();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
@@ -70,7 +81,7 @@ bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) 
 
     if (notify == nullptr)
     {
-        status->getStatus(req);
+        m_devStatus->getStatus(req);
     }
     else
     {

@@ -10,9 +10,9 @@ class RegistrationAgent : public Agent
     friend class UA;
 
 private:
-    std::shared_ptr<Registration> registration;
-    std::string GBVerName;
-    std::string GBVerValue;
+    std::shared_ptr<Registration> m_devRegistration;
+    std::string m_GBVerName;
+    std::string m_GBVerValue;
 
 public:
     RegistrationAgent(UA *ua);

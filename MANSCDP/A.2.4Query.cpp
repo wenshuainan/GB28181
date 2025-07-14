@@ -27,6 +27,8 @@ bool QueryRequest::dispatch(const XMLElement *xmlReq)
             return i->handle(xmlReq);
         }
     }
+
+    return false;
 }
 
 CatalogQuery::CatalogQuery(MANSCDPAgent *agent, Query *query)

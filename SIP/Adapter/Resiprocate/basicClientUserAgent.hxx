@@ -44,7 +44,7 @@ public:
    bool process(int timeoutMs);  // returns false when shutdown is complete and process should no longer be called
 
    DialogUsageManager& getDialogUsageManager() { return *mDum; }
-   std::shared_ptr<UserProfile> getIncomingUserProfile(const SipMessage& msg) { return mProfile; } // This test program only uses the one global Master Profile - just return it
+   std::shared_ptr<UserProfile> getIncomingUserProfile(const SipMessage& msg) { (void) msg; return mProfile; } // This test program only uses the one global Master Profile - just return it
       
 protected:
    // Postable Handler ////////////////////////////////////////////////////////////
@@ -79,6 +79,7 @@ protected:
    virtual void onProvisional(resip::ClientInviteSessionHandle, const resip::SipMessage& msg);
    virtual void onConnected(resip::ClientInviteSessionHandle h, const resip::SipMessage& msg);
    virtual void onConnected(resip::InviteSessionHandle, const resip::SipMessage& msg);
+   virtual void onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg);
    virtual void onStaleCallTimeout(resip::ClientInviteSessionHandle);
    virtual void onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg);
    virtual void onRedirected(resip::ClientInviteSessionHandle, const resip::SipMessage& msg);
