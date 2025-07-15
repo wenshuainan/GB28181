@@ -5,20 +5,20 @@
 
 RtpParticipant::RtpParticipant(Participant& participant)
 {
-    bRunning = false;
-    payloadType = participant.payloadType;
-    SSRC = participant.SSRC;
-    destination = participant.destination;
+    m_bRunning = false;
+    m_payloadType = participant.payloadType;
+    m_SSRC = participant.SSRC;
+    m_destination = participant.destination;
 
-    net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
+    m_net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
 
-    switch (payloadType)
+    switch (m_payloadType)
     {
     case RtpPayload::Type::PS:
-        payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::PS));
+        m_payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::PS));
         break;
     case RtpPayload::Type::H264:
-        payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::H264));
+        m_payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::H264));
         break;
     
     default:
@@ -27,7 +27,9 @@ RtpParticipant::RtpParticipant(Participant& participant)
 }
 
 RtpParticipant::~RtpParticipant()
-{}
+{
+    disconnect();
+}
 
 uint16_t RtpParticipant::genRandom()
 {
@@ -45,23 +47,23 @@ void RtpParticipant::process()
         .x = 0,
         .p = 0,
         .v = 2,
-        .pt = payloadType,
+        .pt = m_payloadType,
         .m = 0,
         .seq = genRandom(),
         .ts = 0,
-        .ssrc = SSRC
+        .ssrc = m_SSRC
     };
 
-    while (bRunning)
+    while (m_bRunning)
     {
-        if (formatedQue.empty())
+        if (m_formatedQue.empty())
         {
             usleep(10000);
             continue;
         }
 
-        Formated formated = formatedQue.front();
-        formatedQue.pop();
+        Formated formated = m_formatedQue.front();
+        m_formatedQue.pop();
 
         if (formated.bFirst)
         {
@@ -73,7 +75,7 @@ void RtpParticipant::process()
         }
         RtpPacket packet(fixed, formated.payload);
 
-        net->send(packet);
+        m_net->send(packet);
 
         fixed.seq++;
         fixed.m = 0;
@@ -82,36 +84,39 @@ void RtpParticipant::process()
 
 bool RtpParticipant::pushPayload(const Formated& formated)
 {
-    formatedQue.push(formated);
+    m_formatedQue.push(formated);
     return true;
 }
 
 int32_t RtpParticipant::format(const uint8_t *data, int32_t len)
 {
-    if (payloadFormat == nullptr)
+    if (m_payloadFormat == nullptr)
     {
         return 0;
     }
 
-    return payloadFormat->format(data, len);
+    return m_payloadFormat->format(data, len);
 }
 
 bool RtpParticipant::connect()
 {
-    if (net == nullptr || net->isConnected())
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
+    if (m_net == nullptr || m_net->isConnected())
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
-    if (destination.ipv4.empty() || destination.port <= 0)
+    if (m_destination.ipv4.empty() || m_destination.port <= 0)
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
-    bool ret = net->connect(destination.ipv4, destination.port);
+    bool ret = m_net->connect(m_destination.ipv4, m_destination.port);
     if (ret)
     {
-        bRunning = true;
-        thread = new std::thread(&RtpParticipant::process, this);
+        m_bRunning = true;
+        m_thread = new std::thread(&RtpParticipant::process, this);
     }
 
     return ret;
@@ -119,21 +124,21 @@ bool RtpParticipant::connect()
 
 bool RtpParticipant::disconnect()
 {
-    if (net == nullptr || !net->isConnected())
+    if (m_net == nullptr || !m_net->isConnected())
     {
         return false;
     }
 
-    bool ret = net->disconnect();
+    bool ret = m_net->disconnect();
     if (ret)
     {
-        bRunning = false;
-        if (thread && thread->joinable())
+        m_bRunning = false;
+        if (m_thread && m_thread->joinable())
         {
-            thread->join();
+            m_thread->join();
         }
-        delete thread;
-        thread = nullptr;
+        delete m_thread;
+        m_thread = nullptr;
     }
 
     return ret;
@@ -141,20 +146,20 @@ bool RtpParticipant::disconnect()
 
 const char* RtpParticipant::getLocalIpv4()
 {
-    if (net == nullptr)
+    if (m_net == nullptr)
     {
         return "";
     }
 
-    return net->getLocalIpv4().c_str();
+    return m_net->getLocalIpv4().c_str();
 }
 
 int32_t RtpParticipant::getLocalPort() const
 {
-    if (net == nullptr)
+    if (m_net == nullptr)
     {
         return -1;
     }
 
-    return net->getLocalPort();
+    return m_net->getLocalPort();
 }

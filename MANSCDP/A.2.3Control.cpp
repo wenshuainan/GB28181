@@ -148,8 +148,8 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
     return m_control->process(req);
 }
 
-// DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)
-// {}
+DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)
+{}
 
 DeviceConfigRequest::~DeviceConfigRequest()
 {

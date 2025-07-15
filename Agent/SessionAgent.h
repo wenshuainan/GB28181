@@ -52,7 +52,7 @@ private:
 
 public:
     void onProgramStream(const uint8_t *data, int32_t size);
-    const std::shared_ptr<RtpParticipant> getRtpParticipant() const;
+    const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
 
 public:
     bool connect();

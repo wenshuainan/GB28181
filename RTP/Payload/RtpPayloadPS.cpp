@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/time.h>
 #include "RtpPayloadPS.h"
 
 RtpPayloadPS::RtpPayloadPS(RtpParticipant *participant, int32_t maxLen)
@@ -27,6 +28,9 @@ int32_t RtpPayloadPS::format(const uint8_t *data, int32_t len)
         }
 
         m_formated.bFirst = true;
+        struct timeval tv;
+        gettimeofday(&tv, nullptr);
+        m_formated.tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
         m_formated.marker = 0;
         m_formated.payload = std::make_shared<std::vector<uint8_t>>();
     }

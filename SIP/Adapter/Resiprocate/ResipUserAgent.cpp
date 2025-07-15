@@ -233,8 +233,12 @@ int ResipUserAgent::onRequestRetry(resip::ClientRegistrationHandle h, int retryM
 }
 
 // Invite Session Handler /////////////////////////////////////////////////////
-// void ResipUserAgent::onNewSession(resip::ServerInviteSessionHandle h, resip::InviteSession::OfferAnswerType oat, const resip::SipMessage& msg)
-// {}
+void ResipUserAgent::onNewSession(resip::ServerInviteSessionHandle h, resip::InviteSession::OfferAnswerType oat, const resip::SipMessage& msg)
+{
+    (void) h;
+    (void) oat;
+    (void) msg;
+}
 
 void ResipUserAgent::onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg)
 {
@@ -287,8 +291,12 @@ void ResipUserAgent::onSuccess(ClientPagerMessageHandle h, const SipMessage& sta
     }
 }
 
-// void ResipUserAgent::onFailure(ClientPagerMessageHandle h, const SipMessage& status, std::unique_ptr<Contents> contents)
-// {}
+void ResipUserAgent::onFailure(ClientPagerMessageHandle h, const SipMessage& status, std::unique_ptr<Contents> contents)
+{
+    (void) h;
+    (void) status;
+    (void) contents;
+}
 
 void ResipUserAgent::onMessageArrived(ServerPagerMessageHandle h, const SipMessage& message)
 {

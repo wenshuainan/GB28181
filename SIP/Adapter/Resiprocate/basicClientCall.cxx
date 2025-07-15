@@ -551,10 +551,12 @@ BasicClientCall::onForkDestroyed(ClientInviteSessionHandle h)
    InfoLog(<< "onForkDestroyed:");
 }
 
-// void 
-// BasicClientCall::onReadyToSend(InviteSessionHandle h, SipMessage& msg)
-// {
-// }
+void 
+BasicClientCall::onReadyToSend(InviteSessionHandle h, SipMessage& msg)
+{
+   (void) h;
+   (void) msg;
+}
 
 void 
 BasicClientCall::onFlowTerminated(InviteSessionHandle h)

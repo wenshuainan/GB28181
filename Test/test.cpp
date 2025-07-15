@@ -15,18 +15,18 @@ static int s_stream_flag = 0;
 static void *stream_proc(void *arg)
 {
     FILE *stream = NULL;
-    const char *filename = "./assets/nature.h264";
+    // const char *filename = "./assets/nature.h264";
     // const char *filename = "./assets/240x320.h264";
     // const char *filename = "./assets/240x3202.h264";
-    // const char *filename = "./assets/128x128.h264";
+    const char *filename = "./assets/128x128.h264";
     // const char *filename = "./assets/1920x1080.h264";
     // const char *filename = "./assets/cuc_ieschool.h264";
     // const char *filename = "./assets/birds.h264";
 
     prctl(PR_SET_NAME, "simulate_stream");
 
-    // PES *pes = (PacketizedAVC *)arg;
-    RtpParticipant *participant = (RtpParticipant *)arg;
+    PES *pes = (PacketizedAVC *)arg;
+    // RtpParticipant *participant = (RtpParticipant *)arg;
 
     while (s_stream_flag)
     {
@@ -54,8 +54,8 @@ static void *stream_proc(void *arg)
         int wrlen = 0;
         while (wrlen < len && s_stream_flag)
         {
-            // int wr = pes->packetized(buf + wrlen, len - wrlen);
-            int wr = participant->format(buf + wrlen, len - wrlen);
+            int wr = pes->packetized(buf + wrlen, len - wrlen);
+            // int wr = participant->format(buf + wrlen, len - wrlen);
             printf(">>>>>> %s:%d wr=%d\n", __FILE__, __LINE__, wr);
             if (wr < 0)
             {
@@ -77,7 +77,7 @@ static void *stream_proc(void *arg)
 void ps_stream_callback(const uint8_t *data, int32_t size)
 {
     // printf("~~~~~~ %p %u\n", data, size);
-#if 0
+#if 1
     static FILE *file = fopen("./stream.ps", "wb");
     if (file)
     {
@@ -88,6 +88,20 @@ void ps_stream_callback(const uint8_t *data, int32_t size)
     s_rtp_participant->format(data, size);
 #endif
 }
+
+class PSCb : public PSCallback
+{
+public:
+    virtual void onProgramStream(const uint8_t *data, int32_t size)
+    {
+        static FILE *file = fopen("./stream.ps", "wb");
+        if (file)
+        {
+            fwrite(data, 1, size, file);
+            fflush(file);
+        }
+    }
+};
 
 int main()
 {
@@ -165,25 +179,26 @@ int main()
     seri.Print(&printer);
     printf("\n%s\n", printer.CStr());
 #elif 0
-    RtpParticipant::Participant participant = {
-        .destination = {"10.12.13.136", 1000},
-        .netType = RtpNet::Type::UDP,
-        .payloadType = RtpPayload::Type::H264,
-        .SSRC = 0x99000000
-    };
-    RtpParticipant rtpParticipant(participant);
-    rtpParticipant.start();
-    s_rtp_participant = &rtpParticipant;
+    // RtpParticipant::Participant participant = {
+    //     .destination = {"10.12.13.136", 1000},
+    //     .netType = RtpNet::Type::UDP,
+    //     .payloadType = RtpPayload::Type::H264,
+    //     .SSRC = 0x99000000
+    // };
+    // RtpParticipant rtpParticipant(participant);
+    // rtpParticipant.start();
+    // s_rtp_participant = &rtpParticipant;
 
-    PSMux mux;
-    mux.setStreamCallback(ps_stream_callback);
-    mux.start();
+    PSCb pscb;
+    PSMux mux(&pscb);
+    // mux.setStreamCallback(ps_stream_callback);
+    // mux.start();
 
     PacketizedAVC packetizer(&mux);
     pthread_t tid;
     s_stream_flag = 1;
-    // pthread_create(&tid, NULL, stream_proc, &packetizer);
-    pthread_create(&tid, NULL, stream_proc, &rtpParticipant);
+    pthread_create(&tid, NULL, stream_proc, &packetizer);
+    // pthread_create(&tid, NULL, stream_proc, &rtpParticipant);
 #else
     BitStream bs;
     // bs.write8(1, 0x80, 7);

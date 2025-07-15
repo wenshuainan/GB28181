@@ -33,14 +33,14 @@ public:
     };
     
 private:
-    std::shared_ptr<RtpNet> net;
-    std::shared_ptr<RtpPayload> payloadFormat;
-    std::queue<Formated> formatedQue;
-    std::thread *thread;
-    bool bRunning;
-    RtpPayload::Type payloadType;
-    Participant::Destination destination;
-    uint32_t SSRC;
+    std::shared_ptr<RtpNet> m_net;
+    std::shared_ptr<RtpPayload> m_payloadFormat;
+    std::queue<Formated> m_formatedQue;
+    std::thread *m_thread;
+    bool m_bRunning;
+    RtpPayload::Type m_payloadType;
+    Participant::Destination m_destination;
+    uint32_t m_SSRC;
     
 public:
     RtpParticipant(Participant& participant);

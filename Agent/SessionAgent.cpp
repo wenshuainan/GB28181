@@ -42,6 +42,8 @@ Media::~Media()
 
 void Media::proc()
 {
+    static FILE *debugf = fopen("./stream.raw", "wb");
+
     const std::shared_ptr<Play> &play = m_session->m_agent->m_devPlay;
     if (play == nullptr)
     {
@@ -59,7 +61,22 @@ void Media::proc()
                 Play::Coded coded;
                 if (play->getVideo(coded))
                 {
-                    m_videoPES->packetized(coded.data, coded.size);
+                    if (debugf != NULL)
+                    {
+                        fwrite(coded.data, 1, coded.size, debugf);
+                        fflush(debugf);
+                    }
+
+                    int32_t plen = 0;
+                    while (plen < coded.size)
+                    {
+                        int32_t len = m_videoPES->packetized(coded.data + plen, coded.size - plen);
+                        if (len < 0)
+                        {
+                            break;
+                        }
+                        plen += len;
+                    }
                     play->putCoded(coded);
                 }
             }
@@ -103,14 +120,36 @@ void Media::proc()
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
 {
+    static FILE *debugf = fopen("./stream.ps", "wb");
+    if (debugf != NULL)
+    {
+        fwrite(data, 1, size, debugf);
+        fflush(debugf);
+    }
+
     if (m_rtpParticipant != nullptr)
     {
-        m_rtpParticipant->format(data, size);
+        int32_t flen = 0;
+        while (flen < size)
+        {
+            int32_t len = m_rtpParticipant->format(data + flen, size - flen);
+            if (len < 0)
+            {
+                break;
+            }
+            flen += len;
+        }
     }
+}
+
+const std::shared_ptr<RtpParticipant>& Media::getRtpParticipant() const
+{
+    return m_rtpParticipant;
 }
 
 bool Media::connect()
 {
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return m_rtpParticipant->connect();
 }
 
@@ -168,6 +207,7 @@ bool Session::start()
 {
     for (auto m : media)
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         m->publish();
     }
 
@@ -194,13 +234,16 @@ SessionAgent::~SessionAgent()
 
 bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
 {
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     SipUserMessage res;
     std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
     sip->makeSessionResponse(req, res, 200);
     std::string name = req.getSdpSessionName();
+    printf(">>>>>> %s:%d name=%s\n", __FILE__, __LINE__, name.c_str());
 
     if (strCaseCmp(name, "Play"))
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         Session::Attr attr;
         Connection sessionCon;
 
@@ -229,12 +272,17 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
             }
             SSRC = req.getSdpMediaSSRC(i);
             mattr.SSRC = &SSRC;
+            printf(">>>>>> %s:%d port=%d, net=%d, payload=%d, ipv4=%s, ssrc=%u\n", __FILE__, __LINE__,
+                    mattr.port, mattr.netType, mattr.payloadType, mCon.ipv4.c_str(), SSRC);
 
             std::shared_ptr<Media> m = m_sessionPlay->addMedia(mattr);
             if (m != nullptr)
             {
                 res.setSdpMediaNum(i + 1);
                 res.setSdpMediaPort(i, m->getRtpParticipant()->getLocalPort());
+                res.setSdpMediaTransport(i, "RTP/AVP");
+                res.setSdpMediaPayloadType(i, 96);
+                res.setSdpMediaSSRC(i, SSRC);
             }
         }
     }
@@ -244,14 +292,17 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
     }
     else
     {
+        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return sip->sendSessionResponse(res);
 }
 
 bool SessionAgent::dispatchACK()
 {
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_sessionPlay != nullptr)
     {
         m_sessionPlay->start();
@@ -263,6 +314,7 @@ bool SessionAgent::dispatchACK()
 
 bool SessionAgent::dispatchBYE()
 {
+    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_sessionPlay != nullptr)
     {
         m_sessionPlay->stop();
@@ -291,25 +343,25 @@ RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
 
 bool SessionAgent::match(const std::string& method, const std::string& contentType)
 {
-    return strCaseCmp(method, "INVITE") == 0
-            || strCaseCmp(method, "ACK") == 0
-            || strCaseCmp(method, "BYE") == 0
-            || strCaseCmp(contentType, "application/sdp") == 0;
+    return strCaseCmp(method, "INVITE")
+            || strCaseCmp(method, "ACK")
+            || strCaseCmp(method, "BYE")
+            || strCaseCmp(contentType, "application/sdp");
 }
 
 bool SessionAgent::agent(const SipUserMessage& message)
 {
     const char* method = message.getMethod();
 
-    if (strCaseCmp(method, "INVITE") == 0)
+    if (strCaseCmp(method, "INVITE"))
     {
         return dispatchINVITE(message);
     }
-    else if (strCaseCmp(method, "ACK") == 0)
+    else if (strCaseCmp(method, "ACK"))
     {
         return dispatchACK();
     }
-    else if (strCaseCmp(method, "BYE") == 0)
+    else if (strCaseCmp(method, "BYE"))
     {
         return dispatchBYE();
     }

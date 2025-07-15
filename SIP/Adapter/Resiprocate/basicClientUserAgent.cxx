@@ -662,9 +662,11 @@ BasicClientUserAgent::onConnected(InviteSessionHandle h, const SipMessage& msg)
    dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onConnected(h, msg);
 }
 
-// void
-// BasicClientUserAgent::onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg)
-// {}
+void
+BasicClientUserAgent::onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg)
+{
+   (void) msg;
+}
 
 void
 BasicClientUserAgent::onStaleCallTimeout(ClientInviteSessionHandle h)
