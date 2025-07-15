@@ -5,11 +5,12 @@
 #include <memory>
 #include <thread>
 #include "SipAdapter.h"
-#include "Agent.h"
-#include "A.2.5Notify.h"
-#include "RegistrationAgent.h"
-#include "MANSCDPAgent.h"
-#include "SessionAgent.h"
+#include "MANSCDP/A.2.5Notify.h"
+
+class Agent;
+class RegistrationAgent;
+class MANSCDPAgent;
+class SessionAgent;
 
 class UA
 {

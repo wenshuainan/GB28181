@@ -1,7 +1,7 @@
 #ifndef REGISTRATION_INTERFACE_H
 #define REGISTRATION_INTERFACE_H
 
-#include "A.2.1GlobalTypes.h"
+#include "MANSCDP/A.2.1GlobalTypes.h"
 
 class Registration
 {

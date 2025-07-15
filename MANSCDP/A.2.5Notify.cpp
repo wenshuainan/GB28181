@@ -1,5 +1,5 @@
 #include "A.2.5Notify.h"
-#include "MANSCDPAgent.h"
+#include "Agent/MANSCDPAgent.h"
 
 NotifyRequest::NotifyRequest(MANSCDPAgent *agent, Status *status)
 {

@@ -1,7 +1,7 @@
 #ifndef DEV_QUERY_H
 #define DEV_QUERY_H
 
-#include "9.5Query.h"
+#include "Interface/9.5Query.h"
 
 class DevQuery : public Query
 {

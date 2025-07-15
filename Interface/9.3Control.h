@@ -1,8 +1,8 @@
 #ifndef CONTROL_INTERFACE_H
 #define CONTROL_INTERFACE_H
 
-#include "A.2.3Control.h"
-#include "A.2.6Response.h"
+#include "MANSCDP/A.2.3Control.h"
+#include "MANSCDP/A.2.6Response.h"
 
 class Control
 {

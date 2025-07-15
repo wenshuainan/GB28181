@@ -1,7 +1,7 @@
 #ifndef DEV_STATUS_H
 #define DEV_STATUS_H
 
-#include "9.6Status.h"
+#include "Interface/9.6Status.h"
 
 class DevStatus : public Status
 {

@@ -1,6 +1,6 @@
 #include "A.2.4Query.h"
 #include "A.2.6Response.h"
-#include "MANSCDPAgent.h"
+#include "Agent/MANSCDPAgent.h"
 
 QueryRequest::QueryRequest(MANSCDPAgent *agent, Query *query)
 {

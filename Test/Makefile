@@ -6,9 +6,8 @@ CROSS_PLATFORM ?= GK7201V200
 CC  = gcc
 CPP = g++
 
-PROJECT_ROOT := ..
+LIB_ROOT := ../Build/output
 TARGET := GB28181Demo
-SIP_OUTPUT := $(PROJECT_ROOT)/SIP/Vendor/resiprocate/cmake/output
 
 CSRCS += 
 CPPSRCS += test.cpp
@@ -18,22 +17,14 @@ OBJS += $(patsubst %.cpp, %.o, $(CPPSRCS))
 
 DEPS := $(OBJS:.o=.d)
 
-INCLUDES := -I$(PROJECT_ROOT)
-INCLUDES += -I$(PROJECT_ROOT)/Agent
-INCLUDES += -I$(PROJECT_ROOT)/MANSCDP
-INCLUDES += -I$(PROJECT_ROOT)/Process
-INCLUDES += -I$(PROJECT_ROOT)/UserInterface
-INCLUDES += -I$(PROJECT_ROOT)/tinyxml2
-INCLUDES += -I$(PROJECT_ROOT)/SIP/Adapter
-INCLUDES += -I$(PROJECT_ROOT)/PS
-INCLUDES += -I$(PROJECT_ROOT)/RTP
+INCLUDES := -I$(LIB_ROOT)/include
 
 CFLAGS := $(INCLUDES) -g -MMD
 
 CPPFLAGS := $(CFLAGS)
 
-LDFLAGS := -L$(PROJECT_ROOT)/Build/
-LDFLAGS += -lGB28181
+LDFLAGS := -L$(LIB_ROOT)/lib
+LDFLAGS += -lGB28181 -lrtp -lmpeg2 -lsipadapter -ldum -lresip -lrutil -lresipares -ltinyxml2 -pthread
 
 #不同的硬件平台
 ifeq ($(CROSS_PLATFORM), GK7201V200)
@@ -44,11 +35,7 @@ else ifeq ($(CROSS_PLATFORM), X86GCC7.5)
 	CPP := /usr/bin/g++
 	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer
-	
-	CFLAGS += -I$(SIP_OUTPUT)/include
-	CPPFLAGS += -I$(SIP_OUTPUT)/sinclude
 	LDFLAGS += -fsanitize=address
-	LDFLAGS += -L$(SIP_OUTPUT)/lib -ldum -lresip -lrutil -lresipares -pthread
 endif
 
 .PHONY: all clean

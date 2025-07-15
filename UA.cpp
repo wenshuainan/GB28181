@@ -2,6 +2,10 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "UA.h"
+#include "Agent/Agent.h"
+#include "Agent/RegistrationAgent.h"
+#include "Agent/MANSCDPAgent.h"
+#include "Agent/SessionAgent.h"
 
 UA::UA()
 {

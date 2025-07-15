@@ -2,15 +2,26 @@
 #include <unistd.h>
 #include "UA.h"
 
+#define TEST_GB28181 1
+#define TEST_MPEG2 0
+#define TEST_RTP 0
+#define TEST_BITSTREAM 0
+#define TEST_XML 0
+
+#if TEST_MPEG2
 #include <sys/prctl.h>
 #include <pthread.h>
 #include "PSMux.h"
 #include "Packetizer/PacketizedAVC.h"
 #include "Semantics.h"
+#endif
 
+#if TEST_RTP
 #include "RTP/RtpParticipant.h"
 static RtpParticipant *s_rtp_participant = NULL;
+#endif
 
+#if TEST_MPEG2 || TEST_RTP
 static int s_stream_flag = 0;
 static void *stream_proc(void *arg)
 {
@@ -25,8 +36,11 @@ static void *stream_proc(void *arg)
 
     prctl(PR_SET_NAME, "simulate_stream");
 
+#if TEST_MPEG2
     PES *pes = (PacketizedAVC *)arg;
-    // RtpParticipant *participant = (RtpParticipant *)arg;
+#elif TEST_RTP
+    RtpParticipant *participant = (RtpParticipant *)arg;
+#endif
 
     while (s_stream_flag)
     {
@@ -54,8 +68,11 @@ static void *stream_proc(void *arg)
         int wrlen = 0;
         while (wrlen < len && s_stream_flag)
         {
+#if TEST_MPEG2
             int wr = pes->packetized(buf + wrlen, len - wrlen);
-            // int wr = participant->format(buf + wrlen, len - wrlen);
+#elif TEST_RTP
+            int wr = participant->format(buf + wrlen, len - wrlen);
+#endif
             printf(">>>>>> %s:%d wr=%d\n", __FILE__, __LINE__, wr);
             if (wr < 0)
             {
@@ -77,18 +94,20 @@ static void *stream_proc(void *arg)
 void ps_stream_callback(const uint8_t *data, int32_t size)
 {
     // printf("~~~~~~ %p %u\n", data, size);
-#if 1
+#if TEST_MPEG2
     static FILE *file = fopen("./stream.ps", "wb");
     if (file)
     {
         fwrite(data, 1, size, file);
         fflush(file);
     }
-#else
+#elif TEST_RTP
     s_rtp_participant->format(data, size);
 #endif
 }
+#endif
 
+#if TEST_MPEG2
 class PSCb : public PSCallback
 {
 public:
@@ -102,10 +121,11 @@ public:
         }
     }
 };
+#endif
 
 int main()
 {
-#if 1
+#if TEST_GB28181
     UA ua;
 
     SipUserAgent::ClientInfo client;
@@ -127,7 +147,7 @@ int main()
     keepalive.timeoutCount = 3;
 
     ua.start(client, server, keepalive);
-#elif 0
+#elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \
                         <CmdType>Catalog</CmdType> \
@@ -178,28 +198,29 @@ int main()
     XMLPrinter printer;
     seri.Print(&printer);
     printf("\n%s\n", printer.CStr());
-#elif 0
-    // RtpParticipant::Participant participant = {
-    //     .destination = {"10.12.13.136", 1000},
-    //     .netType = RtpNet::Type::UDP,
-    //     .payloadType = RtpPayload::Type::H264,
-    //     .SSRC = 0x99000000
-    // };
-    // RtpParticipant rtpParticipant(participant);
-    // rtpParticipant.start();
-    // s_rtp_participant = &rtpParticipant;
+#elif TEST_RTP
+    RtpParticipant::Participant participant = {
+        .destination = {"10.12.13.136", 1000},
+        .netType = RtpNet::Type::UDP,
+        .payloadType = RtpPayload::Type::H264,
+        .SSRC = 0x99000000
+    };
+    RtpParticipant rtpParticipant(participant);
+    rtpParticipant.start();
+    s_rtp_participant = &rtpParticipant;
 
+    pthread_t tid;
+    s_stream_flag = 1;
+    pthread_create(&tid, NULL, stream_proc, &rtpParticipant);
+#elif TEST_MEPG2
     PSCb pscb;
     PSMux mux(&pscb);
-    // mux.setStreamCallback(ps_stream_callback);
-    // mux.start();
-
     PacketizedAVC packetizer(&mux);
+
     pthread_t tid;
     s_stream_flag = 1;
     pthread_create(&tid, NULL, stream_proc, &packetizer);
-    // pthread_create(&tid, NULL, stream_proc, &rtpParticipant);
-#else
+#elif TEST_BITSTREAM
     BitStream bs;
     // bs.write8(1, 0x80, 7);
     // bs.write8(2, 0x40, 6);

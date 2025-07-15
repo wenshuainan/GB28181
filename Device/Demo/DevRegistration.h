@@ -1,7 +1,7 @@
 #ifndef DEV_REGISTRATION_H
 #define DEV_REGISTRATION_H
 
-#include "9.1Registration.h"
+#include "Interface/9.1Registration.h"
 
 class DevRegistration : public Registration
 {

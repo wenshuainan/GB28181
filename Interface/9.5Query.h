@@ -1,8 +1,8 @@
 #ifndef QUERY_INTERFACE_H
 #define QUERY_INTERFACE_H
 
-#include "A.2.4Query.h"
-#include "A.2.6Response.h"
+#include "MANSCDP/A.2.4Query.h"
+#include "MANSCDP/A.2.6Response.h"
 
 class Query
 {

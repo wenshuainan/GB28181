@@ -3,7 +3,7 @@
 
 #include <memory>
 #include "Agent.h"
-#include "9.1Registration.h"
+#include "Interface/9.1Registration.h"
 
 class RegistrationAgent : public Agent
 {
