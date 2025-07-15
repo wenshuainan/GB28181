@@ -3,9 +3,9 @@
 
 #include <memory>
 #include "Agent.h"
-#include "Process/9.3Control.h"
-#include "Process/9.5Query.h"
-#include "Process/9.6Status.h"
+#include "Interface/9.3Control.h"
+#include "Interface/9.5Query.h"
+#include "Interface/9.6Status.h"
 
 class MANSCDPAgent : public Agent
 {

@@ -1,0 +1,4 @@
+#ifndef VOICE_INTERFACE_H
+#define VOICE_INTERFACE_H
+
+#endif

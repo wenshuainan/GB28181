@@ -7,9 +7,9 @@ DevControl::DevControl()
 DevControl::~DevControl()
 {}
 
-bool DevControl::process(const PTZCmdControl::Request& req)
+bool DevControl::handle(const PTZCmdControl::Request& req)
 {
-    std::cout << "DevControl::process" << std::endl;
+    std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
     std::cout << "SN:" << req.SN.getValue() << std::endl;
     std::cout << "DeviceID:" << req.DeviceID.getValue() << std::endl;
@@ -20,17 +20,17 @@ bool DevControl::process(const PTZCmdControl::Request& req)
     return true;
 }
 
-bool DevControl::process(const TeleBootControl::Request& req)
+bool DevControl::handle(const TeleBootControl::Request& req)
 {
-    std::cout << "DevControl::process" << std::endl;
+    std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
     
     return false;
 }
 
-bool DevControl::process(const RecordControl::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::handle(const RecordControl::Request& req, DeviceControlResponse::Response& res)
 {
-    std::cout << "DevControl::process" << std::endl;
+    std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
 
     res.CmdType = req.CmdType;

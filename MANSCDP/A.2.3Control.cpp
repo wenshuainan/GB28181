@@ -145,7 +145,7 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    return m_control->process(req);
+    return m_control->handle(req);
 }
 
 DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)

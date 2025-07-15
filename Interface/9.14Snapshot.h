@@ -1,0 +1,4 @@
+#ifndef SNAPSHOT_INTERFACE_H
+#define SNAPSHOT_INTERFACE_H
+
+#endif

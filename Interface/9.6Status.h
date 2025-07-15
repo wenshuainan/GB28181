@@ -1,5 +1,5 @@
-#ifndef STATUS_PROCESS_H
-#define STATUS_PROCESS_H
+#ifndef STATUS_INTERFACE_H
+#define STATUS_INTERFACE_H
 
 #include <thread>
 #include "A.2.5Notify.h"

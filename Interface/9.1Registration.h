@@ -1,5 +1,5 @@
-#ifndef REGISTRATION_PROCESS_H
-#define REGISTRATION_PROCESS_H
+#ifndef REGISTRATION_INTERFACE_H
+#define REGISTRATION_INTERFACE_H
 
 #include "A.2.1GlobalTypes.h"
 
@@ -21,7 +21,7 @@ public:
     Registration() : m_state(UNREGISTERED) {}
     ~Registration() {}
 
-    virtual void processState(State state, const std::string& sipReasonPhrase) = 0;
+    virtual void onState(State state, const std::string& sipReasonPhrase) = 0;
     virtual State getState() { return m_state; }
 };
 

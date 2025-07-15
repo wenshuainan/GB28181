@@ -17,7 +17,7 @@ endif ()
 include_directories(./)
 include_directories(./tinyxml2)
 include_directories(./MANSCDP)
-include_directories(./Process)
+include_directories(./Interface)
 include_directories(./Agent)
 include_directories(./SIP/Adapter)
 include_directories(${SIP_VENDOR_ADAPTER_DIR})
@@ -28,7 +28,7 @@ include_directories(./RTP)
 
 file(GLOB_RECURSE SRC_XML ./tinyxml2/tinyxml2.cpp)
 aux_source_directory(./MANSCDP SRC_MANSCDP)
-aux_source_directory(./Process SRC_PROCESS)
+aux_source_directory(./Interface SRC_INTERFACE)
 aux_source_directory(./Agent SRC_AGENT)
 aux_source_directory(./SIP/Adapter SRC_SIP_ADAPTER)
 aux_source_directory(${SIP_VENDOR_ADAPTER_DIR} SRC_SIP_VENDOR_ADAPTER)
@@ -37,7 +37,7 @@ file(GLOB SRC_PS "./PS/*.cpp" "./PS/*/*.cpp")
 file(GLOB SRC_RTP "./RTP/*.cpp" "./RTP/*/*.cpp")
 
 set(SRC_CUR UA.cpp)
-set(SRC_LIB ${SRC_XML} ${SRC_SIP_ADAPTER} ${SRC_SIP_VENDOR_ADAPTER} ${SRC_SIP_VENDOR} ${SRC_PS} ${SRC_RTP} ${SRC_MANSCDP} ${SRC_PROCESS} ${SRC_AGENT} ${SRC_DEV} ${SRC_CUR})
+set(SRC_LIB ${SRC_XML} ${SRC_SIP_ADAPTER} ${SRC_SIP_VENDOR_ADAPTER} ${SRC_SIP_VENDOR} ${SRC_PS} ${SRC_RTP} ${SRC_MANSCDP} ${SRC_INTERFACE} ${SRC_AGENT} ${SRC_DEV} ${SRC_CUR})
 
 add_compile_options(
 		-g

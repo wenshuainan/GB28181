@@ -1,4 +1,0 @@
-#ifndef UPGRADE_PROCESS_H
-#define UPGRADE_PROCESS_H
-
-#endif

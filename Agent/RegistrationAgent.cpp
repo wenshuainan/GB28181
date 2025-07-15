@@ -79,5 +79,5 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
         break;
     }
 
-    m_devRegistration->processState(newState, reasonPhrase);
+    m_devRegistration->onState(newState, reasonPhrase);
 }

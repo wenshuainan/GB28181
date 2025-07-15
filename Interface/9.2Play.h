@@ -1,5 +1,5 @@
-#ifndef PLAY_PROCESS_H
-#define PLAY_PROCESS_H
+#ifndef PLAY_INTERFACE_H
+#define PLAY_INTERFACE_H
 
 #include <memory>
 

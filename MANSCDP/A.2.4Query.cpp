@@ -93,7 +93,7 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
     }
 
     CatalogQueryResponse::Response res;
-    if (m_query->process(req, res))
+    if (m_query->handle(req, res))
     {
         XMLDocument doc;
         CatalogQueryResponse::serialize(res, &doc);
@@ -165,7 +165,7 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     }
 
     DeviceInfoQueryResponse::Response res;
-    if (m_query->process(req, res))
+    if (m_query->handle(req, res))
     {
         XMLDocument doc;
         DeviceInfoQueryResponse::serialize(res, &doc);

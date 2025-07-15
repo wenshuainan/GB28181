@@ -7,9 +7,9 @@ DevQuery::DevQuery()
 DevQuery::~DevQuery()
 {}
 
-bool DevQuery::process(const CatalogQuery::Request& req, CatalogQueryResponse::Response& res)
+bool DevQuery::handle(const CatalogQuery::Request& req, CatalogQueryResponse::Response& res)
 {
-    std::cout << "DevQuery::process" << std::endl;
+    std::cout << "DevQuery::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
     std::cout << "SN:" << req.SN.getValue() << std::endl;
     std::cout << "DeviceID:" << req.DeviceID.getValue() << std::endl;
@@ -35,9 +35,9 @@ bool DevQuery::process(const CatalogQuery::Request& req, CatalogQueryResponse::R
     return true;
 }
 
-bool DevQuery::process(const DeviceInfoQuery::Request& req, DeviceInfoQueryResponse::Response& res)
+bool DevQuery::handle(const DeviceInfoQuery::Request& req, DeviceInfoQueryResponse::Response& res)
 {
-    std::cout << "DevQuery::process" << std::endl;
+    std::cout << "DevQuery::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
     std::cout << "SN:" << req.SN.getValue() << std::endl;
     std::cout << "DeviceID:" << req.DeviceID.getValue() << std::endl;

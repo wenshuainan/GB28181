@@ -1,5 +1,5 @@
-#ifndef DEV_REGISTRATION_PROCESS_H
-#define DEV_REGISTRATION_PROCESS_H
+#ifndef DEV_REGISTRATION_H
+#define DEV_REGISTRATION_H
 
 #include "9.1Registration.h"
 
@@ -10,7 +10,7 @@ public:
     ~DevRegistration() {}
 
 public:
-    void processState(State state, const std::string& sipReasonPhrase);
+    void onState(State state, const std::string& sipReasonPhrase);
 };
 
 #endif

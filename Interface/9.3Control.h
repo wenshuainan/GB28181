@@ -1,5 +1,5 @@
-#ifndef CONTROL_PROCESS_H
-#define CONTROL_PROCESS_H
+#ifndef CONTROL_INTERFACE_H
+#define CONTROL_INTERFACE_H
 
 #include "A.2.3Control.h"
 #include "A.2.6Response.h"
@@ -18,9 +18,9 @@ public:
      * 源设备向目标设备发送录像控制、报警布防/撤防、报警复位、看守位控制、软件升级、设备配置
      * 命令后,目标设备应发送应答命令表示执行的结果,命令流程见9.3.2.2;
      */
-    virtual bool process(const PTZCmdControl::Request& req) = 0;
-    virtual bool process(const TeleBootControl::Request& req) = 0;
-    virtual bool process(const RecordControl::Request& req, DeviceControlResponse::Response& res) = 0;
+    virtual bool handle(const PTZCmdControl::Request& req) = 0;
+    virtual bool handle(const TeleBootControl::Request& req) = 0;
+    virtual bool handle(const RecordControl::Request& req, DeviceControlResponse::Response& res) = 0;
 };
 
 #endif
