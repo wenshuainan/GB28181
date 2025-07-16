@@ -13,6 +13,9 @@ public:
     RtpPayloadPS(RtpParticipant *participant, int32_t maxLen = 1400);
     virtual ~RtpPayloadPS();
 
+private:
+    void pushFormated();
+
 public:
     virtual int32_t format(const uint8_t *data, int32_t len);
 };

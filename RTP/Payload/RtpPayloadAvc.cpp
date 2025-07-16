@@ -19,8 +19,8 @@ uint8_t RtpPayloadAvc::makeFUAIndicator(uint8_t naluHeader)
 {
     uint8_t indicator = 0;
 
-    indicator = naluHeader & 0x07;
-    indicator |= 28 << 3; // FU-A = 28
+    indicator = naluHeader & 0xE0;
+    indicator |= 28; // FU-A = 28
 
     return indicator;
 }
@@ -29,9 +29,9 @@ uint8_t RtpPayloadAvc::makeFUAHeader(uint8_t start, uint8_t end, uint8_t naluTyp
 {
     uint8_t header = 0;
 
-    header = start;
-    header |= end << 1;
-    header |= naluType << 3;
+    header = start << 7;
+    header |= end << 6;
+    header |= naluType;
 
     return header;
 }
@@ -109,7 +109,7 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
                 m_formated.payload = std::make_shared<std::vector<uint8_t>>();
                 m_formated.payload->resize(2); //FUA indicator and header
 
-                for (j = i + 4; j < assembleLen; j++)
+                for (j = i + 5; j < assembleLen; j++)
                 {
                     m_formated.payload->push_back(assemble[j]);
                 }
@@ -188,7 +188,7 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
         m_formated.payload = std::make_shared<std::vector<uint8_t>>();
         m_formated.payload->resize(2); //FUA indicator and header
 
-        m_formated.payload->push_back(data[parsed+4]);
+        // m_formated.payload->push_back(data[parsed+4]);
         m_cacheLen = 0;
         parsed += 5;
     }

@@ -25,7 +25,6 @@ std::shared_ptr<RtpNet> RtpNet::create(Type type, int localPort)
     switch (type)
     {
     case UDP:
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         net = std::make_shared<RtpOverUdp>(localPort);
         break;
     case TCP_ACTIVE:

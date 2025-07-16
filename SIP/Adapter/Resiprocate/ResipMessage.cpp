@@ -1,5 +1,6 @@
 #include <strings.h>
 #include <iostream>
+#include <stdlib.h>
 #include "SipAdapter.h"
 #include "resip/stack/SipMessage.hxx"
 #include "resip/stack/OctetContents.hxx"
@@ -205,6 +206,45 @@ int32_t SipUserMessage::getSdpMediaNum() const
     return container.size();
 }
 
+const char* SipUserMessage::getSdpMediaType(int32_t index) const
+{
+    if (index < 0)
+    {
+        return "";
+    }
+
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if ((uint32_t)index < container.size())
+    {
+        auto m = container.begin();
+        std::advance(m, index);
+        return m != container.end() ? m->name().c_str() : "";
+    }
+    else
+    {
+        return "";
+    }
+}
+
 int32_t SipUserMessage::getSdpMediaPort(int32_t index) const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)
@@ -270,7 +310,7 @@ const char* SipUserMessage::getSdpMediaTransport(int32_t index) const
     return m != container.end() ? m->protocol().c_str() : "";
 }
 
-int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index) const
+int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index, uint16_t type[10]) const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
@@ -296,19 +336,22 @@ int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index) const
     {
         return 0;
     }
+    int i = 0;
     auto m = container.begin();
     std::advance(m, index);
     if (m != container.end())
     {
-        const resip::SdpContents::Session::Medium::CodecContainer &codecs = m->codecs();
-        if (codecs.size() > 0)
+        const std::list<Data>& formats = m->getFormats();
+        for (auto f : formats)
         {
-            auto c = codecs.begin();
-            std::advance(c, 0);
-            return c != codecs.end() ? c->payloadType() : 0;
+            type[i++] = atoi(f.c_str());
+            if (i >= 10)
+            {
+                break;
+            }
         }
     }
-    return 0;
+    return i;
 }
 
 const char* SipUserMessage::getSdpMediaIpv4(int32_t index) const
@@ -434,10 +477,48 @@ bool SipUserMessage::setSdpMediaNum(int32_t num)
         return false;
     }
     int i;
-    for (i = 0; i < size; i++)
+    for (i = size; i < num; i++)
     {
-        container.push_back(resip::SdpContents::Session::Medium());
+        session.addMedium(resip::SdpContents::Session::Medium());
     }
+    return true;
+}
+
+bool SipUserMessage::setSdpMediaType(int32_t index, const char *type)
+{
+    if (index < 0 || type == nullptr || type[0] == 0)
+    {
+        return false;
+    }
+
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return false;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return false;
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return false;
+    }
+
+    resip::SdpContents::Session &session = sdp->session();
+    resip::SdpContents::Session::MediumContainer &container = session.media();
+    int32_t size = container.size();
+    if (index >= size)
+    {
+        return false;
+    }
+    auto i = container.begin();
+    std::advance(i, index);
+    i->name() = type;
     return true;
 }
 

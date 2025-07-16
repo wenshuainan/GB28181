@@ -36,8 +36,8 @@ private:
     std::shared_ptr<RtpNet> m_net;
     std::shared_ptr<RtpPayload> m_payloadFormat;
     std::queue<Formated> m_formatedQue;
-    std::thread *m_thread;
-    bool m_bRunning;
+    std::shared_ptr<std::thread> m_thread;
+    bool m_bConnected;
     RtpPayload::Type m_payloadType;
     Participant::Destination m_destination;
     uint32_t m_SSRC;
@@ -47,14 +47,14 @@ public:
     ~RtpParticipant();
 
 private:
-    uint16_t genRandom();
+    uint16_t makeRandom();
     void process();
 
 public:
     bool pushPayload(const Formated& formated);
 
 public:
-    int32_t format(const uint8_t *data, int32_t len);
+    int32_t transport(const uint8_t *data, int32_t len);
     bool connect();
     bool disconnect();
     const char* getLocalIpv4();

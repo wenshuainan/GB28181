@@ -17,6 +17,7 @@ public:
 
 private:
     void pushPacket(uint8_t naluType);
+    int32_t packetizeFrame(uint8_t *data, int32_t size);
 
 public:
     int32_t packetized(uint8_t *data, int32_t size);

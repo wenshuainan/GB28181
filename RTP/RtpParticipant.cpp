@@ -5,24 +5,15 @@
 
 RtpParticipant::RtpParticipant(Participant& participant)
 {
-    m_bRunning = false;
+    m_bConnected = false;
     m_payloadType = participant.payloadType;
     m_SSRC = participant.SSRC;
     m_destination = participant.destination;
 
     m_net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
-
-    switch (m_payloadType)
+    if (m_net != nullptr)
     {
-    case RtpPayload::Type::PS:
-        m_payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::PS));
-        break;
-    case RtpPayload::Type::H264:
-        m_payloadFormat = std::shared_ptr<RtpPayload>(RtpPayload::create(this, RtpPayload::Type::H264));
-        break;
-    
-    default:
-        break;
+        m_payloadFormat = RtpPayload::create(this, m_payloadType, m_net->getEfficLen());
     }
 }
 
@@ -31,7 +22,7 @@ RtpParticipant::~RtpParticipant()
     disconnect();
 }
 
-uint16_t RtpParticipant::genRandom()
+uint16_t RtpParticipant::makeRandom()
 {
     std::random_device rd;  // 用于获取随机种子
     std::mt19937 gen(rd()); // 使用 Mersenne Twister 引擎
@@ -41,20 +32,19 @@ uint16_t RtpParticipant::genRandom()
 
 void RtpParticipant::process()
 {
-    RtpHeader::Fixed fixed =
-    {
+    RtpHeader::Fixed fixed = {
         .cc = 0,
         .x = 0,
         .p = 0,
         .v = 2,
         .pt = m_payloadType,
         .m = 0,
-        .seq = genRandom(),
+        .seq = makeRandom(),
         .ts = 0,
         .ssrc = m_SSRC
     };
 
-    while (m_bRunning)
+    while (m_bConnected)
     {
         if (m_formatedQue.empty())
         {
@@ -88,38 +78,46 @@ bool RtpParticipant::pushPayload(const Formated& formated)
     return true;
 }
 
-int32_t RtpParticipant::format(const uint8_t *data, int32_t len)
+int32_t RtpParticipant::transport(const uint8_t *data, int32_t len)
 {
     if (m_payloadFormat == nullptr)
     {
         return 0;
     }
 
-    return m_payloadFormat->format(data, len);
+    int32_t tlen = 0;
+    while (tlen < len)
+    {
+        int flen = m_payloadFormat->format(data + tlen, len - tlen);
+        if (flen <= 0)
+        {
+            break;
+        }
+        tlen += flen;
+    }
+    
+    return tlen;
 }
 
 bool RtpParticipant::connect()
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_net == nullptr || m_net->isConnected())
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
     if (m_destination.ipv4.empty() || m_destination.port <= 0)
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
-    bool ret = m_net->connect(m_destination.ipv4, m_destination.port);
-    if (ret)
+    bool connected = m_net->connect(m_destination.ipv4, m_destination.port);
+    if (connected)
     {
-        m_bRunning = true;
-        m_thread = new std::thread(&RtpParticipant::process, this);
+        m_bConnected = true;
+        m_thread = std::make_shared<std::thread>(&RtpParticipant::process, this);
     }
 
-    return ret;
+    return connected;
 }
 
 bool RtpParticipant::disconnect()
@@ -129,19 +127,13 @@ bool RtpParticipant::disconnect()
         return false;
     }
 
-    bool ret = m_net->disconnect();
-    if (ret)
+    m_bConnected = false;
+    if (m_thread && m_thread->joinable())
     {
-        m_bRunning = false;
-        if (m_thread && m_thread->joinable())
-        {
-            m_thread->join();
-        }
-        delete m_thread;
-        m_thread = nullptr;
+        m_thread->join();
     }
 
-    return ret;
+    return m_net->disconnect();
 }
 
 const char* RtpParticipant::getLocalIpv4()

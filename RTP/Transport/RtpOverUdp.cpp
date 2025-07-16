@@ -11,11 +11,12 @@ RtpOverUdp::RtpOverUdp(int localPort)
 {}
 
 RtpOverUdp::~RtpOverUdp()
-{}
+{
+    disconnect();
+}
 
 bool RtpOverUdp::connect(const std::string& ipv4, int port)
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     m_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (m_sockfd < 0)
     {
@@ -28,7 +29,6 @@ bool RtpOverUdp::connect(const std::string& ipv4, int port)
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 
-    printf(">>>>>> %s:%d %s %d\n", __FILE__, __LINE__, ipv4.c_str(), port);
     if (::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
         close(m_sockfd);
@@ -53,7 +53,7 @@ bool RtpOverUdp::disconnect()
 bool RtpOverUdp::send(RtpPacket& packet)
 {
 #if 1
-    static FILE *debugf = fopen("./stream.rtp", "wb");
+    static FILE *debugf = fopen("./stream.rtpoverudp", "wb");
     if (debugf != NULL)
     {
         fwrite(packet.getHeader(), 1, packet.getHeaderLength(), debugf);
@@ -84,11 +84,15 @@ bool RtpOverUdp::send(RtpPacket& packet)
     static FILE* file = fopen("./rtp_over_udp.rtp", "wb");
     if (file)
     {
-        printf(">>>>>> %s:%d %u %u\n", __FILE__, __LINE__, packet.getHeaderLength(), packet.getPayloadLength());
         fwrite(packet.getHeader(), 1, packet.getHeaderLength(), file);
         fwrite(packet.getPayload(), 1, packet.getPayloadLength(), file);
         fflush(file);
     }
     return false; // For debugging purposes, always return false
 #endif
+}
+
+uint16_t RtpOverUdp::getEfficLen()
+{
+    return 1472 - 12;
 }

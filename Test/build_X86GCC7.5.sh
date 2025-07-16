@@ -45,7 +45,7 @@ fi
 #if [ ! -f libGB28181.a ];then
 #	make clean && make
 #fi
-make
+make && make install
 
 #回到当前目录编译Demo
 cd -

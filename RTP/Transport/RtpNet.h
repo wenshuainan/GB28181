@@ -27,6 +27,7 @@ public:
     virtual bool connect(const std::string& ipv4, int port) = 0;
     virtual bool disconnect() = 0;
     virtual bool send(RtpPacket& packet) = 0;
+    virtual uint16_t getEfficLen() = 0;
 
 public:
     static std::shared_ptr<RtpNet> create(Type type, int localPort = 0);

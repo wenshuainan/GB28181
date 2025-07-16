@@ -12,7 +12,9 @@ RtpOverTcp::RtpOverTcp(int localPort)
 {}
 
 RtpOverTcp::~RtpOverTcp()
-{}
+{
+    disconnect();
+}
 
 bool RtpOverTcp::connect(const std::string& ipv4, int port)
 {
@@ -56,17 +58,44 @@ bool RtpOverTcp::send(RtpPacket& packet)
         return false;
     }
 
-    struct iovec iov[3];
-    uint16_t length = htons(packet.getHeaderLength() + packet.getPayloadLength());
+    static FILE *debugf = fopen("./stream.rtpovertcp", "wb");
+    if (debugf != NULL)
+    {
+        fwrite(packet.getHeader(), 1, packet.getHeaderLength(), debugf);
+        fwrite(packet.getPayload(), 1, packet.getPayloadLength(), debugf);
+        fflush(debugf);
+    }
 
+    uint16_t headerlen = packet.getHeaderLength();
+    uint16_t payloadlen = packet.getPayloadLength();
+
+    struct iovec iov[3];
+    uint16_t length = htons(headerlen + payloadlen);
+
+#if 1 // 《GB28181自动化测试工具》花屏问题
+    uint8_t precede[4] = {0};
+    precede[0] = '$';
+    precede[1] = 0;
+    memcpy(precede + 2, &length, sizeof(length));
+
+    iov[0].iov_base = precede;
+    iov[0].iov_len = sizeof(precede);
+#else
     iov[0].iov_base = &length;
     iov[0].iov_len = sizeof(length);
+#endif
 
     iov[1].iov_base = (void *)packet.getHeader();
-    iov[1].iov_len = packet.getHeaderLength();
+    iov[1].iov_len = headerlen;
 
     iov[2].iov_base = (void *)packet.getPayload();
-    iov[2].iov_len = packet.getPayloadLength();
+    iov[2].iov_len = payloadlen;
 
-    return writev(m_sockfd, iov, 3) > 0;
+    return writev(m_sockfd, iov, 3)
+            == (ssize_t)(sizeof(length) + headerlen + payloadlen);
+}
+
+uint16_t RtpOverTcp::getEfficLen()
+{
+    return 0xFFFF - 12;
 }

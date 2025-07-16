@@ -32,6 +32,7 @@ void UA::proc()
             {
                 m_bOnline = false;
                 m_registAgent->stop();
+                continue;
             }
 
             if (katick + 3 > m_kaInfo.interval)
@@ -127,6 +128,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     }
 
     /* 创建状态维护线程 */
+    m_bStarted = true;
     m_thread = std::make_shared<std::thread>(&UA::proc, this);
     if (m_thread == nullptr)
     {
@@ -136,7 +138,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     }
     else
     {
-        return m_bStarted = true;
+        return true;
     }
 }
 

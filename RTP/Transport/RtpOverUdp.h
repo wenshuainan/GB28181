@@ -13,6 +13,7 @@ public:
     virtual bool connect(const std::string& ipv4, int port);
     virtual bool disconnect();
     virtual bool send(RtpPacket& packet);
+    virtual uint16_t getEfficLen();
 };
 
 #endif

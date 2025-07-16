@@ -33,13 +33,15 @@ public:
     const char* getSdpSessionName() const;
     const char* getSdpSessionIpv4() const;
     int32_t getSdpMediaNum() const;
+    const char* getSdpMediaType(int32_t index) const;
     int32_t getSdpMediaPort(int32_t index) const;
     const char* getSdpMediaTransport(int32_t index) const;
-    int32_t getSdpMediaPayloadType(int32_t index) const;
+    int32_t getSdpMediaPayloadType(int32_t index, uint16_t type[10]) const;
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
 
     bool setSdpMediaNum(int32_t num);
+    bool setSdpMediaType(int32_t index, const char *type);
     bool setSdpMediaPort(int32_t index, int32_t port);
     bool setSdpMediaTransport(int32_t index, const char *transport);
     bool setSdpMediaPayloadType(int32_t index, int32_t type);

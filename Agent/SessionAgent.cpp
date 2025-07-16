@@ -1,44 +1,36 @@
+#include <iostream>
+#include <algorithm>
 #include "SessionAgent.h"
 #include "DevPlay.h"
 #include "UA.h"
 
-Media::Media(Session* session, const Attr& attr)
+Media::Media(Session* session, const Attr& attr, RtpPayload::Type payloadType)
 {
-    m_bRunning = false;
+    m_bPublish = false;
     m_session = session;
-    Connection *conInfo = attr.conInfo;
 
-    if (attr.conInfo == NULL)
-    {
-        conInfo = session->m_conInfo != nullptr ? session->m_conInfo.get() : NULL;
-    }
-    if (conInfo == NULL)
-    {
-        return;
-    }
-
-    m_rtpPayloadType = attr.payloadType;
-
+    m_rtpPayloadType = payloadType;
     if (m_rtpPayloadType == RtpPayload::PS)
     {
         m_psMux = std::make_shared<PSMux>(this);
-        
-        //根据设备目前的视音频编码类型创建
+        //根据设备当前的视音频编码类型创建
         m_videoPES = PES::create(PES::AVC, m_psMux.get());
         m_audioPES = PES::create(PES::G711A, m_psMux.get());
     }
 
     RtpParticipant::Participant participant;
-    participant.destination.ipv4 = conInfo->ipv4;
+    participant.destination.ipv4 = attr.conInfo.ipv4;
     participant.destination.port = attr.port;
     participant.netType = attr.netType;
-    participant.payloadType = attr.payloadType;
-    participant.SSRC = attr.SSRC != NULL ? *attr.SSRC : 0;
+    participant.payloadType = m_rtpPayloadType;
+    participant.SSRC = attr.SSRC;
     m_rtpParticipant = std::make_shared<RtpParticipant>(participant);
 }
 
 Media::~Media()
-{}
+{
+    unpublish();
+}
 
 void Media::proc()
 {
@@ -50,7 +42,7 @@ void Media::proc()
         return;
     }
 
-    while (m_bRunning)
+    while (m_bPublish)
     {
         switch (m_rtpPayloadType)
         {
@@ -67,16 +59,7 @@ void Media::proc()
                         fflush(debugf);
                     }
 
-                    int32_t plen = 0;
-                    while (plen < coded.size)
-                    {
-                        int32_t len = m_videoPES->packetized(coded.data + plen, coded.size - plen);
-                        if (len < 0)
-                        {
-                            break;
-                        }
-                        plen += len;
-                    }
+                    m_videoPES->packetized(coded.data, coded.size);
                     play->putCoded(coded);
                 }
             }
@@ -96,7 +79,7 @@ void Media::proc()
             Play::Coded coded;
             if (play->getVideo(coded))
             {
-                m_rtpParticipant->format(coded.data, coded.size);
+                m_rtpParticipant->transport(coded.data, coded.size);
                 play->putCoded(coded);
             }
             break;
@@ -106,7 +89,7 @@ void Media::proc()
             Play::Coded coded;
             if (play->getAudio(coded))
             {
-                m_rtpParticipant->format(coded.data, coded.size);
+                m_rtpParticipant->transport(coded.data, coded.size);
                 play->putCoded(coded);
             }
             break;
@@ -129,16 +112,7 @@ void Media::onProgramStream(const uint8_t *data, int32_t size)
 
     if (m_rtpParticipant != nullptr)
     {
-        int32_t flen = 0;
-        while (flen < size)
-        {
-            int32_t len = m_rtpParticipant->format(data + flen, size - flen);
-            if (len < 0)
-            {
-                break;
-            }
-            flen += len;
-        }
+        m_rtpParticipant->transport(data, size);
     }
 }
 
@@ -147,9 +121,13 @@ const std::shared_ptr<RtpParticipant>& Media::getRtpParticipant() const
     return m_rtpParticipant;
 }
 
+RtpPayload::Type Media::getRtpPaylodaType() const
+{
+    return m_rtpPayloadType;
+}
+
 bool Media::connect()
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return m_rtpParticipant->connect();
 }
 
@@ -160,24 +138,33 @@ bool Media::disconnect()
 
 bool Media::publish()
 {
-    m_bRunning = true;
-    m_thread = new std::thread(&Media::proc, this);
+    if (m_bPublish)
+    {
+        return false;
+    }
+
+    m_bPublish = true;
+    m_thread = std::make_shared<std::thread>(&Media::proc, this);
     return true;
 }
 
 bool Media::unpublish()
 {
-    m_bRunning = false;
+    if (!m_bPublish)
+    {
+        return false;
+    }
 
+    m_bPublish = false;
     if (m_thread != nullptr)
     {
         if (m_thread->joinable())
         {
             m_thread->join();
         }
-        delete m_thread;
-        m_thread = nullptr;
     }
+
+    m_rtpParticipant->disconnect();
 
     return true;
 }
@@ -193,21 +180,69 @@ Session::Session(SessionAgent *agent, const Attr& attr)
 }
 
 Session::~Session()
-{}
+{
+    m_media.clear();
+}
 
 std::shared_ptr<Media> Session::addMedia(const Media::Attr& attr)
 {
-    std::shared_ptr<Media> m = std::make_shared<Media>(this, attr);
-    m->connect();
-    media.push_back(m);
-    return m;
+    std::shared_ptr<Media> media;
+
+    if (attr.type == "video")
+    {
+        /* 优先查找PS，如果不存在则查找设备当前视频编码类型 */
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+        }
+        else
+        {
+            RtpPayload::Type payloadType = RtpPayload::H264;
+            // 获取设备当前视频编码类型
+            // payloadType = xxx
+
+            auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+            if (it != attr.payloadType.end())
+            {
+                media = std::make_shared<Media>(this, attr, payloadType);
+            }
+            else // 不支持这个类型
+            {
+                media = nullptr;
+            }
+        }
+    }
+    else if (attr.type == "audio")
+    {
+        RtpPayload::Type payloadType = RtpPayload::G711A;
+        // 获取设备当前音频编码类型...
+        // payloadType = xxx
+
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, payloadType);
+        }
+        else // 不支持这个类型
+        {
+            media = nullptr;
+        }
+    }
+
+    if (media != nullptr)
+    {
+        media->connect();
+        m_media.push_back(media);
+    }
+
+    return media;
 }
 
 bool Session::start()
 {
-    for (auto m : media)
+    for (auto m : m_media)
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         m->publish();
     }
 
@@ -216,7 +251,7 @@ bool Session::start()
 
 bool Session::stop()
 {
-    for (auto m : media)
+    for (auto m : m_media)
     {
         m->unpublish();
     }
@@ -234,16 +269,15 @@ SessionAgent::~SessionAgent()
 
 bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     SipUserMessage res;
     std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
     sip->makeSessionResponse(req, res, 200);
     std::string name = req.getSdpSessionName();
-    printf(">>>>>> %s:%d name=%s\n", __FILE__, __LINE__, name.c_str());
+    int32_t reqMediaNum = 0;
+    int32_t resMediaNum = 0;
 
     if (strCaseCmp(name, "Play"))
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         Session::Attr attr;
         Connection sessionCon;
 
@@ -255,34 +289,45 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
 
         m_sessionPlay = std::make_shared<Session>(this, attr);
 
-        int32_t n = req.getSdpMediaNum();
-        for (int32_t i = 0; i < n; i++)
+        reqMediaNum = req.getSdpMediaNum();
+        for (int32_t i = 0; i < reqMediaNum; i++)
         {
             Media::Attr mattr;
-            Connection mCon;
-            uint32_t SSRC = 0;
 
+            mattr.type = req.getSdpMediaType(i);
             mattr.port = req.getSdpMediaPort(i);
             mattr.netType = parseNetType(req.getSdpMediaTransport(i));
-            mattr.payloadType = (RtpPayload::Type)req.getSdpMediaPayloadType(i);
-            mCon.ipv4 = req.getSdpMediaIpv4(i);
-            if (!mCon.ipv4.empty())
+            uint16_t payloadType[10] = {0};
+            int32_t num = req.getSdpMediaPayloadType(i, payloadType);
+            for (int32_t j = 0; j < num; j++)
             {
-                mattr.conInfo = &mCon;
+                mattr.payloadType.push_back((RtpPayload::Type)payloadType[j]);
             }
-            SSRC = req.getSdpMediaSSRC(i);
-            mattr.SSRC = &SSRC;
-            printf(">>>>>> %s:%d port=%d, net=%d, payload=%d, ipv4=%s, ssrc=%u\n", __FILE__, __LINE__,
-                    mattr.port, mattr.netType, mattr.payloadType, mCon.ipv4.c_str(), SSRC);
+            mattr.conInfo.ipv4 = req.getSdpMediaIpv4(i);
+            mattr.SSRC = req.getSdpMediaSSRC(i);
+            std::cout << "media:" << std::endl
+                      << "type=" << mattr.type.c_str() << " "
+                      << "port=" << mattr.port  << " "
+                      << "net=" << mattr.netType  << " "
+                      << "payload=";
+                      for (int32_t j = 0; (uint32_t)j < mattr.payloadType.size(); j++)
+                      {
+                        std::cout << mattr.payloadType[j]  << " ";
+                      }
+                      std::cout << "ipv4=" << mattr.conInfo.ipv4.c_str()  << " "
+                      << "ssrc=" << mattr.SSRC  << " "
+                      << std::endl;
 
-            std::shared_ptr<Media> m = m_sessionPlay->addMedia(mattr);
-            if (m != nullptr)
+            std::shared_ptr<Media> media = m_sessionPlay->addMedia(mattr);
+            if (media != nullptr)
             {
-                res.setSdpMediaNum(i + 1);
-                res.setSdpMediaPort(i, m->getRtpParticipant()->getLocalPort());
-                res.setSdpMediaTransport(i, "RTP/AVP");
-                res.setSdpMediaPayloadType(i, 96);
-                res.setSdpMediaSSRC(i, SSRC);
+                resMediaNum++;
+                res.setSdpMediaNum(resMediaNum);
+                res.setSdpMediaType(resMediaNum - 1, mattr.type.c_str());
+                res.setSdpMediaPort(resMediaNum -1, media->getRtpParticipant()->getLocalPort());
+                res.setSdpMediaTransport(resMediaNum -1, req.getSdpMediaTransport(i));
+                res.setSdpMediaPayloadType(resMediaNum -1, media->getRtpPaylodaType());
+                res.setSdpMediaSSRC(resMediaNum -1, mattr.SSRC);
             }
         }
     }
@@ -292,17 +337,14 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
     }
     else
     {
-        printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
         return false;
     }
 
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     return sip->sendSessionResponse(res);
 }
 
 bool SessionAgent::dispatchACK()
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_sessionPlay != nullptr)
     {
         m_sessionPlay->start();
@@ -314,7 +356,6 @@ bool SessionAgent::dispatchACK()
 
 bool SessionAgent::dispatchBYE()
 {
-    printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_sessionPlay != nullptr)
     {
         m_sessionPlay->stop();
@@ -331,7 +372,7 @@ RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
     {
         return RtpNet::UDP;
     }
-    else if (strCaseCmp(str, "TCP/RTP/AVP"))
+    else if (strCaseCmp(str, "RTP/AVP/TCP"))
     {
         return RtpNet::TCP_ACTIVE;
     }

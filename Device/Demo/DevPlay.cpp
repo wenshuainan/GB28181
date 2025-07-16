@@ -4,6 +4,7 @@
 DevPlay::DevPlay()
 {
     m_testVideo = fopen("./assets/128x128.h264", "rb");
+    // m_testVideo = fopen("./assets/nature.h264", "rb");
 }
 
 DevPlay::~DevPlay()
@@ -17,12 +18,12 @@ DevPlay::~DevPlay()
 
 bool DevPlay::getVideo(Coded &coded)
 {
-    // printf(">>>>>> %s:%d\n", __FILE__, __LINE__);
     if (m_testVideo != nullptr)
     {
         int32_t size = fread(m_videoBuf, 1, sizeof(m_videoBuf), m_testVideo);
         if (size <= 0)
         {
+            // fseek(m_testVideo, 0, SEEK_SET);
             return false;
         }
 

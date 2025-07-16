@@ -1,6 +1,7 @@
 #ifndef SESSION_AGENT_H
 #define SESSION_AGENT_H
 
+#include <vector>
 #include <memory>
 #include <thread>
 #include <map>
@@ -26,11 +27,12 @@ class Media : public PSCallback
 public:
     struct Attr
     {
+        std::string type;
         int32_t port;
         RtpNet::Type netType;
-        RtpPayload::Type payloadType;
-        Connection *conInfo;
-        uint32_t *SSRC;
+        std::vector<RtpPayload::Type> payloadType;
+        Connection conInfo;
+        uint32_t SSRC;
     };
 
 private:
@@ -39,12 +41,12 @@ private:
     std::shared_ptr<PSMux> m_psMux; // PS复用器
     std::shared_ptr<RtpParticipant> m_rtpParticipant; // RTP流发布
     RtpPayload::Type m_rtpPayloadType;
-    std::thread *m_thread;
-    bool m_bRunning; // 是否正在运行
+    std::shared_ptr<std::thread> m_thread;
+    bool m_bPublish;
     Session *m_session;
 
 public:
-    Media(Session* session, const Attr& attr);
+    Media(Session* session, const Attr& attr, RtpPayload::Type payloadType);
     virtual ~Media();
 
 private:
@@ -53,6 +55,8 @@ private:
 public:
     void onProgramStream(const uint8_t *data, int32_t size);
     const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
+    const std::string& getType() const;
+    RtpPayload::Type getRtpPaylodaType() const;
 
 public:
     bool connect();
@@ -76,7 +80,7 @@ public:
     };
 
 private:
-    std::vector<std::shared_ptr<Media>> media;
+    std::vector<std::shared_ptr<Media>> m_media;
     SessionAgent *m_agent;
     std::shared_ptr<Connection> m_conInfo;
 
