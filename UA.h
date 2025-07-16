@@ -14,6 +14,12 @@ class SessionAgent;
 
 class UA
 {
+    friend class SipUserAgent;
+    friend class Agent;
+    friend class RegistrationAgent;
+    friend class MANSCDPAgent;
+    friend class SessionAgent;
+
 public:
     struct KeepaliveInfo
     {
@@ -22,36 +28,38 @@ public:
     };
     
 private:
+    bool m_bStarted;
     bool m_bOnline;
+    std::shared_ptr<SipUserAgent> m_sip;
     std::vector<std::shared_ptr<Agent>> m_agents;
     std::shared_ptr<RegistrationAgent> m_registAgent;
     std::shared_ptr<MANSCDPAgent> m_mansAgent;
     std::shared_ptr<SessionAgent> m_sessionAgent;
-    std::shared_ptr<SipUserAgent> m_sip;
-    std::thread *m_keepaliveThread;
-    bool m_bKeepaliveRunning;
-    KeepaliveInfo m_keepaliveInfo;
+    std::shared_ptr<std::thread> m_thread;
+    KeepaliveInfo m_kaInfo;
 
 public:
     UA();
     ~UA();
 
 private:
-    void keepaliveProc();
+    void proc();
 
-public:
+private:
     bool dispatchRegistrationResponse(const SipUserMessage& res);
     bool dispatchSessionRequest(const SipUserMessage& req);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchKeepaliveResponse(int32_t code);
-    const std::shared_ptr<SipUserAgent>& getSip() { return m_sip; }
-    void setOnline();
-    bool startKeepalive();
-    bool stopKeepalive();
+    const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
+    void setStatus(bool online);
 
 public:
-    bool start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server, const KeepaliveInfo &keepalive);
+    bool start(const SipUserAgent::ClientInfo& client,
+                const SipUserAgent::ServerInfo& server,
+                const KeepaliveInfo &keepalive
+            );
     bool stop();
+    bool getStatus() const;
 
     // 设备主动向服务器发送
     bool updateStatus(const KeepAliveNotify::Request &notify); // 9.6.1 立即发送状态信息

@@ -12,7 +12,7 @@ public:
 public:
     virtual void getStatus(KeepAliveNotify::Request& req);
     virtual void onKeepaliveSuccess();
-    virtual void onKeepaliveTimeout(int32_t timeoutCount);
+    virtual void onKeepaliveTimeout(int32_t count);
 };
 
 #endif

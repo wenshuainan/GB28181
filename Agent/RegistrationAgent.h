@@ -13,6 +13,7 @@ private:
     std::shared_ptr<Registration> m_devRegistration;
     std::string m_GBVerName;
     std::string m_GBVerValue;
+    bool m_bStarted;
 
 public:
     RegistrationAgent(UA *ua);

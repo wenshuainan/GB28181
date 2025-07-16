@@ -9,32 +9,57 @@
 
 UA::UA()
 {
+    m_bStarted = false;
     m_bOnline = false;
 }
 
 UA::~UA()
-{}
-
-void UA::keepaliveProc()
 {
-    int32_t tick = 0x0FFFFFFF;
+    stop();
+}
 
-    while (m_bKeepaliveRunning)
+void UA::proc()
+{
+    int32_t katick = 0x0FFFFFFF;
+    int32_t tickinterval = 1000000;
+
+    while (m_bStarted)
     {
-        auto timeoutCount = m_mansAgent->getKeepaliveTimeoutCount();
-        if (timeoutCount > m_keepaliveInfo.timeoutCount)
+        if (m_bOnline)
         {
-            // offline
+            auto timeoutCount = m_mansAgent->getKeepaliveTimeoutCount();
+            if (timeoutCount > m_kaInfo.timeoutCount)
+            {
+                m_bOnline = false;
+                m_registAgent->stop();
+            }
+
+            if (katick + 3 > m_kaInfo.interval)
+            {
+                katick = 0;
+                m_mansAgent->sendKeepaliveRequest();
+            }
+
+            katick++;
+        }
+        else
+        {
+            katick = 0x0FFFFFFF;
+
+            /* 注册 */
+            if (m_registAgent != nullptr)
+            {
+                m_registAgent->start();
+            }
         }
 
-        if (tick - 3 > m_keepaliveInfo.interval)
-        {
-            tick = 0;
-            m_mansAgent->sendKeepaliveRequest();
-        }
+        usleep(tickinterval);
+    }
 
-        usleep(1000000);
-        tick++;
+    /* 注销 */
+    if (m_registAgent != nullptr)
+    {
+        m_registAgent->stop();
     }
 }
 
@@ -58,37 +83,20 @@ bool UA::dispatchKeepaliveResponse(int32_t code)
     return m_mansAgent->recvedKeepaliveResponse(code);
 }
 
-void UA::setOnline()
+void UA::setStatus(bool online)
 {
-    m_bOnline = true;
-    startKeepalive();
+    m_bOnline = online;
 }
 
-bool UA::startKeepalive()
+bool UA::start(const SipUserAgent::ClientInfo& client,
+                const SipUserAgent::ServerInfo& server,
+                const KeepaliveInfo &keepalive
+            )
 {
-    m_bKeepaliveRunning = true;
-    m_keepaliveThread = new std::thread(&UA::keepaliveProc, this);
-    return true;
-}
-
-bool UA::stopKeepalive()
-{
-    m_bKeepaliveRunning = false;
-    if (m_keepaliveThread != nullptr)
+    if (m_bStarted)
     {
-        if (m_keepaliveThread->joinable())
-        {
-            m_keepaliveThread->join();
-        }
-        delete m_keepaliveThread;
-        m_keepaliveThread = nullptr;
+        return false;
     }
-    return true;
-}
-
-bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server, const KeepaliveInfo &keepalive)
-{
-    m_keepaliveInfo = keepalive;
     
     /* 创建注册协议代理 */
     m_registAgent = std::make_shared<RegistrationAgent>(this);
@@ -105,35 +113,53 @@ bool UA::start(const SipUserAgent::ClientInfo& client, const SipUserAgent::Serve
     if (m_sip == nullptr)
     {
         m_agents.clear();
-        return false;
+        return m_bStarted = false;
     }
+
+    m_kaInfo = keepalive;
 
     /* 初始化sip用户代理 */
     if (m_sip->init() == false)
     {
         m_sip->destroy();
         m_agents.clear();
-        return false;
+        return m_bStarted = false;
     }
 
-    /* 发起注册 */
-    if (m_registAgent != nullptr)
+    /* 创建状态维护线程 */
+    m_thread = std::make_shared<std::thread>(&UA::proc, this);
+    if (m_thread == nullptr)
     {
-        return m_registAgent->start();
+        m_sip->destroy();
+        m_agents.clear();
+        return m_bStarted = false;
     }
     else
     {
-        return false;
+        return m_bStarted = true;
     }
 }
 
 bool UA::stop()
 {
-    stopKeepalive();
+    if (!m_bStarted)
+    {
+        return false;
+    }
+
+    m_bStarted = false;
+    m_thread->join();
+
     m_agents.clear();
     m_sip->destroy();
     m_bOnline = false;
+
     return true;
+}
+
+bool UA::getStatus() const
+{
+    return m_bOnline;
 }
 
 bool UA::updateStatus(const KeepAliveNotify::Request &notify)

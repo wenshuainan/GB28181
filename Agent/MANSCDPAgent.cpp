@@ -92,5 +92,13 @@ bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) 
     KeepAliveNotify::serialize(req, &xmldocReq);
 
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendKeepaliveRequest(xmldocReq);
+    if (sip->sendKeepaliveRequest(xmldocReq))
+    {
+        m_devStatus->addSentCount();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }

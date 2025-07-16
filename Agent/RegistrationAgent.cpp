@@ -4,11 +4,13 @@
 #include "RegistrationAgent.h"
 #include "DevRegistration.h"
 
-RegistrationAgent::RegistrationAgent(UA *ua) : Agent(ua)
+RegistrationAgent::RegistrationAgent(UA *ua)
+    : Agent(ua)
 {
     m_devRegistration = std::make_shared<DevRegistration>();
     m_GBVerName = "X-GB-Ver";
     m_GBVerValue = "3.0";
+    m_bStarted = false;
 }
 
 RegistrationAgent::~RegistrationAgent()
@@ -28,9 +30,17 @@ bool RegistrationAgent::agent(const SipUserMessage& message)
 
 bool RegistrationAgent::start()
 {
-    auto sip = m_ua->getSip();
+    if (m_bStarted)
+    {
+        return false;
+    }
+    else
+    {
+        m_bStarted = true;
+    }
 
     SipUserMessage message;
+    auto sip = m_ua->getSip();
     sip->makeRegistrationRequest(message);
 
     /* 添加GB版本号扩展头域（附录I） */
@@ -41,9 +51,17 @@ bool RegistrationAgent::start()
 
 bool RegistrationAgent::stop()
 {
-    auto sip = m_ua->getSip();
+    if (!m_bStarted)
+    {
+        return false;
+    }
+    else
+    {
+        m_bStarted = false;
+    }
 
     SipUserMessage message;
+    auto sip = m_ua->getSip();
     sip->makeRegistrationRequest(message);
 
     message.setExpires(0);
@@ -59,7 +77,7 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
     switch (code)
     {
     case 200:
-        m_ua->setOnline(); //注册成功，设置在线状态
+        m_ua->setStatus(true); //注册成功，设置在线状态
 
         if (oldState == Registration::REGISTERED)
         {

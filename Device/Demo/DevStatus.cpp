@@ -18,7 +18,7 @@ void DevStatus::getStatus(KeepAliveNotify::Request& req)
 void DevStatus::onKeepaliveSuccess()
 {}
 
-void DevStatus::onKeepaliveTimeout(int32_t timeoutCount)
+void DevStatus::onKeepaliveTimeout(int32_t count)
 {
-    std::cout << "Keepalive timeout: " << timeoutCount << std::endl;
+    std::cout << "Keepalive timeout: " << count << std::endl;
 }

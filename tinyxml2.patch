@@ -1,0 +1,52 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+old mode 100644
+new mode 100755
+index b7bdf86..4c900b3
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.15)
++cmake_minimum_required(VERSION 3.10)
+ project(tinyxml2 VERSION 11.0.0)
+ 
+ include(CTest)
+@@ -78,9 +78,10 @@ install(
+     TARGETS tinyxml2 EXPORT tinyxml2-targets
+     RUNTIME COMPONENT tinyxml2_runtime
+     LIBRARY COMPONENT tinyxml2_runtime
+-    NAMELINK_COMPONENT tinyxml2_development
++    #NAMELINK_COMPONENT tinyxml2_development
+     ARCHIVE COMPONENT tinyxml2_development
+     INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
++	ARCHIVE DESTINATION lib
+ )
+ 
+ # Type-specific targets
+@@ -117,18 +118,19 @@ install(
+ 
+ install(
+     FILES tinyxml2.h
+-    TYPE INCLUDE
++    #TYPE INCLUDE
+     COMPONENT tinyxml2_development
++	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+ )
+ 
+ ## pkg-config
+ 
+ if (tinyxml2_INSTALL_PKGCONFIG)
+-    configure_file(cmake/tinyxml2.pc.in tinyxml2.pc.gen @ONLY)
+-    file(GENERATE OUTPUT tinyxml2.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc.gen")
+-    install(
+-        FILES "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc"
+-        DESTINATION "${tinyxml2_INSTALL_PKGCONFIGDIR}"
+-        COMPONENT tinyxml2_development
+-    )
++    #configure_file(cmake/tinyxml2.pc.in tinyxml2.pc.gen @ONLY)
++    #file(GENERATE OUTPUT tinyxml2.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc.gen")
++    #install(
++    #    FILES "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc"
++    #    DESTINATION "${tinyxml2_INSTALL_PKGCONFIGDIR}"
++    #    COMPONENT tinyxml2_development
++    #)
+ endif ()

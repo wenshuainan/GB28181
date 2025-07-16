@@ -36,9 +36,7 @@ public:
     bool recvedKeepaliveResponse(int32_t code) const;
 
 public:
-    // bool sendResponse200(const SipUserMessage& req) const; //无应答命令
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
-    // bool sendRequest(const XMLDocument& xmldocReq) const;
     bool sendKeepaliveRequest(const KeepAliveNotify::Request *notify = nullptr) const;
 };
 
