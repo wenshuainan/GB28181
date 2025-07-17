@@ -34,7 +34,9 @@ Media::~Media()
 
 void Media::proc()
 {
+#if 0
     static FILE *debugf = fopen("./stream.raw", "wb");
+#endif
 
     const std::shared_ptr<Play> &play = m_session->m_agent->m_devPlay;
     if (play == nullptr)
@@ -53,11 +55,13 @@ void Media::proc()
                 Play::Coded coded;
                 if (play->getVideo(coded))
                 {
+#if 0
                     if (debugf != NULL)
                     {
                         fwrite(coded.data, 1, coded.size, debugf);
                         fflush(debugf);
                     }
+#endif
 
                     m_videoPES->packetized(coded.data, coded.size);
                     play->putCoded(coded);
@@ -103,12 +107,14 @@ void Media::proc()
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
 {
+#if 0
     static FILE *debugf = fopen("./stream.ps", "wb");
     if (debugf != NULL)
     {
         fwrite(data, 1, size, debugf);
         fflush(debugf);
     }
+#endif
 
     if (m_rtpParticipant != nullptr)
     {
@@ -267,80 +273,110 @@ SessionAgent::SessionAgent(UA *ua) : Agent(ua)
 SessionAgent::~SessionAgent()
 {}
 
-bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
+bool SessionAgent::handleSessionPlay(const SipUserMessage& req)
 {
+    Session::Attr attr;
+    Connection sessionCon;
+    int32_t reqMediaNum = 0;
+    int32_t resMediaNum = 0;
     SipUserMessage res;
     std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
     sip->makeSessionResponse(req, res, 200);
+
+    sessionCon.ipv4 = req.getSdpSessionIpv4();
+    if (!sessionCon.ipv4.empty())
+    {
+        attr.conInfo = &sessionCon;
+    }
+
+    m_sessionPlay = std::make_shared<Session>(this, attr);
+
+    reqMediaNum = req.getSdpMediaNum();
+    for (int32_t i = 0; i < reqMediaNum; i++)
+    {
+        Media::Attr mattr;
+
+        mattr.type = req.getSdpMediaType(i);
+        mattr.port = req.getSdpMediaPort(i);
+        mattr.netType = parseNetType(req.getSdpMediaTransport(i));
+        uint16_t payloadType[10] = {0};
+        int32_t num = req.getSdpMediaPayloadType(i, payloadType);
+        for (int32_t j = 0; j < num; j++)
+        {
+            mattr.payloadType.push_back((RtpPayload::Type)payloadType[j]);
+        }
+        mattr.conInfo.ipv4 = req.getSdpMediaIpv4(i);
+        mattr.SSRC = req.getSdpMediaSSRC(i);
+        std::cout << "media:" << std::endl
+                    << "type=" << mattr.type.c_str() << " "
+                    << "port=" << mattr.port  << " "
+                    << "net=" << mattr.netType  << " "
+                    << "payload=";
+                    for (int32_t j = 0; (uint32_t)j < mattr.payloadType.size(); j++)
+                    {
+                    std::cout << mattr.payloadType[j]  << " ";
+                    }
+                    std::cout << "ipv4=" << mattr.conInfo.ipv4.c_str()  << " "
+                    << "ssrc=" << mattr.SSRC  << " "
+                    << std::endl;
+
+        std::shared_ptr<Media> media = m_sessionPlay->addMedia(mattr);
+        if (media != nullptr)
+        {
+            resMediaNum++;
+            res.setSdpMediaNum(resMediaNum);
+            res.setSdpMediaType(resMediaNum - 1, mattr.type.c_str());
+            res.setSdpMediaPort(resMediaNum -1, media->getRtpParticipant()->getLocalPort());
+            res.setSdpMediaTransport(resMediaNum -1, req.getSdpMediaTransport(i));
+            res.setSdpMediaPayloadType(resMediaNum -1, media->getRtpPaylodaType());
+            res.setSdpMediaSSRC(resMediaNum -1, mattr.SSRC);
+        }
+    }
+
+    /* 附录G 当设备收到无法满足的SDP时,向发送的Invite请求方发送488错误响应消息 */
+    if (resMediaNum == 0)
+    {
+        m_sessionPlay = nullptr;
+        SipUserMessage res488;
+        sip->makeSessionResponse(req, res488, 488);
+        return sip->sendSessionResponse(res488);
+    }
+    else
+    {
+        return sip->sendSessionResponse(res);
+    }
+}
+
+bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
+{
     std::string name = req.getSdpSessionName();
-    int32_t reqMediaNum = 0;
-    int32_t resMediaNum = 0;
 
     if (strCaseCmp(name, "Play"))
     {
-        Session::Attr attr;
-        Connection sessionCon;
-
-        sessionCon.ipv4 = req.getSdpSessionIpv4();
-        if (!sessionCon.ipv4.empty())
+        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
+        if (m_sessionPlay != nullptr)
         {
-            attr.conInfo = &sessionCon;
+            SipUserMessage res486;
+            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
+            sip->makeSessionResponse(req, res486, 486);
+            sip->sendSessionResponse(res486);
+            return false;
         }
 
-        m_sessionPlay = std::make_shared<Session>(this, attr);
-
-        reqMediaNum = req.getSdpMediaNum();
-        for (int32_t i = 0; i < reqMediaNum; i++)
-        {
-            Media::Attr mattr;
-
-            mattr.type = req.getSdpMediaType(i);
-            mattr.port = req.getSdpMediaPort(i);
-            mattr.netType = parseNetType(req.getSdpMediaTransport(i));
-            uint16_t payloadType[10] = {0};
-            int32_t num = req.getSdpMediaPayloadType(i, payloadType);
-            for (int32_t j = 0; j < num; j++)
-            {
-                mattr.payloadType.push_back((RtpPayload::Type)payloadType[j]);
-            }
-            mattr.conInfo.ipv4 = req.getSdpMediaIpv4(i);
-            mattr.SSRC = req.getSdpMediaSSRC(i);
-            std::cout << "media:" << std::endl
-                      << "type=" << mattr.type.c_str() << " "
-                      << "port=" << mattr.port  << " "
-                      << "net=" << mattr.netType  << " "
-                      << "payload=";
-                      for (int32_t j = 0; (uint32_t)j < mattr.payloadType.size(); j++)
-                      {
-                        std::cout << mattr.payloadType[j]  << " ";
-                      }
-                      std::cout << "ipv4=" << mattr.conInfo.ipv4.c_str()  << " "
-                      << "ssrc=" << mattr.SSRC  << " "
-                      << std::endl;
-
-            std::shared_ptr<Media> media = m_sessionPlay->addMedia(mattr);
-            if (media != nullptr)
-            {
-                resMediaNum++;
-                res.setSdpMediaNum(resMediaNum);
-                res.setSdpMediaType(resMediaNum - 1, mattr.type.c_str());
-                res.setSdpMediaPort(resMediaNum -1, media->getRtpParticipant()->getLocalPort());
-                res.setSdpMediaTransport(resMediaNum -1, req.getSdpMediaTransport(i));
-                res.setSdpMediaPayloadType(resMediaNum -1, media->getRtpPaylodaType());
-                res.setSdpMediaSSRC(resMediaNum -1, mattr.SSRC);
-            }
-        }
+        return handleSessionPlay(req);
     }
     else if (strCaseCmp(name, "Playback"))
     {
-        /* add code */
+        return false;
+    }
+    else if (strCaseCmp(name, "Download"))
+    {
+        return false;
     }
     else
     {
         return false;
     }
-
-    return sip->sendSessionResponse(res);
 }
 
 bool SessionAgent::dispatchACK()
@@ -372,7 +408,8 @@ RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
     {
         return RtpNet::UDP;
     }
-    else if (strCaseCmp(str, "RTP/AVP/TCP"))
+    else if (strCaseCmp(str, "TCP/RTP/AVP")
+                || strCaseCmp(str, "RTP/AVP/TCP"))
     {
         return RtpNet::TCP_ACTIVE;
     }

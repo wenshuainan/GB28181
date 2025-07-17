@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -29,8 +30,6 @@ std::shared_ptr<RtpNet> RtpNet::create(Type type, int localPort)
         break;
     case TCP_ACTIVE:
         net = std::make_shared<RtpOverTcp>(localPort);
-        break;
-    case TCP_PASSIVE:
         break;
     
     default:

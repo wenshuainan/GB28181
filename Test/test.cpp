@@ -1,12 +1,14 @@
 #include <stdio.h>
+#include <iostream>
 #include <unistd.h>
 #include "UA.h"
 
-#define TEST_GB28181 1
+#define TEST_GB28181 0
 #define TEST_MPEG2 0
 #define TEST_RTP 0
 #define TEST_BITSTREAM 0
 #define TEST_XML 0
+#define TEST_RTSP 1
 
 #if TEST_MPEG2
 #include <sys/prctl.h>
@@ -19,6 +21,10 @@
 #if TEST_RTP
 #include "RTP/RtpParticipant.h"
 static RtpParticipant *s_rtp_participant = NULL;
+#endif
+
+#if TEST_RTSP
+#include "MANSRTSP/B.1MANSRTSP.h"
 #endif
 
 #if TEST_MPEG2 || TEST_RTP
@@ -240,6 +246,13 @@ int main()
         printf("%02x ", bs.getData()[i]);
     }
     printf("\n");
+#elif TEST_RTSP
+    std::string data = "PLAY RTSP/1.0\r\n \
+                        CSeq:2\r\n \
+                        Range:npt=now";
+    std::cout << "data=" << data << std::endl;
+    MANSRTSP rtsp;
+    rtsp.parse(data.c_str(), data.length());
 #endif
 
     while (1)

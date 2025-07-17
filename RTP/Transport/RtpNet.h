@@ -11,7 +11,7 @@ public:
     {
         UDP,
         TCP_ACTIVE,
-        TCP_PASSIVE,
+        // TCP_PASSIVE, // 附录L 只对流媒体服务器之间要求
     };
 
 protected:

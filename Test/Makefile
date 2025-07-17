@@ -17,7 +17,8 @@ OBJS += $(patsubst %.cpp, %.o, $(CPPSRCS))
 
 DEPS := $(OBJS:.o=.d)
 
-INCLUDES := -I$(LIB_ROOT)/include
+INCLUDES := -I..
+INCLUDES += -I$(LIB_ROOT)/include
 
 CFLAGS := $(INCLUDES) -g -MMD
 

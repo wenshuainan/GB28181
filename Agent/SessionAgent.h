@@ -111,11 +111,11 @@ public:
     ~SessionAgent();
 
 private:
+    RtpNet::Type parseNetType(const std::string& str) const;
+    bool handleSessionPlay(const SipUserMessage& req);
     bool dispatchINVITE(const SipUserMessage& req);
     bool dispatchACK();
     bool dispatchBYE();
-
-    RtpNet::Type parseNetType(const std::string& str) const;
 
 public:
     bool match(const std::string& method, const std::string& contentType);

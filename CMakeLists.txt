@@ -21,10 +21,11 @@ include_directories(./RTP)
 aux_source_directory(. SRC_UA)
 aux_source_directory(./Agent SRC_AGENT)
 aux_source_directory(./MANSCDP SRC_MANSCDP)
+aux_source_directory(./MANSRTSP SRC_MANSRTSP)
 aux_source_directory(./Interface SRC_INTERFACE)
 aux_source_directory(${DEVICE_DIR} SRC_DEV)
 
-set(SRC_GB28181 ${SRC_MANSCDP} ${SRC_INTERFACE} ${SRC_AGENT} ${SRC_DEV} ${SRC_UA})
+set(SRC_GB28181 ${SRC_MANSCDP} ${SRC_MANSRTSP} ${SRC_INTERFACE} ${SRC_AGENT} ${SRC_DEV} ${SRC_UA})
 
 add_compile_options(
 	-g

@@ -155,9 +155,12 @@ bool ResipUserAgent::makeSessionResponse(const SipUserMessage& req, SipUserMessa
     std::shared_ptr<resip::SipMessage> instance = std::make_shared<resip::SipMessage>();
     Helper::Helper::makeResponse(*instance, *(reqAdapter->instance), code);
 
-    resip::SdpContents sdp = *reqSdp;
-    sdp.session().clearMedium();
-    instance->setContents(&sdp);
+    if (code == 200)
+    {
+        resip::SdpContents sdp = *reqSdp;
+        sdp.session().clearMedium();
+        instance->setContents(&sdp);
+    }
 
     SipAdapterMessage adapter = {
         .instance = instance
