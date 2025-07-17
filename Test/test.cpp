@@ -249,8 +249,10 @@ int main()
 #elif TEST_RTSP
     std::string data = "PLAY RTSP/1.0\r\n \
                         CSeq:2\r\n \
-                        Range:npt=now";
-    std::cout << "data=" << data << std::endl;
+                        Range:npt=now-\r\n \
+                        PauseTime: now=\r\n \
+                        Scale: =\r\n \
+                        RTP-Info: seq=18139;rtptime=3119600838\r\n";
     MANSRTSP rtsp;
     rtsp.parse(data.c_str(), data.length());
 #endif

@@ -14,7 +14,6 @@ int32_t StartLine::parseMethod(const char* data, int32_t size)
     int32_t i = 0;
     while (i < size && !isblank(data[i]))
     {
-        // std::cout << i << data[i] << "-->[" << m_method << "]" << m_method.length() << std::endl;
         m_method.push_back(data[i]);
         i++;
     }
@@ -39,9 +38,9 @@ int32_t StartLine::parse(const char* data, int32_t size)
     int32_t i = 0;
     i = parseMethod(data, size);
     i += parseVersion(data + i, size - i);
-    std::cout << "startline-" << std::endl;
-    std::cout << "\tmethod=" << m_method << std::endl;
-    std::cout << "\tversion=" << m_version << std::endl;
+    std::cout << "├── STARTLINE" << std::endl;
+    std::cout << "│   ├── METHOD=" << m_method << std::endl;
+    std::cout << "│   └── VERSION=" << m_version << std::endl;
     return std::min(i, size);
 }
 
@@ -76,7 +75,7 @@ int32_t Header::Parameter::parseValue(const char* data, int32_t size)
 {
     int32_t i = 0;
     while ((i < size && data[i] != ';')
-            || (i + 1 < size && !(data[i] == '\r' && data[i+1] == '\n')))
+            && (i + 1 < size && !(data[i] == '\r' && data[i+1] == '\n')))
     {
         m_value.push_back(data[i]);
         i++;
@@ -89,7 +88,7 @@ int32_t Header::Parameter::parseValue(const char* data, int32_t size)
     }
     else
     {
-        return std::min(i + 2, size);
+        return std::min(i, size);
     }
 }
 
@@ -129,13 +128,11 @@ int32_t Header::parseName(const char* data, int32_t size)
 
 int32_t Header::parseValue(const char* data, int32_t size)
 {
-    std::cout << __FILE__ << ":" << __LINE__ << "data=" << data << " size=" << size << std::endl;
     int32_t i = 0;
     while ((i < size && data[i] != ';')
             && (i < size && data[i] != '=')
             && (i + 1 < size && !(data[i] == '\r' && data[i+1] == '\n')))
     {
-        std::cout << i << data[i] << "-->[" << m_value << "]" << m_value.length() << std::endl;
         m_value.push_back(data[i]);
         i++;
     }
@@ -143,12 +140,15 @@ int32_t Header::parseValue(const char* data, int32_t size)
 
     if (data[i] == ';')
     {
+        i += 1;
+        i += parseParameters(data + i, size - i);
         return std::min(i + 1, size);
     }
     else if (data[i] == '=')
     {
         m_value.clear();
-        return 0;
+        i = parseParameters(data, size); // no value, begin from data again
+        return std::min(i, size);
     }
     else
     {
@@ -164,26 +164,41 @@ int32_t Header::parseParameters(const char* data, int32_t size)
         m_parameters.push_back(Parameter());
         i += m_parameters.back().parse(data + i, size - i);
     }
-    return std::min(i, size);
+    return std::min(i + 2, size);
 }
 
 int32_t Header::parse(const char* data, int32_t size)
 {
     int32_t i = 0;
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     i = parseName(data, size);
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     i += parseValue(data + i, size - i);
-    std::cout << __FILE__ << ":" << __LINE__ << "> data=" << data + i << " size=" << size << std::endl;
-    i += parseParameters(data + i, size - i);
-    std::cout << "header-" << std::endl;
-    std::cout << "\tname=" << m_name << std::endl;
-    std::cout << "\tvalue=" << m_value << std::endl;
-    for (auto param : m_parameters)
+    if (i < size)
     {
-        std::cout << "\tparameter-" << std::endl;
-        std::cout << "\t\tname=" << param.m_name << std::endl;
-        std::cout << "\t\tvalue=" << param.m_value << std::endl;
+        std::cout << "├── HEADER" << std::endl;
+        std::cout << "│   ├── NAME=" << m_name << std::endl;
+        std::cout << "│   " << (m_parameters.empty() ? "└── " : "├── ") << "VALUE=" << m_value << std::endl;
+    }
+    else
+    {
+        std::cout << "└── HEADER" << std::endl;
+        std::cout << "    ├── NAME=" << m_name << std::endl;
+        std::cout << "    " << (m_parameters.empty() ? "└── " : "├── ") << "VALUE=" << m_value << std::endl;
+    }
+    
+    for (std::size_t k = 0; k < m_parameters.size(); k++)
+    {
+        if (k < m_parameters.size() - 1)
+        {
+            std::cout << (i < size ? "│" : " ") << "   ├── PARAMETER" << std::endl;
+            std::cout << (i < size ? "│" : " ") << "   │   ├── NAME=" << m_parameters[k].m_name << std::endl;
+            std::cout << (i < size ? "│" : " ") << "   │   └── VALUE=" << m_parameters[k].m_value << std::endl;
+        }
+        else
+        {
+            std::cout << (i < size ? "│" : " ") << "   └── PARAMETER" << std::endl;
+            std::cout << (i < size ? "│" : " ") << "       ├── NAME=" << m_parameters[k].m_name << std::endl;
+            std::cout << (i < size ? "│" : " ") << "       └── VALUE=" << m_parameters[k].m_value << std::endl;
+        }
     }
     
     return std::min(i, size);
@@ -216,15 +231,11 @@ MANSRTSP::~MANSRTSP()
 int32_t MANSRTSP::parse(const char* data, int32_t size)
 {
     int32_t i = 0;
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     i = m_startline.parse(data, size);
-    std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     while (i + 1 < size && !(data[i] == '\r' && data[i+1] == '\n'))
     {
         m_headers.push_back(Header());
-        std::cout << __FILE__ << ":" << __LINE__ << std::endl;
         i += m_headers.back().parse(data + i, size - i);
-        std::cout << __FILE__ << ":" << __LINE__ << std::endl;
     }
 
     if (i + 2 < size)
