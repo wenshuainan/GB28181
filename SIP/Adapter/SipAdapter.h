@@ -32,6 +32,8 @@ public:
     const char* getSdpSessionOwner() const;
     const char* getSdpSessionName() const;
     const char* getSdpSessionIpv4() const;
+    const char* getSdpUri() const;
+    bool getSdpTime(time_t& start, time_t& end) const;
     int32_t getSdpMediaNum() const;
     const char* getSdpMediaType(int32_t index) const;
     int32_t getSdpMediaPort(int32_t index) const;

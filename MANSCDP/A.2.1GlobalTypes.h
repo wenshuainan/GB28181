@@ -10,7 +10,7 @@ using namespace tinyxml2;
 class integerType
 {
 protected:
-    int value;
+    int32_t value;
     std::string strValue;
     bool bValid; // 可选/必选
 
@@ -24,12 +24,12 @@ public:
         return bValid;
     }
 
-    int getValue() const
+    int32_t getValue() const
     {
         return value;
     }
 
-    int getInt() const
+    int32_t getInt() const
     {
         return value;
     }
@@ -44,16 +44,14 @@ public:
         value = other.value;
         strValue = other.strValue;
         bValid = other.bValid;
-
         return *this;
     }
 
-    integerType& operator=(const int& num)
+    integerType& operator=(const int32_t& num)
     {
         value = num;
         strValue = std::to_string(num);
         bValid = true;
-
         return *this;
     }
 
@@ -62,7 +60,6 @@ public:
         value = std::stoi(str); // WARN: will crash if str is not a number
         strValue = str;
         bValid = true;
-
         return *this;
     }
 };
@@ -97,7 +94,6 @@ public:
     {
         value = other.value;
         bValid = other.bValid;
-
         return *this;
     }
 
@@ -105,15 +101,13 @@ public:
     {
         value = str;
         bValid = true;
-
         return *this;
     }
 
-    stringType& operator=(const int& num)
+    stringType& operator=(const int32_t& num)
     {
         value = std::to_string(num);
         bValid = true;
-
         return *this;
     }
 };
@@ -155,16 +149,14 @@ public:
         value = other.value;
         strValue = other.strValue;
         bValid = other.bValid;
-
         return *this;
     }
 
-    doubleType& operator=(const int& num)
+    doubleType& operator=(const int32_t& num)
     {
         value = num;
         strValue = std::to_string(num);
         bValid = true;
-
         return *this;
     }
 
@@ -173,7 +165,6 @@ public:
         value = std::stod(str); // WARN: will crash if str is not a number
         strValue = str;
         bValid = true;
-
         return *this;
     }
 };
@@ -185,14 +176,13 @@ typedef stringType deviceIDType;
 class SNType : public integerType
 {
 private:
-    const int minInclusize = 1;
+    const int32_t minInclusize = 1;
 
 public:
     SNType& operator=(const SNType& other)
     {
         value = other.value;
         bValid = other.bValid;
-
         return *this;
     }
 
@@ -200,15 +190,13 @@ public:
     {
         value = std::stoi(str);
         bValid = true;
-
         return *this;
     }
 
-    SNType& operator=(const int& num)
+    SNType& operator=(const int32_t& num)
     {
         value = num;
         bValid = true;
-
         return *this;
     }
 };
@@ -228,7 +216,6 @@ public:
     {
         value = other.value;
         bValid = other.bValid;
-
         return *this;
     }
 
@@ -236,11 +223,10 @@ public:
     {
         value = str;
         bValid = true;
-
         return *this;
     }
 
-    statusType& operator=(const int& num)
+    statusType& operator=(const int32_t& num)
     {
         switch (num)
         {
@@ -255,7 +241,6 @@ public:
             break;
         }
         bValid = true;
-
         return *this;
     }
 };
@@ -274,7 +259,6 @@ public:
     {
         value = other.value;
         bValid = other.bValid;
-
         return *this;
     }
 
@@ -282,11 +266,10 @@ public:
     {
         value = str;
         bValid = true;
-
         return *this;
     }
 
-    resultType& operator=(const int& num)
+    resultType& operator=(const int32_t& num)
     {
         switch (num)
         {
@@ -301,7 +284,80 @@ public:
             break;
         }
         bValid = true;
+        return *this;
+    }
+};
 
+class dateTimeType
+{
+private:
+    bool bValid;
+    std::string strValue;
+    int32_t year;
+    int32_t month;
+    int32_t day;
+    int32_t hour;
+    int32_t minute;
+    int32_t second;
+
+public:
+    dateTimeType() : bValid(false) {}
+
+public:
+    bool isValid() const { return bValid; }
+
+    const std::string& getStr()
+    {
+        char str[128] = {0};
+        snprintf(str, sizeof(str), "%04d-%02d-%02d %02d:%02d:%02d",
+            year, month, day, hour, minute, second);
+        return strValue = str;
+    }
+
+    dateTimeType& operator=(const dateTimeType& other)
+    {
+        year = other.year;
+        month = other.month;
+        day = other.day;
+        hour = other.hour;
+        minute = other.minute;
+        second = other.second;
+        bValid = other.bValid;
+        return *this;
+    }
+
+    dateTimeType& operator=(const std::string& str)
+    {
+        int ret = sscanf(str.c_str(), "%d-%d-%d %d:%d:%d",
+                    &year, &month, &day, &hour, &minute, &second);
+        if (ret == 6)
+        {
+            bValid = true;
+        }
+        else
+        {
+            bValid = false;
+        }
+        return *this;
+    }
+
+    dateTimeType& operator=(const time_t& unixTime)
+    {
+        if (unixTime > 0)
+        {
+            struct tm* p = localtime(&unixTime);
+            year = p->tm_year + 1900;
+            month = p->tm_mon + 1;
+            day = p->tm_mday;
+            hour = p->tm_hour;
+            minute = p->tm_min;
+            second = p->tm_sec;
+            bValid = true;
+        }
+        else
+        {
+            bValid = false;
+        }
         return *this;
     }
 };
@@ -310,7 +366,7 @@ public:
 class PTZCmdType : public stringType
 {
 public:
-    const int length = 8;
+    const int32_t length = 8;
 
     PTZCmdType& operator=(const PTZCmdType& other)
     {
@@ -356,7 +412,7 @@ public:
         return *this;
     }
 
-    recordType& operator=(const int& num)
+    recordType& operator=(const int32_t& num)
     {
         switch (num)
         {
@@ -402,7 +458,7 @@ public:
         return *this;
     }
 
-    guardType& operator=(const int& num)
+    guardType& operator=(const int32_t& num)
     {
         switch (num)
         {
@@ -425,7 +481,7 @@ public:
 class complexType
 {
 public:
-    virtual bool toXml(XMLElement *parent) = 0;
+    virtual bool encode(XMLElement *parent) = 0;
 };
 
 /* A.2.1.9 目录项类型 */
@@ -480,7 +536,7 @@ public:
     doubleType Latitude;
 
 public:
-    virtual bool toXml(XMLElement *parent)
+    virtual bool encode(XMLElement *parent)
     {
         XMLDocument *doc = parent->GetDocument();
         if (doc == nullptr)
@@ -558,8 +614,121 @@ public:
 };
 
 /* A.2.1.10 文件目录项类型 */
-class itemFileType
-{};
+class itemFileType : public complexType
+{
+public:
+    /* 〈! -- 目标设备编码(必选)--〉 */
+    deviceIDType DeviceID;
+    /* 〈!-- 目标设备名称(必选)--〉 */
+    stringType Name;
+    /* 〈! -- 文件路径名(可选)--〉 */
+    stringType FilePath;
+    /* 〈! -- 录像地址(可选)--〉 */
+    stringType Address;
+    /* 〈! -- 录像开始时间(可选)--〉 */
+    dateTimeType StartTime;
+    /* 〈! -- 录像结束时间(可选)--〉 */
+    dateTimeType EndTime;
+    /* 〈! -- 保密属性(必选)缺省为0;0-不涉密,1-涉密--〉 */
+    integerType Secrecy;
+    /* 〈! -- 录像产生类型(可选)time或alarm 或 manual--〉 */
+    stringType Type;
+    /* 〈! -- 录像触发者ID(可选)--〉 */
+    stringType RecorderID;
+    /* 〈! -- 录像文件大小,单位:Byte(可选)--〉 */
+    stringType FileSize;
+    /* 〈! -- 存储录像文件的设备/系统编码,(模糊查询时必选)--〉 */
+    deviceIDType RecordLocation;
+    /* 〈! --码流类型:0-主码流;1-子码流1;2-子码流2;以此类推(可选)--〉 */
+    integerType StreamNumber;
+
+public:
+    virtual bool encode(XMLElement *parent)
+    {
+        XMLDocument *doc = parent->GetDocument();
+        if (doc == nullptr)
+        {
+            return false;
+        }
+
+        XMLElement *xmlDeviceID = doc->NewElement("DeviceID");
+        xmlDeviceID->SetText(DeviceID.getStr().c_str());
+        parent->InsertEndChild(xmlDeviceID);
+
+        XMLElement *xmlName = doc->NewElement("Name");
+        xmlName->SetText(Name.getStr().c_str());
+        parent->InsertEndChild(xmlName);
+
+        if (FilePath.isValid())
+        {
+            XMLElement *xmlFilePath = doc->NewElement("FilePath");
+            xmlFilePath->SetText(FilePath.getStr().c_str());
+            parent->InsertEndChild(xmlFilePath);
+        }
+
+        if (Address.isValid())
+        {
+            XMLElement *xmlAddress = doc->NewElement("Address");
+            xmlAddress->SetText(Address.getStr().c_str());
+            parent->InsertEndChild(xmlAddress);
+        }
+
+        if (StartTime.isValid())
+        {
+            XMLElement *xmlStartTime = doc->NewElement("StartTime");
+            xmlStartTime->SetText(StartTime.getStr().c_str());
+            parent->InsertEndChild(xmlStartTime);
+        }
+
+        if (EndTime.isValid())
+        {
+            XMLElement *xmlEndTime = doc->NewElement("EndTime");
+            xmlEndTime->SetText(EndTime.getStr().c_str());
+            parent->InsertEndChild(xmlEndTime);
+        }
+
+        XMLElement *xmlSecrecy = doc->NewElement("Secrecy");
+        xmlSecrecy->SetText(Secrecy.getValue());
+        parent->InsertEndChild(xmlSecrecy);
+
+        if (Type.isValid())
+        {
+            XMLElement *xmlType = doc->NewElement("Type");
+            xmlType->SetText(Type.getStr().c_str());
+            parent->InsertEndChild(xmlType);
+        }
+
+        if (RecorderID.isValid())
+        {
+            XMLElement *xmlRecorderID = doc->NewElement("RecorderID");
+            xmlRecorderID->SetText(RecorderID.getStr().c_str());
+            parent->InsertEndChild(xmlRecorderID);
+        }
+
+        if (FileSize.isValid())
+        {
+            XMLElement *xmlFileSize = doc->NewElement("FileSize");
+            xmlFileSize->SetText(FileSize.getStr().c_str());
+            parent->InsertEndChild(xmlFileSize);
+        }
+
+        if (RecordLocation.isValid())
+        {
+            XMLElement *xmlRecordLocation = doc->NewElement("RecordLocation");
+            xmlRecordLocation->SetText(RecordLocation.getStr().c_str());
+            parent->InsertEndChild(xmlRecordLocation);
+        }
+
+        if (StreamNumber.isValid())
+        {
+            XMLElement *xmlStreamNumber = doc->NewElement("StreamNumber");
+            xmlStreamNumber->SetText(StreamNumber.getValue());
+            parent->InsertEndChild(xmlStreamNumber);
+        }
+
+        return true;
+    }
+};
 
 /* A.2.1.11 PTZ精准控制类型 */
 class PTZPreciseCtrlType

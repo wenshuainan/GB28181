@@ -47,7 +47,7 @@ DeviceControlRequest::~DeviceControlRequest()
     spec.clear();
 }
 
-bool DeviceControlRequest::deserialize(const XMLElement *xmlReq, Request& req)
+bool DeviceControlRequest::parse(const XMLElement *xmlReq, Request& req)
 {
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (!xmlCmdType)
@@ -99,9 +99,9 @@ PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent, Control *control)
 PTZCmdControl::~PTZCmdControl()
 {}
 
-bool PTZCmdControl::deserialize(const XMLElement *xmlReq, Request& req)
+bool PTZCmdControl::parse(const XMLElement *xmlReq, Request& req)
 {
-    if (!DeviceControlRequest::deserialize(xmlReq, req))
+    if (!DeviceControlRequest::parse(xmlReq, req))
     {
         return false;
     }
@@ -140,7 +140,7 @@ bool PTZCmdControl::match(const XMLElement *xmlReq)
 bool PTZCmdControl::handle(const XMLElement *xmlReq)
 {
     Request req;
-    if (!deserialize(xmlReq, req))
+    if (!parse(xmlReq, req))
     {
         return false;
     }

@@ -181,6 +181,62 @@ const char* SipUserMessage::getSdpSessionIpv4() const
     }
 }
 
+const char* SipUserMessage::getSdpUri() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+    
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+    
+    const resip::SdpContents::Session &session = sdp->session();
+    return "";
+}
+
+bool SipUserMessage::getSdpTime(time_t& start, time_t& end) const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return false;
+    }
+    
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return false;
+    }
+    
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return false;
+    }
+    
+    const resip::SdpContents::Session &session = sdp->session();
+    const std::list<resip::SdpContents::Session::Time>& times = session.getTimes();
+    if (times.size() == 0)
+    {
+        return false;
+    }
+    
+    start = times.front().getStart();
+    end = times.front().getStop();
+    return true;
+}
+
 int32_t SipUserMessage::getSdpMediaNum() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)

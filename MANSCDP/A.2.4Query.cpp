@@ -6,6 +6,7 @@ QueryRequest::QueryRequest(MANSCDPAgent *agent, Query *query)
 {
     spec.push_back(std::make_shared<CatalogQuery>(agent, query));
     spec.push_back(std::make_shared<DeviceInfoQuery>(agent, query));
+    spec.push_back(std::make_shared<RecordInfoQuery>(agent, query));
 }
 
 QueryRequest::~QueryRequest()
@@ -38,7 +39,7 @@ CatalogQuery::CatalogQuery(MANSCDPAgent *agent, Query *query)
 CatalogQuery::~CatalogQuery()
 {}
 
-bool CatalogQuery::deserialize(const XMLElement *xmlReq, Request& req)
+bool CatalogQuery::parse(const XMLElement *xmlReq, Request& req)
 {
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (xmlCmdType)
@@ -76,18 +77,20 @@ bool CatalogQuery::deserialize(const XMLElement *xmlReq, Request& req)
 bool CatalogQuery::match(const XMLElement *xmlReq)
 {
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
-    if (!xmlCmdType)
+    if (xmlCmdType)
+    {
+        return std::string(xmlCmdType->GetText()) == "Catalog";
+    }
+    else
     {
         return false;
     }
-
-    return std::string(xmlCmdType->GetText()) == "Catalog";
 }
 
 bool CatalogQuery::handle(const XMLElement *xmlReq)
 {
     Request req;
-    if (!deserialize(xmlReq, req))
+    if (!parse(xmlReq, req))
     {
         return false;
     }
@@ -96,7 +99,7 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
     if (m_query->handle(req, res))
     {
         XMLDocument doc;
-        CatalogQueryResponse::serialize(res, &doc);
+        CatalogQueryResponse::encode(res, &doc);
         return m_agent->sendResponseCmd(doc);
     }
 
@@ -110,7 +113,7 @@ DeviceInfoQuery::DeviceInfoQuery(MANSCDPAgent *agent, Query *query)
 DeviceInfoQuery::~DeviceInfoQuery()
 {}
 
-bool DeviceInfoQuery::deserialize(const XMLElement *xmlReq, Request& req)
+bool DeviceInfoQuery::parse(const XMLElement *xmlReq, Request& req)
 {
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (xmlCmdType)
@@ -148,18 +151,20 @@ bool DeviceInfoQuery::deserialize(const XMLElement *xmlReq, Request& req)
 bool DeviceInfoQuery::match(const XMLElement *xmlReq)
 {
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
-    if (!xmlCmdType)
+    if (xmlCmdType)
+    {
+        return std::string(xmlCmdType->GetText()) == "DeviceInfo";
+    }
+    else
     {
         return false;
     }
-
-    return std::string(xmlCmdType->GetText()) == "DeviceInfo";
 }
 
 bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
 {
     Request req;
-    if (!deserialize(xmlReq, req))
+    if (!parse(xmlReq, req))
     {
         return false;
     }
@@ -168,9 +173,105 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     if (m_query->handle(req, res))
     {
         XMLDocument doc;
-        DeviceInfoQueryResponse::serialize(res, &doc);
+        DeviceInfoQueryResponse::encode(res, &doc);
         return m_agent->sendResponseCmd(doc);
     }
 
     return false;
+}
+
+RecordInfoQuery::RecordInfoQuery(MANSCDPAgent *agent, Query *query)
+    : CmdTypeSpecRequest(agent, query)
+{}
+
+RecordInfoQuery::~RecordInfoQuery()
+{}
+
+bool RecordInfoQuery::parse(const XMLElement *xmlReq, Request& req)
+{
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
+    if (xmlCmdType)
+    {
+        req.CmdType = xmlCmdType->GetText();
+    }
+    else
+    {
+        return false;
+    }
+
+    const XMLElement *xmlSN = xmlReq->FirstChildElement("SN");
+    if (xmlSN)
+    {
+        req.SN = xmlSN->GetText();
+    }
+    else
+    {
+        return false;
+    }
+
+    const XMLElement *xmlDeviceID = xmlReq->FirstChildElement("DeviceID");
+    if (xmlDeviceID)
+    {
+        req.DeviceID = xmlDeviceID->GetText();
+    }
+    else
+    {
+        return false;
+    }
+
+    const XMLElement *xmlStartTime = xmlReq->FirstChildElement("StartTime");
+    if (xmlStartTime)
+    {
+        req.StartTime = xmlStartTime->GetText();
+    }
+    else
+    {
+        return false;
+    }
+
+    const XMLElement *xmlEndTime = xmlReq->FirstChildElement("EndTime");
+    if (xmlEndTime)
+    {
+        req.EndTime = xmlEndTime->GetText();
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool RecordInfoQuery::match(const XMLElement *xmlReq)
+{
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
+    if (xmlCmdType)
+    {
+        return std::string(xmlCmdType->GetText()) == "RecordInfo";
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool RecordInfoQuery::handle(const XMLElement *xmlReq)
+{
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    RecordInfoQueryResponse::Response res;
+    if (m_query->handle(req, res))
+    {
+        XMLDocument doc;
+        RecordInfoQueryResponse::encode(res, &doc);
+        return m_agent->sendResponseCmd(doc);
+    }
+    else
+    {
+        return false;
+    }
 }

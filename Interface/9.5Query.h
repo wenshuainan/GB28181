@@ -13,6 +13,7 @@ public:
 public:
     virtual bool handle(const CatalogQuery::Request& req, CatalogQueryResponse::Response& res) = 0;
     virtual bool handle(const DeviceInfoQuery::Request& req, DeviceInfoQueryResponse::Response& res) = 0;
+    virtual bool handle(const RecordInfoQuery::Request& req, RecordInfoQueryResponse::Response& res) = 0;
 };
 
 #endif

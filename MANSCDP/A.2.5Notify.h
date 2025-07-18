@@ -22,7 +22,7 @@ public:
     virtual ~NotifyRequest();
 
 public:
-    static bool serialize(const Request& req, XMLDocument *xmldocReq);
+    static bool encode(const Request& req, XMLDocument *xmldocReq);
 
 public:
     virtual bool match(const std::string& ReqType);
@@ -50,7 +50,7 @@ public:
     virtual ~KeepAliveNotify();
 
 public:
-    static bool serialize(const Request& req, XMLDocument *xmldocReq);
+    static bool encode(const Request& req, XMLDocument *xmldocReq);
 
 public:
     virtual bool match(const XMLElement *xmlReq);

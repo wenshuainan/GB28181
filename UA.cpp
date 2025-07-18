@@ -6,6 +6,7 @@
 #include "Agent/RegistrationAgent.h"
 #include "Agent/MANSCDPAgent.h"
 #include "Agent/SessionAgent.h"
+#include "Agent/MANSRTSPAgent.h"
 
 UA::UA()
 {
@@ -27,7 +28,7 @@ void UA::proc()
     {
         if (m_bOnline)
         {
-            auto timeoutCount = m_mansAgent->getKeepaliveTimeoutCount();
+            auto timeoutCount = m_cdpAgent->getKeepaliveTimeoutCount();
             if (timeoutCount > m_kaInfo.timeoutCount)
             {
                 m_bOnline = false;
@@ -38,7 +39,7 @@ void UA::proc()
             if (katick + 3 > m_kaInfo.interval)
             {
                 katick = 0;
-                m_mansAgent->sendKeepaliveRequest();
+                m_cdpAgent->sendKeepaliveRequest();
             }
 
             katick++;
@@ -76,12 +77,12 @@ bool UA::dispatchSessionRequest(const SipUserMessage& req)
 
 bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
 {
-    return m_mansAgent->agent(req);
+    return m_cdpAgent->agent(req);
 }
 
 bool UA::dispatchKeepaliveResponse(int32_t code)
 {
-    return m_mansAgent->recvedKeepaliveResponse(code);
+    return m_cdpAgent->recvedKeepaliveResponse(code);
 }
 
 void UA::setStatus(bool online)
@@ -103,11 +104,14 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     m_registAgent = std::make_shared<RegistrationAgent>(this);
     m_agents.push_back(m_registAgent);
     /* 创建MANSCDP协议代理 */
-    m_mansAgent = std::make_shared<MANSCDPAgent>(this);
-    m_agents.push_back(m_mansAgent);
-    /* 创建媒体协议代理 */
+    m_cdpAgent = std::make_shared<MANSCDPAgent>(this);
+    m_agents.push_back(m_cdpAgent);
+    /* 创建INVITE会话代理 */
     m_sessionAgent = std::make_shared<SessionAgent>(this);
     m_agents.push_back(m_sessionAgent);
+    /* 创建MANSRTSP协议代理 */
+    m_rtspAgent = std::make_shared<MANSRTSPAgent>(this);
+    m_agents.push_back(m_rtspAgent);
 
     /* 创建sip用户代理 */
     m_sip = SipUserAgent::create(this, client, server);
@@ -166,5 +170,5 @@ bool UA::getStatus() const
 
 bool UA::updateStatus(const KeepAliveNotify::Request &notify)
 {
-    return m_mansAgent->sendKeepaliveRequest(&notify);
+    return m_cdpAgent->sendKeepaliveRequest(&notify);
 }

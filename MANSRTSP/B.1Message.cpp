@@ -1,13 +1,9 @@
 #include <iostream>
 #include <ctype.h>
 #include <algorithm>
-#include "B.1MANSRTSP.h"
+#include "B.1Message.h"
 
-StartLine::StartLine()
-{}
-
-StartLine::~StartLine()
-{}
+using namespace MANSRTSP;
 
 int32_t StartLine::parseMethod(const char* data, int32_t size)
 {
@@ -44,20 +40,16 @@ int32_t StartLine::parse(const char* data, int32_t size)
     return std::min(i, size);
 }
 
-bool StartLine::encode(std::string& data)
+bool StartLine::encode(std::string& data) const
 {
-    data += m_method;
-    data += " ";
     data += m_version;
+    data += " ";
+    data += std::to_string(m_code);
+    data += " ";
+    data += m_reason;
     data += "\r\n";
     return true;
 }
-
-Header::Parameter::Parameter()
-{}
-
-Header::Parameter::~Parameter()
-{}
 
 int32_t Header::Parameter::parseName(const char* data, int32_t size)
 {
@@ -100,19 +92,13 @@ int32_t Header::Parameter::parse(const char* data, int32_t size)
     return std::min(i, size);
 }
 
-bool Header::Parameter::encode(std::string& data)
+bool Header::Parameter::encode(std::string& data) const
 {
     data += m_name;
     data += "=";
     data += m_value;
     return true;
 }
-
-Header::Header()
-{}
-
-Header::~Header()
-{}
 
 int32_t Header::parseName(const char* data, int32_t size)
 {
@@ -204,7 +190,7 @@ int32_t Header::parse(const char* data, int32_t size)
     return std::min(i, size);
 }
 
-bool Header::encode(std::string& data)
+bool Header::encode(std::string& data) const
 {
     data += m_name;
     data += ": ";
@@ -222,13 +208,7 @@ bool Header::encode(std::string& data)
     return true;
 }
 
-MANSRTSP::MANSRTSP()
-{}
-
-MANSRTSP::~MANSRTSP()
-{}
-
-int32_t MANSRTSP::parse(const char* data, int32_t size)
+int32_t Message::parse(const char* data, int32_t size)
 {
     int32_t i = 0;
     i = m_startline.parse(data, size);
@@ -256,7 +236,7 @@ int32_t MANSRTSP::parse(const char* data, int32_t size)
     return std::min(i, size);
 }
 
-bool MANSRTSP::encode(std::string& data)
+bool Message::encode(std::string& data) const
 {
     m_startline.encode(data);
     for (auto& header : m_headers)
@@ -270,6 +250,9 @@ bool MANSRTSP::encode(std::string& data)
     {
         data += m_body;
     }
+
+    std::cout << "encoded:" << std::endl;
+    std::cout << data << std::endl;
 
     return true;
 }

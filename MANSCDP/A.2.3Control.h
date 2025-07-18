@@ -43,7 +43,7 @@ private:
 public:
     DeviceControlRequest(MANSCDPAgent *agent, Control *control);
     virtual ~DeviceControlRequest();
-    static bool deserialize(const XMLElement *xmlReq, Request& req);
+    static bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
     virtual bool match(const std::string& CmdType);
@@ -73,7 +73,7 @@ public:
     virtual ~PTZCmdControl();
 
 private:
-    bool deserialize(const XMLElement *xmlReq, Request& req);
+    bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
     virtual bool match(const XMLElement *xmlReq);
@@ -99,7 +99,7 @@ public:
     virtual ~TeleBootControl();
 
 private:
-    bool deserialize(const XMLElement *xmlReq, Request& req);
+    bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
     virtual bool match(const XMLElement *xmlReq);
@@ -123,7 +123,7 @@ public:
     virtual ~RecordControl();
 
 private:
-    bool deserialize(const XMLElement *xmlReq, Request& req);
+    bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
     virtual bool match(const XMLElement *xmlReq);
@@ -172,7 +172,7 @@ private:
 public:
     DeviceConfigRequest(MANSCDPAgent *agent, Control *control);
     virtual ~DeviceConfigRequest();
-    static bool deserialize(const XMLElement *xmlReq, Request& req);
+    static bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
     virtual bool match(const std::string& CmdType);

@@ -6,10 +6,12 @@
 #include <thread>
 #include <map>
 #include "Agent.h"
-#include "Interface/9.2Play.h"
 #include "PS/PSMux.h"
 #include "PS/Packetizer/PacketizedES.h"
 #include "RTP/RtpParticipant.h"
+#include "Interface/9.2Play.h"
+#include "Interface/9.8Playback.h"
+#include "Interface/9.9Download.h"
 
 class SessionAgent;
 class Session;
@@ -21,9 +23,6 @@ struct Connection
 
 class Media : public PSCallback
 {
-    friend class SessionAgent;
-    friend class Session;
-
 public:
     struct Attr
     {
@@ -67,44 +66,90 @@ public:
 
 class Session
 {
-    friend class SessionAgent; // 允许MediaAgent访问Session的私有成员
-    friend class Media;
-
 public:
     struct Attr
     {
         int32_t version;
         std::string owner;
         std::string name;
-        Connection *conInfo;
+        std::string uri;
+        time_t startTime;
+        time_t endTime;
     };
 
-private:
+protected:
+    std::string name;
     std::vector<std::shared_ptr<Media>> m_media;
-    SessionAgent *m_agent;
-    std::shared_ptr<Connection> m_conInfo;
 
 public:
-    Session(SessionAgent *agent, const Attr& attr);
-    virtual ~Session();
+    static std::shared_ptr<Session> create(const Attr& attr);
 
-private:
-    std::shared_ptr<Media> addMedia(const Media::Attr& attr);
+public:
+    virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
+    virtual int32_t readVideo(uint8_t *data, int32_t size) = 0;
+    virtual int32_t readAudio(uint8_t *data, int32_t size) = 0;
+    virtual bool isMANSRTSP() = 0;
+    virtual const std::string& getName() const = 0;
 
 public:
     bool start();
     bool stop();
 };
 
+class SessionPlay : public Session
+{
+private:
+    std::shared_ptr<Play> m_devPlay;
+
+private:
+    virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
+    virtual int32_t readVideo(uint8_t *data, int32_t size);
+    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() { return false; }
+    const std::string& getName() const { return "Play"; }
+};
+
+class SessionPlayback : public Session
+{
+private:
+    std::shared_ptr<Playback> m_devPlayback;
+
+private:
+    virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
+    virtual int32_t readVideo(uint8_t *data, int32_t size);
+    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() { return true; }
+    const std::string& getName() const { return "Playback"; }
+
+public:
+    bool play();
+    bool pause();
+    bool scalePlay();
+    bool rangePlay();
+    bool teardown();
+};
+
+class SessionDownload : public Session
+{
+private:
+    std::shared_ptr<Download> m_devDownload;
+
+private:
+    virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
+    virtual int32_t readVideo(uint8_t *data, int32_t size);
+    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() { return false; }
+    const std::string& getName() const { return "Download"; }
+};
+
 class SessionAgent : public Agent
 {
     friend class UA;
-    friend class Session; // 允许Session访问MediaAgent的私有成员play
-    friend class Media; // 允许Media访问MediaAgent的私有成员play
+
+    typedef uint64_t SessionIdentifier;
 
 private:
-    std::shared_ptr<Play> m_devPlay;
-    std::shared_ptr<Session> m_sessionPlay; //实时视音频点播
+    std::map<const SessionIdentifier&, std::shared_ptr<Session>> m_session;
 
 public:
     SessionAgent(UA *ua);
@@ -112,14 +157,15 @@ public:
 
 private:
     RtpNet::Type parseNetType(const std::string& str) const;
-    bool handleSessionPlay(const SipUserMessage& req);
-    bool dispatchINVITE(const SipUserMessage& req);
-    bool dispatchACK();
-    bool dispatchBYE();
+    bool dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req);
+    bool dispatchACK(const SessionIdentifier& id);
+    bool dispatchBYE(const SessionIdentifier& id);
 
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipUserMessage& message);
+    const std::shared_ptr<Session>& getMANSRTSPSession();
+    bool isSessionExist(const std::string& name) const;
 };
 
 #endif

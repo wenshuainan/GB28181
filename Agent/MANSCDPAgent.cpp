@@ -89,7 +89,7 @@ bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) 
     }
 
     XMLDocument xmldocReq;
-    KeepAliveNotify::serialize(req, &xmldocReq);
+    KeepAliveNotify::encode(req, &xmldocReq);
 
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
     if (sip->sendKeepaliveRequest(xmldocReq))

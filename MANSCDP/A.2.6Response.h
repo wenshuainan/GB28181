@@ -15,7 +15,7 @@ public:
     {};
 
 public:
-    static bool serialize(const Response& res, XMLDocument *xmldocRes);
+    static bool encode(const Response& res, XMLDocument *xmldocRes);
 };
 
 /*  A.2.6.2 设备控制应答 */
@@ -35,7 +35,7 @@ public:
     };
 
 public:
-    static bool serialize(const Response& res, XMLDocument *xmldocRes);
+    static bool encode(const Response& res, XMLDocument *xmldocRes);
 };
 
 /*  A.2.6.3 报警通知应答 */
@@ -57,14 +57,14 @@ public:
         /* 〈! -- 设备目录项列表,Num 表示目录项个数--〉 */
         struct
         {
-            std::vector<itemType> item;
+            std::vector<itemType> Item;
             integerType Num; //attribute
         } DeviceList;
         /* 〈! -- 扩展信息,可多项--〉 */
     };
 
 public:
-    static bool serialize(const Response& res, XMLDocument *xmldocRes);
+    static bool encode(const Response& res, XMLDocument *xmldocRes);
 };
 
 /*  A.2.6.5 设备信息查询应答 */
@@ -95,12 +95,38 @@ public:
     };
 
 public:
-    static bool serialize(const Response& res, XMLDocument *xmldocRes);
+    static bool encode(const Response& res, XMLDocument *xmldocRes);
 };
 
 /*  A.2.6.6 设备状态查询应答 */
 
 /*  A.2.6.7 文件目录检索应答 */
+class RecordInfoQueryResponse
+{
+public:
+    struct Response : CmdTypeResponse::Response
+    {
+        /* 〈! -- 命令类型:文件目录查询(必选)--〉 */
+        stringType CmdType;
+        /* 〈! -- 命令序列号(必选)--〉 */
+        SNType SN;
+        /* 〈! -- 目标设备编码(必选)--〉 */
+        deviceIDType DeviceID;
+        /* 〈! -- 设备/区域名称(必选)--〉 */
+        stringType Name;
+        /* 〈! -- 查询结果总数(必选)--〉 */
+        integerType SumNum;
+        /* 〈! -- 文件目录项列表,Num 表示目录项个数--〉 */
+        struct
+        {
+            std::vector<itemFileType> Item;
+            integerType Num; //attribute
+        } RecordList;
+    };
+
+public:
+    static bool encode(const Response& res, XMLDocument *xmldocRes);
+};
 
 /*  A.2.6.8 设备配置应答 */
 

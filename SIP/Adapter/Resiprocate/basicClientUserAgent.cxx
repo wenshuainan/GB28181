@@ -198,6 +198,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mProfile->addSupportedMimeType(NOTIFY, Mime("text","plain"));  // subscription testing
    //mProfile->addSupportedMimeType(NOTIFY, Mime("message", "sipfrag"));  
    mProfile->addSupportedMimeType(MESSAGE, Mime("Application", "MANSCDP+xml"));
+   mProfile->addSupportedMimeType(INFO, Mime("Application", "MANSRTSP"));
 
    // Supported Options Tags
    mProfile->clearSupportedOptionTags();

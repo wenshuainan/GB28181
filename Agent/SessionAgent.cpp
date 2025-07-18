@@ -273,7 +273,7 @@ SessionAgent::SessionAgent(UA *ua) : Agent(ua)
 SessionAgent::~SessionAgent()
 {}
 
-bool SessionAgent::handleSessionPlay(const SipUserMessage& req)
+bool SessionAgent::createPlay(const SipUserMessage& req)
 {
     Session::Attr attr;
     Connection sessionCon;
@@ -347,6 +347,16 @@ bool SessionAgent::handleSessionPlay(const SipUserMessage& req)
     }
 }
 
+bool SessionAgent::handlePlayback(const SipUserMessage& req)
+{
+    return false;
+}
+
+bool SessionAgent::handleDownload(const SipUserMessage& req)
+{
+    return false;
+}
+
 bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
 {
     std::string name = req.getSdpSessionName();
@@ -363,15 +373,35 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
             return false;
         }
 
-        return handleSessionPlay(req);
+        return createPlay(req);
     }
     else if (strCaseCmp(name, "Playback"))
     {
-        return false;
+        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
+        if (m_sessionPlayback != nullptr)
+        {
+            SipUserMessage res486;
+            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
+            sip->makeSessionResponse(req, res486, 486);
+            sip->sendSessionResponse(res486);
+            return false;
+        }
+
+        return handlePlayback(req);
     }
     else if (strCaseCmp(name, "Download"))
     {
-        return false;
+        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
+        if (m_sessionDownload != nullptr)
+        {
+            SipUserMessage res486;
+            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
+            sip->makeSessionResponse(req, res486, 486);
+            sip->sendSessionResponse(res486);
+            return false;
+        }
+
+        return handleDownload(req);
     }
     else
     {

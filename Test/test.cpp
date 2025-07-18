@@ -24,7 +24,8 @@ static RtpParticipant *s_rtp_participant = NULL;
 #endif
 
 #if TEST_RTSP
-#include "MANSRTSP/B.1MANSRTSP.h"
+#include "MANSRTSP/B.1Message.h"
+using namespace MANSRTSP;
 #endif
 
 #if TEST_MPEG2 || TEST_RTP
@@ -250,11 +251,14 @@ int main()
     std::string data = "PLAY RTSP/1.0\r\n \
                         CSeq:2\r\n \
                         Range:npt=now-\r\n \
-                        PauseTime: now=\r\n \
-                        Scale: =\r\n \
+                        PauseTime: now\r\n \
+                        Scale: 2.0\r\n \
                         RTP-Info: seq=18139;rtptime=3119600838\r\n";
-    MANSRTSP rtsp;
+    Message rtsp;
     rtsp.parse(data.c_str(), data.length());
+    Message res(rtsp, 200);
+    std::string enc;
+    res.encode(enc);
 #endif
 
     while (1)

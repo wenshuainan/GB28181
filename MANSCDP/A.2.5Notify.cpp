@@ -11,7 +11,7 @@ NotifyRequest::~NotifyRequest()
     spec.clear();
 }
 
-bool NotifyRequest::serialize(const Request& req, XMLDocument *xmldocReq)
+bool NotifyRequest::encode(const Request& req, XMLDocument *xmldocReq)
 {
     (void) req;
     XMLDeclaration *dec = xmldocReq->NewDeclaration("xml version=\"1.0\"");
@@ -56,9 +56,9 @@ KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent, Status *status)
 KeepAliveNotify::~KeepAliveNotify()
 {}
 
-bool KeepAliveNotify::serialize(const Request& req, XMLDocument *xmldocReq)
+bool KeepAliveNotify::encode(const Request& req, XMLDocument *xmldocReq)
 {
-    if (!NotifyRequest::serialize(req, xmldocReq))
+    if (!NotifyRequest::encode(req, xmldocReq))
     {
         return false;
     }

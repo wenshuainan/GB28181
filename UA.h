@@ -6,11 +6,13 @@
 #include <thread>
 #include "SipAdapter.h"
 #include "MANSCDP/A.2.5Notify.h"
+#include "MANSRTSP/B.1Message.h"
 
 class Agent;
 class RegistrationAgent;
 class MANSCDPAgent;
 class SessionAgent;
+class MANSRTSPAgent;
 
 class UA
 {
@@ -19,6 +21,7 @@ class UA
     friend class RegistrationAgent;
     friend class MANSCDPAgent;
     friend class SessionAgent;
+    friend class MANSRTSPAgent;
 
 public:
     struct KeepaliveInfo
@@ -33,8 +36,9 @@ private:
     std::shared_ptr<SipUserAgent> m_sip;
     std::vector<std::shared_ptr<Agent>> m_agents;
     std::shared_ptr<RegistrationAgent> m_registAgent;
-    std::shared_ptr<MANSCDPAgent> m_mansAgent;
+    std::shared_ptr<MANSCDPAgent> m_cdpAgent;
     std::shared_ptr<SessionAgent> m_sessionAgent;
+    std::shared_ptr<MANSRTSPAgent> m_rtspAgent;
     std::shared_ptr<std::thread> m_thread;
     KeepaliveInfo m_kaInfo;
 
@@ -50,6 +54,7 @@ private:
     bool dispatchSessionRequest(const SipUserMessage& req);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchKeepaliveResponse(int32_t code);
+    bool dispatchMANSRTSPRequest(const MANSRTSP::Message& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
 
