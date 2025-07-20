@@ -152,11 +152,12 @@ private:
     std::map<const SessionIdentifier&, std::shared_ptr<Session>> m_session;
 
 public:
-    SessionAgent(UA *ua);
-    ~SessionAgent();
+    SessionAgent(UA *ua) : Agent(ua) {}
+    virtual ~SessionAgent() {}
 
 private:
     RtpNet::Type parseNetType(const std::string& str) const;
+    std::shared_ptr<Session> createSession(const SipUserMessage& req);
     bool dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchACK(const SessionIdentifier& id);
     bool dispatchBYE(const SessionIdentifier& id);

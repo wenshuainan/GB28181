@@ -175,22 +175,47 @@ bool Media::unpublish()
     return true;
 }
 
-Session::Session(SessionAgent *agent, const Attr& attr)
+std::shared_ptr<Session> Session::create(const Attr& attr)
 {
-    m_agent = agent;
-
-    if (attr.conInfo != NULL)
+    if (attr.name == "Play")
     {
-        m_conInfo = std::make_shared<Connection>(*attr.conInfo);
+        return std::make_shared<SessionPlay>(attr);
+    }
+    else if (attr.name == "Playback")
+    {
+        return std::make_shared<SessionPlayback>(attr);
+    }
+    else if (attr.name == "Download")
+    {
+        return std::make_shared<SessionDownload>(attr);
+    }
+    else
+    {
+        return nullptr;
     }
 }
 
-Session::~Session()
+bool Session::start()
 {
-    m_media.clear();
+    for (auto m : m_media)
+    {
+        m->publish();
+    }
+
+    return true;
 }
 
-std::shared_ptr<Media> Session::addMedia(const Media::Attr& attr)
+bool Session::stop()
+{
+    for (auto m : m_media)
+    {
+        m->unpublish();
+    }
+
+    return true;
+}
+
+std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
 {
     std::shared_ptr<Media> media;
 
@@ -238,42 +263,29 @@ std::shared_ptr<Media> Session::addMedia(const Media::Attr& attr)
 
     if (media != nullptr)
     {
-        media->connect();
         m_media.push_back(media);
+        media->connect();
     }
 
     return media;
 }
 
-bool Session::start()
-{
-    for (auto m : m_media)
-    {
-        m->publish();
-    }
-
-    return true;
-}
-
-bool Session::stop()
-{
-    for (auto m : m_media)
-    {
-        m->unpublish();
-    }
-
-    return true;
-}
-
-SessionAgent::SessionAgent(UA *ua) : Agent(ua)
-{
-    m_devPlay = std::make_shared<DevPlay>();
-}
-
-SessionAgent::~SessionAgent()
+int32_t SessionPlay::readVideo(uint8_t *data, int32_t size)
 {}
 
-bool SessionAgent::createPlay(const SipUserMessage& req)
+int32_t SessionPlay::readAudio(uint8_t *data, int32_t size)
+{}
+
+std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
+{}
+
+int32_t SessionPlayback::readVideo(uint8_t *data, int32_t size)
+{}
+
+int32_t SessionPlayback::readAudio(uint8_t *data, int32_t size)
+{}
+
+std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
 {
     Session::Attr attr;
     Connection sessionCon;

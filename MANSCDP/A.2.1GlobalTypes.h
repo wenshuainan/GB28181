@@ -309,7 +309,7 @@ public:
     const std::string& getStr()
     {
         char str[128] = {0};
-        snprintf(str, sizeof(str), "%04d-%02d-%02d %02d:%02d:%02d",
+        snprintf(str, sizeof(str), "%04d-%02d-%02dT%02d:%02d:%02d",
             year, month, day, hour, minute, second);
         return strValue = str;
     }
@@ -328,7 +328,7 @@ public:
 
     dateTimeType& operator=(const std::string& str)
     {
-        int ret = sscanf(str.c_str(), "%d-%d-%d %d:%d:%d",
+        int ret = sscanf(str.c_str(), "%d-%d-%dT%d:%d:%d",
                     &year, &month, &day, &hour, &minute, &second);
         if (ret == 6)
         {
