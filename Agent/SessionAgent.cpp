@@ -1,21 +1,20 @@
+#include <unistd.h>
+#include <sys/time.h>
 #include <iostream>
 #include <algorithm>
+#include "UA.h"
 #include "SessionAgent.h"
 #include "DevPlay.h"
-#include "UA.h"
+#include "DevPlayback.h"
+#include "DevDownload.h"
+#include "MANSCDPAgent.h"
 
 Media::Media(Session* session, const Attr& attr, RtpPayload::Type payloadType)
 {
-    m_bPublish = false;
-    m_session = session;
-
     m_rtpPayloadType = payloadType;
     if (m_rtpPayloadType == RtpPayload::PS)
     {
-        m_psMux = std::make_shared<PSMux>(this);
-        //根据设备当前的视音频编码类型创建
-        m_videoPES = PES::create(PES::AVC, m_psMux.get());
-        m_audioPES = PES::create(PES::G711A, m_psMux.get());
+        m_psmux = std::make_shared<PSMux>(this);
     }
 
     RtpParticipant::Participant participant;
@@ -29,80 +28,71 @@ Media::Media(Session* session, const Attr& attr, RtpPayload::Type payloadType)
 
 Media::~Media()
 {
-    unpublish();
+    disconnect();
 }
 
-void Media::proc()
+bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
 {
-#if 0
-    static FILE *debugf = fopen("./stream.raw", "wb");
-#endif
-
-    const std::shared_ptr<Play> &play = m_session->m_agent->m_devPlay;
-    if (play == nullptr)
+    switch (type)
     {
-        return;
-    }
-
-    while (m_bPublish)
+    case PES::AVC:
+    case PES::HEVC:
     {
         switch (m_rtpPayloadType)
         {
-        case RtpPayload::PS:
-        {
-            if (m_videoPES)
+            case RtpPayload::PS:
             {
-                Play::Coded coded;
-                if (play->getVideo(coded))
+                if (m_vpes == nullptr)
                 {
-#if 0
-                    if (debugf != NULL)
-                    {
-                        fwrite(coded.data, 1, coded.size, debugf);
-                        fflush(debugf);
-                    }
-#endif
-
-                    m_videoPES->packetized(coded.data, coded.size);
-                    play->putCoded(coded);
+                    m_vpes = PES::create(type, m_psmux.get());
                 }
+                m_vpes->packetized(data, size);
+                break;
             }
-            if (m_audioPES)
+            case RtpPayload::H264:
+            case RtpPayload::H265:
             {
-                Play::Coded coded;
-                if (play->getAudio(coded))
-                {
-                    m_audioPES->packetized(coded.data, coded.size);
-                    play->putCoded(coded);
-                }
+                m_rtpParticipant->transport(data, size);
+                break;
             }
-            break;
+            
+            default:
+                break;
         }
-        case RtpPayload::H264:
-        {
-            Play::Coded coded;
-            if (play->getVideo(coded))
-            {
-                m_rtpParticipant->transport(coded.data, coded.size);
-                play->putCoded(coded);
-            }
-            break;
-        }
-        case RtpPayload::G711A:
-        {
-            Play::Coded coded;
-            if (play->getAudio(coded))
-            {
-                m_rtpParticipant->transport(coded.data, coded.size);
-                play->putCoded(coded);
-            }
-            break;
-        }
-        
-        default:
-            break;
-        }
+        break;
     }
+    case PES::AAC:
+    case PES::G711A:
+    {
+        switch (m_rtpPayloadType)
+        {
+            case RtpPayload::PS:
+            {
+                if (m_apes == nullptr)
+                {
+                    m_apes = PES::create(type, m_psmux.get());
+                }
+                m_apes->packetized(data, size);
+                break;
+            }
+            case RtpPayload::AAC:
+            case RtpPayload::G711A:
+            {
+                m_rtpParticipant->transport(data, size);
+                break;
+            }
+            
+            default:
+                break;
+        }
+        break;
+    }
+    
+    default:
+        break;
+    }
+
+    return true;
 }
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
@@ -142,52 +132,19 @@ bool Media::disconnect()
     return m_rtpParticipant->disconnect();
 }
 
-bool Media::publish()
-{
-    if (m_bPublish)
-    {
-        return false;
-    }
-
-    m_bPublish = true;
-    m_thread = std::make_shared<std::thread>(&Media::proc, this);
-    return true;
-}
-
-bool Media::unpublish()
-{
-    if (!m_bPublish)
-    {
-        return false;
-    }
-
-    m_bPublish = false;
-    if (m_thread != nullptr)
-    {
-        if (m_thread->joinable())
-        {
-            m_thread->join();
-        }
-    }
-
-    m_rtpParticipant->disconnect();
-
-    return true;
-}
-
-std::shared_ptr<Session> Session::create(const Attr& attr)
+std::shared_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr)
 {
     if (attr.name == "Play")
     {
-        return std::make_shared<SessionPlay>(attr);
+        return std::make_shared<SessionPlay>(agent);
     }
     else if (attr.name == "Playback")
     {
-        return std::make_shared<SessionPlayback>(attr);
+        return std::make_shared<SessionPlayback>(agent);
     }
     else if (attr.name == "Download")
     {
-        return std::make_shared<SessionDownload>(attr);
+        return std::make_shared<SessionDownload>(agent);
     }
     else
     {
@@ -195,25 +152,96 @@ std::shared_ptr<Session> Session::create(const Attr& attr)
     }
 }
 
+void Session::proc()
+{
+    while (m_bStarted)
+    {
+        PES::ES_TYPE type;
+        int32_t len = read(type, m_buffer, m_bufferSize);
+        if (len > 0)
+        {
+            for (auto& m : m_media)
+            {
+                m->input(type, m_buffer, len);
+            }
+        }
+
+        if (isFileEnd())
+        {
+            m_agent->notifyFileEnd();
+        }
+
+        usleep(10000);
+    }
+}
+
 bool Session::start()
 {
-    for (auto m : m_media)
-    {
-        m->publish();
-    }
+    m_bufferSize = 64 * 1024;
+    m_buffer = new uint8_t[m_bufferSize];
+
+    m_bStarted = true;
+    m_thread = std::make_shared<std::thread>(&Session::proc, this);
 
     return true;
 }
 
 bool Session::stop()
 {
-    for (auto m : m_media)
-    {
-        m->unpublish();
-    }
-
+    m_bStarted = false;
+    m_thread->join();
+    m_thread = nullptr;
+    delete []m_buffer;
     return true;
 }
+
+bool Session::getSdp(SipUserMessage& sdp)
+{
+    int num = m_media.size();
+    if (num != 0)
+    {
+        sdp.setSdpMediaNum(num);
+    }
+    else
+    {
+        return false;
+    }
+
+    for (int i = 0; i < num; i++)
+    {
+        auto media = m_media[i];
+        switch (media->getRtpPaylodaType())
+        {
+        case RtpPayload::PS:
+        case RtpPayload::H264:
+        case RtpPayload::H265:
+            sdp.setSdpMediaType(i, "video");
+            break;
+        case RtpPayload::AAC:
+        case RtpPayload::G711A:
+            sdp.setSdpMediaType(i, "audio");
+            break;
+        
+        default:
+            break;
+        }
+        sdp.setSdpMediaPort(i, media->getRtpParticipant()->getLocalPort());
+        sdp.setSdpMediaTransport(i, media->getRtpParticipant()->getTransportType());
+        sdp.setSdpMediaPayloadType(i, media->getRtpPaylodaType());
+        sdp.addSdpMediaAttr(i, "sendonly", "");
+        sdp.setSdpMediaSSRC(i, media->getRtpParticipant()->getSSRC());
+    }
+    return true;
+}
+
+SessionPlay::SessionPlay(SessionAgent *agent)
+    : Session(agent)
+{
+    m_devPlay = std::make_shared<DevPlay>();
+}
+
+SessionPlay::~SessionPlay()
+{}
 
 std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
 {
@@ -270,41 +298,231 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionPlay::readVideo(uint8_t *data, int32_t size)
-{}
+int32_t SessionPlay::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+{
+    type = PES::AVC;
+    return m_devPlay->getVideo(data, size);
+}
 
-int32_t SessionPlay::readAudio(uint8_t *data, int32_t size)
+SessionPlayback::SessionPlayback(SessionAgent *agent)
+    : Session(agent)
+{
+    m_devPlayback = std::make_shared<DevPlayback>();
+}
+
+SessionPlayback::~SessionPlayback()
 {}
 
 std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
+{
+    std::shared_ptr<Media> media;
+
+    if (attr.type == "video")
+    {
+        /* 优先查找PS，如果不存在则查找录像文件视频编码类型 */
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+        }
+        else
+        {
+            RtpPayload::Type payloadType = RtpPayload::H264;
+            // 获取录像文件视频编码类型
+            // payloadType = xxx
+
+            auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+            if (it != attr.payloadType.end())
+            {
+                media = std::make_shared<Media>(this, attr, payloadType);
+            }
+            else // 不支持这个类型
+            {
+                media = nullptr;
+            }
+        }
+    }
+    else if (attr.type == "audio")
+    {
+        RtpPayload::Type payloadType = RtpPayload::G711A;
+        // 获取录像文件音频编码类型...
+        // payloadType = xxx
+
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, payloadType);
+        }
+        else // 不支持这个类型
+        {
+            media = nullptr;
+        }
+    }
+
+    if (media != nullptr)
+    {
+        m_media.push_back(media);
+        media->connect();
+    }
+
+    return media;
+}
+
+int32_t SessionPlayback::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+{
+    type = PES::AVC;
+    return m_devPlayback->read(data, size);
+}
+
+bool SessionPlayback::play()
+{
+    return false;
+}
+
+bool SessionPlayback::pause()
+{
+    return false;
+}
+
+bool SessionPlayback::scalePlay()
+{
+    return false;
+}
+
+bool SessionPlayback::rangePlay()
+{
+    return false;
+}
+
+bool SessionPlayback::teardown()
+{
+    return false;
+}
+
+bool SessionPlayback::isFileEnd()
+{
+    /* 根据时间戳或者文件长度等判断是否结束 */
+    /* ... */
+
+    static timeval tv1 = {
+        .tv_sec = 0,
+        .tv_usec = 0
+    };
+    
+    timeval tv2;
+    gettimeofday(&tv2, NULL);
+    if (tv1.tv_sec == 0)
+    {
+        tv1 = tv2;
+    }
+    else
+    {
+        if (tv2.tv_sec - tv1.tv_sec > 10)
+        {
+            tv1 = tv2;
+            return true;
+        }
+    }
+    return false;
+}
+
+SessionDownload::SessionDownload(SessionAgent *agent)
+    : Session(agent)
+{
+    m_devDownload = std::make_shared<DevDownload>();
+}
+
+SessionDownload::~SessionDownload()
 {}
 
-int32_t SessionPlayback::readVideo(uint8_t *data, int32_t size)
-{}
+std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
+{
+    std::shared_ptr<Media> media;
 
-int32_t SessionPlayback::readAudio(uint8_t *data, int32_t size)
-{}
+    if (attr.type == "video")
+    {
+        /* 优先查找PS，如果不存在则查找录像文件视频编码类型 */
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+        }
+        else
+        {
+            RtpPayload::Type payloadType = RtpPayload::H264;
+            // 获取录像文件视频编码类型
+            // payloadType = xxx
+
+            auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+            if (it != attr.payloadType.end())
+            {
+                media = std::make_shared<Media>(this, attr, payloadType);
+            }
+            else // 不支持这个类型
+            {
+                media = nullptr;
+            }
+        }
+    }
+    else if (attr.type == "audio")
+    {
+        RtpPayload::Type payloadType = RtpPayload::G711A;
+        // 获取录像文件音频编码类型...
+        // payloadType = xxx
+
+        auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
+        if (it != attr.payloadType.end())
+        {
+            media = std::make_shared<Media>(this, attr, payloadType);
+        }
+        else // 不支持这个类型
+        {
+            media = nullptr;
+        }
+    }
+
+    if (media != nullptr)
+    {
+        m_media.push_back(media);
+        media->connect();
+    }
+
+    return media;
+}
+
+int32_t SessionDownload::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+{
+    type = PES::AVC;
+    return m_devDownload->read(data, size);
+}
+
+bool SessionDownload::isFileEnd()
+{
+    /* 根据时间戳或者文件长度等判断是否结束 */
+    /* ... */
+    return false;
+}
 
 std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
 {
-    Session::Attr attr;
-    Connection sessionCon;
-    int32_t reqMediaNum = 0;
-    int32_t resMediaNum = 0;
-    SipUserMessage res;
-    std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
-    sip->makeSessionResponse(req, res, 200);
+    Session::Attr attr = {
+        .version = req.getSdpSessionVersion(),
+        .owner = req.getSdpSessionOwner(),
+        .name = req.getSdpSessionName(),
+        .uri = req.getSdpSessionUri(),
+        .startTime = req.getSdpTimeStart(),
+        .endTime = req.getSdpTimeEnd()
+    };
 
-    sessionCon.ipv4 = req.getSdpSessionIpv4();
-    if (!sessionCon.ipv4.empty())
+    std::shared_ptr<Session> session = Session::create(this, attr);
+    if (session == nullptr)
     {
-        attr.conInfo = &sessionCon;
+        return nullptr;
     }
 
-    m_sessionPlay = std::make_shared<Session>(this, attr);
-
-    reqMediaNum = req.getSdpMediaNum();
-    for (int32_t i = 0; i < reqMediaNum; i++)
+    int i;
+    int32_t num = req.getSdpMediaNum();
+    for (i = 0; i < num; i++)
     {
         Media::Attr mattr;
 
@@ -332,88 +550,52 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
                     << "ssrc=" << mattr.SSRC  << " "
                     << std::endl;
 
-        std::shared_ptr<Media> media = m_sessionPlay->addMedia(mattr);
-        if (media != nullptr)
-        {
-            resMediaNum++;
-            res.setSdpMediaNum(resMediaNum);
-            res.setSdpMediaType(resMediaNum - 1, mattr.type.c_str());
-            res.setSdpMediaPort(resMediaNum -1, media->getRtpParticipant()->getLocalPort());
-            res.setSdpMediaTransport(resMediaNum -1, req.getSdpMediaTransport(i));
-            res.setSdpMediaPayloadType(resMediaNum -1, media->getRtpPaylodaType());
-            res.setSdpMediaSSRC(resMediaNum -1, mattr.SSRC);
-        }
+        session->addMedia(mattr);
     }
-
-    /* 附录G 当设备收到无法满足的SDP时,向发送的Invite请求方发送488错误响应消息 */
-    if (resMediaNum == 0)
-    {
-        m_sessionPlay = nullptr;
-        SipUserMessage res488;
-        sip->makeSessionResponse(req, res488, 488);
-        return sip->sendSessionResponse(res488);
-    }
-    else
-    {
-        return sip->sendSessionResponse(res);
-    }
+    return session;
 }
 
-bool SessionAgent::handlePlayback(const SipUserMessage& req)
-{
-    return false;
-}
-
-bool SessionAgent::handleDownload(const SipUserMessage& req)
-{
-    return false;
-}
-
-bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
+bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req)
 {
     std::string name = req.getSdpSessionName();
+    auto sip = m_ua->getSip();
 
-    if (strCaseCmp(name, "Play"))
+    /* 附录G 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
+    if (isSessionExist(name))
     {
-        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
-        if (m_sessionPlay != nullptr)
-        {
-            SipUserMessage res486;
-            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
-            sip->makeSessionResponse(req, res486, 486);
-            sip->sendSessionResponse(res486);
-            return false;
-        }
-
-        return createPlay(req);
+        SipUserMessage res486;
+        sip->makeSessionResponse(req, res486, 486);
+        sip->sendSessionResponse(id, res486);
+        return false;
     }
-    else if (strCaseCmp(name, "Playback"))
-    {
-        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
-        if (m_sessionPlayback != nullptr)
-        {
-            SipUserMessage res486;
-            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
-            sip->makeSessionResponse(req, res486, 486);
-            sip->sendSessionResponse(res486);
-            return false;
-        }
 
-        return handlePlayback(req);
+    std::shared_ptr<Session> session = createSession(req);
+    if (session != nullptr)
+    {
+        SipUserMessage res200;
+        sip->makeSessionResponse(req, res200, 200);
+        if (session->getSdp(res200))
+        {
+            sip->sendSessionResponse(id, res200);
+            m_session[id] = session;
+            return true;
+        }
     }
-    else if (strCaseCmp(name, "Download"))
-    {
-        /* 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
-        if (m_sessionDownload != nullptr)
-        {
-            SipUserMessage res486;
-            std::shared_ptr<SipUserAgent> sip = m_ua->getSip();
-            sip->makeSessionResponse(req, res486, 486);
-            sip->sendSessionResponse(res486);
-            return false;
-        }
+    
+    /* 附录G 当设备收到无法满足的SDP时,向发送的Invite请求方发送488错误响应消息 */
+    SipUserMessage res488;
+    sip->makeSessionResponse(req, res488, 488);
+    sip->sendSessionResponse(id, res488);
+    return false;
+}
 
-        return handleDownload(req);
+bool SessionAgent::dispatchACK(const SessionIdentifier& id)
+{
+    auto session = m_session.find(id);
+    if (session != m_session.end())
+    {
+        session->second->start();
+        return true;
     }
     else
     {
@@ -421,27 +603,19 @@ bool SessionAgent::dispatchINVITE(const SipUserMessage& req)
     }
 }
 
-bool SessionAgent::dispatchACK()
+bool SessionAgent::dispatchBYE(const SessionIdentifier& id)
 {
-    if (m_sessionPlay != nullptr)
+    auto session = m_session.find(id);
+    if (session != m_session.end())
     {
-        m_sessionPlay->start();
+        session->second->stop();
+        m_session.erase(session);
         return true;
     }
-
-    return false;
-}
-
-bool SessionAgent::dispatchBYE()
-{
-    if (m_sessionPlay != nullptr)
+    else
     {
-        m_sessionPlay->stop();
-        m_sessionPlay = nullptr;
-        return true;
+        return false;
     }
-
-    return false;
 }
 
 RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
@@ -451,7 +625,7 @@ RtpNet::Type SessionAgent::parseNetType(const std::string& str) const
         return RtpNet::UDP;
     }
     else if (strCaseCmp(str, "TCP/RTP/AVP")
-                || strCaseCmp(str, "RTP/AVP/TCP"))
+                || strCaseCmp(str, "RTP/AVP/TCP")) // for《GB28181自动化测试工具》
     {
         return RtpNet::TCP_ACTIVE;
     }
@@ -471,22 +645,68 @@ bool SessionAgent::match(const std::string& method, const std::string& contentTy
 
 bool SessionAgent::agent(const SipUserMessage& message)
 {
+    return false;
+}
+
+bool SessionAgent::agent(const SessionIdentifier& id, const SipUserMessage& message)
+{
     const char* method = message.getMethod();
 
     if (strCaseCmp(method, "INVITE"))
     {
-        return dispatchINVITE(message);
+        return dispatchINVITE(id, message);
     }
     else if (strCaseCmp(method, "ACK"))
     {
-        return dispatchACK();
+        return dispatchACK(id);
     }
     else if (strCaseCmp(method, "BYE"))
     {
-        return dispatchBYE();
+        return dispatchBYE(id);
     }
     else
     {
         return false;
     }
+}
+
+const std::shared_ptr<SessionPlayback> SessionAgent::getMANSRTSPSession() const
+{
+    for (auto& session : m_session)
+    {
+        if (strCaseCmp(session.second->getName(), "Playback"))
+        {
+            return std::dynamic_pointer_cast<SessionPlayback>(session.second);
+        }
+    }
+    return nullptr;
+}
+
+bool SessionAgent::isSessionExist(const std::string& name) const
+{
+    for (auto& session : m_session)
+    {
+        if (strCaseCmp(session.second->getName(), name))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SessionAgent::notifyFileEnd() const
+{
+    for (auto& session : m_session)
+    {
+        if (strCaseCmp(session.second->getName(), "Playback"))
+        {
+            MediaStatusNotify::Request notify;
+            notify.SN = 2;
+            notify.DeviceID = "64010000041310000345";
+            notify.NotifyType = "121";
+            const std::shared_ptr<MANSCDPAgent>& agent = m_ua->getMANSCDPAgent();
+            return agent->sendMediaStatusRequest(session.first, notify);
+        }
+    }
+    return false;
 }

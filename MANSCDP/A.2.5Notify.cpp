@@ -4,6 +4,7 @@
 NotifyRequest::NotifyRequest(MANSCDPAgent *agent, Status *status)
 {
     spec.push_back(std::make_shared<KeepAliveNotify>(agent, status));
+    spec.push_back(std::make_shared<MediaStatusNotify>(agent, status));
 }
 
 NotifyRequest::~NotifyRequest()
@@ -90,24 +91,63 @@ bool KeepAliveNotify::encode(const Request& req, XMLDocument *xmldocReq)
 
 bool KeepAliveNotify::match(const XMLElement *xmlReq)
 {
-    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
-    if (xmlCmdType == nullptr)
-    {
-        return false;
-    }
-    if (xmlCmdType->GetText() != nullptr)
-    {
-        std::string CmdType = xmlCmdType->GetText();
-        return CmdType == "Keepalive";
-    }
-    else
-    {
-        return false;
-    }
+    (void)xmlReq;
+    return false;
 }
 
 bool KeepAliveNotify::handle(const XMLElement *xmlReq)
 {
     (void) xmlReq;
+    return false;
+}
+
+MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, Status *status)
+    : CmdTypeSpecRequest(agent, status)
+{}
+
+MediaStatusNotify::~MediaStatusNotify()
+{}
+
+bool MediaStatusNotify::encode(const Request& req, XMLDocument *xmldocReq)
+{
+    if (!NotifyRequest::encode(req, xmldocReq))
+    {
+        return false;
+    }
+
+    XMLElement *rootElement = xmldocReq->LastChildElement();
+    if (rootElement == nullptr)
+    {
+        return false;
+    }
+
+    XMLElement *xmlCmdType = xmldocReq->NewElement("CmdType");
+    xmlCmdType->SetText("MediaStatus");
+    rootElement->InsertEndChild(xmlCmdType);
+
+    XMLElement *xmlSN = xmldocReq->NewElement("SN");
+    xmlSN->SetText(req.SN.getValue());
+    rootElement->InsertEndChild(xmlSN);
+
+    XMLElement *xmlDeviceID = xmldocReq->NewElement("DeviceID");
+    xmlDeviceID->SetText(req.DeviceID.getStr().c_str());
+    rootElement->InsertEndChild(xmlDeviceID);
+
+    XMLElement *xmlNotifyType = xmldocReq->NewElement("NotifyType");
+    xmlNotifyType->SetText(req.NotifyType.getStr().c_str());
+    rootElement->InsertEndChild(xmlNotifyType);
+
+    return true;
+}
+
+bool MediaStatusNotify::match(const XMLElement *xmlReq)
+{
+    (void)xmlReq;
+    return false;
+}
+
+bool MediaStatusNotify::handle(const XMLElement *xmlReq)
+{
+    (void)xmlReq;
     return false;
 }

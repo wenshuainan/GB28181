@@ -46,7 +46,7 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
     usleep(40000); // debug printf >>>>>>
 }
 
-int32_t PacketizedAVC::packetizeFrame(uint8_t *data, int32_t size)
+int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
 {
     if (data == nullptr || size <= 0)
     {
@@ -163,7 +163,7 @@ int32_t PacketizedAVC::packetizeFrame(uint8_t *data, int32_t size)
     return parsed;
 }
 
-int32_t PacketizedAVC::packetized(uint8_t *data, int32_t size)
+int32_t PacketizedAVC::packetized(const uint8_t *data, int32_t size)
 {
     if (data == nullptr || size <= 0)
     {

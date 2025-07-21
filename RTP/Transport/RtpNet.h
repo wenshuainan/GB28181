@@ -28,6 +28,7 @@ public:
     virtual bool disconnect() = 0;
     virtual bool send(RtpPacket& packet) = 0;
     virtual uint16_t getEfficLen() = 0;
+    virtual const char* getType() const = 0;
 
 public:
     static std::shared_ptr<RtpNet> create(Type type, int localPort = 0);

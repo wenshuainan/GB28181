@@ -155,3 +155,20 @@ int32_t RtpParticipant::getLocalPort() const
 
     return m_net->getLocalPort();
 }
+
+uint32_t RtpParticipant::getSSRC() const
+{
+    return m_SSRC;
+}
+
+const char* RtpParticipant::getTransportType() const
+{
+    if (m_net != nullptr)
+    {
+        return m_net->getType();
+    }
+    else
+    {
+        return "";
+    }
+}

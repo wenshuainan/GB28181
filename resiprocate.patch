@@ -51,18 +51,31 @@ index 266a2bf95..33e067971
 diff --git a/resip/dum/DialogUsageManager.cxx b/resip/dum/DialogUsageManager.cxx
 old mode 100644
 new mode 100755
-index e905fc28e..3f8ef17dd
+index e905fc28e..99aad1163
 --- a/resip/dum/DialogUsageManager.cxx
 +++ b/resip/dum/DialogUsageManager.cxx
-@@ -1682,6 +1682,21 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
-                   return;
-                }
+@@ -1676,10 +1676,29 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
              }
-+            if (sipMsg->header(h_RequestLine).method() == ACK && !sipMsg->header(h_To).exists(p_tag))
+             if (sipMsg->header(h_From).exists(p_tag))
+             {
+-               if (mergeRequest(*sipMsg) )
++               // if (mergeRequest(*sipMsg) )
++               // {
++               //    InfoLog (<< "Merged request: " << *sipMsg);
++               //    return;
++               // }
++            }
++            if (sipMsg->header(h_RequestLine).method() == ACK
++               && ((!sipMsg->header(h_To).exists(p_tag))
++                     || (sipMsg->header(h_To).exists(p_tag) && sipMsg->header(h_To).param(p_tag) == "1533684873")
++                  )
++               )
 +            {
 +               auto it = mDialogSetMap.begin();
 +               for (; it != mDialogSetMap.end(); it++)
-+               {
+                {
+-                  InfoLog (<< "Merged request: " << *sipMsg);
+-                  return;
 +                  if (it->first.getCallId() == sipMsg->header(h_CallId).value())
 +                  {
 +                     break;
@@ -71,18 +84,39 @@ index e905fc28e..3f8ef17dd
 +               if (it != mDialogSetMap.end())
 +               {
 +                  sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
-+               }
-+            }
+                }
+             }
              processRequest(*sipMsg);
-          }
-          else
+diff --git a/resip/dum/test/basicMessage.cxx b/resip/dum/test/basicMessage.cxx
+old mode 100644
+new mode 100755
 diff --git a/resip/stack/SdpContents.cxx b/resip/stack/SdpContents.cxx
 old mode 100644
 new mode 100755
-index 37f75d8a0..b821ff8d5
+index 37f75d8a0..685739970
 --- a/resip/stack/SdpContents.cxx
 +++ b/resip/stack/SdpContents.cxx
-@@ -1706,6 +1706,14 @@ SdpContents::Session::Medium::parse(ParseBuffer& pb)
+@@ -1526,7 +1526,8 @@ SdpContents::Session::Medium::Medium()
+    : mSession(0),
+      mPort(0),
+      mMulticast(1),
+-     mRtpMapDone(false)
++     mRtpMapDone(false),
++     mSSRC(0)
+ {}
+ 
+ SdpContents::Session::Medium::Medium(const Medium& rhs)
+@@ -1544,7 +1545,8 @@ SdpContents::Session::Medium::Medium(const Medium& rhs)
+      mEncryption(rhs.mEncryption),
+      mAttributeHelper(rhs.mAttributeHelper),
+      mRtpMapDone(rhs.mRtpMapDone),
+-     mRtpMap(rhs.mRtpMap)
++     mRtpMap(rhs.mRtpMap),
++     mSSRC(rhs.mSSRC)
+ {
+ }
+ 
+@@ -1706,6 +1708,14 @@ SdpContents::Session::Medium::parse(ParseBuffer& pb)
     }
  
     mAttributeHelper.parse(pb);
@@ -97,10 +131,21 @@ index 37f75d8a0..b821ff8d5
  }
  
  EncodeStream&
+@@ -1788,6 +1798,10 @@ SdpContents::Session::Medium::encode(EncodeStream& s) const
+ 
+    mAttributeHelper.encode(s);
+ 
++   char y[16] = {0};
++   snprintf(y, sizeof(y), "%010u", mSSRC);
++   s << "y=" << y << Symbols::CRLF;
++
+    return s;
+ }
+ 
 diff --git a/resip/stack/SdpContents.hxx b/resip/stack/SdpContents.hxx
 old mode 100644
 new mode 100755
-index acf793f5a..854f1d23a
+index acf793f5a..3cd219b94
 --- a/resip/stack/SdpContents.hxx
 +++ b/resip/stack/SdpContents.hxx
 @@ -843,6 +843,9 @@ class SdpContents : public Contents
@@ -108,16 +153,17 @@ index acf793f5a..854f1d23a
                    const Direction& getDirection(const Direction& sessionDefault) const;
  
 +                  uint32_t ssrc() const {return mSSRC;}
-+                  uint32_t& ssrc() {return mSSRC;}
++                  uint32_t& ssrc() { return mSSRC;}
 +
                 private:
                    void setSession(Session* session);
                    Session* mSession;
-@@ -859,6 +862,7 @@ class SdpContents : public Contents
-                   std::list<Bandwidth> mBandwidths;
-                   Encryption mEncryption;
-                   AttributeHelper mAttributeHelper;
-+                  uint32_t mSSRC;
- 
-                   bool mRtpMapDone;
+@@ -864,6 +867,8 @@ class SdpContents : public Contents
                    typedef HashMap<int, Codec> RtpMap;
+                   RtpMap mRtpMap;
+ 
++                  uint32_t mSSRC;
++
+                   friend class Session;
+             };
+ 

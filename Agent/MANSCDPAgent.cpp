@@ -102,3 +102,12 @@ bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) 
         return false;
     }
 }
+
+bool MANSCDPAgent::sendMediaStatusRequest(const SessionIdentifier& id, const MediaStatusNotify::Request& notify) const
+{
+    XMLDocument xmldocReq;
+    MediaStatusNotify::encode(notify, &xmldocReq);
+
+    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
+    return sip->sendSessionNotify(id, xmldocReq);
+}

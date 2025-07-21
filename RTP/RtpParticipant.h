@@ -59,6 +59,8 @@ public:
     bool disconnect();
     const char* getLocalIpv4();
     int32_t getLocalPort() const;
+    uint32_t getSSRC() const;
+    const char* getTransportType() const;
 };
 
 #endif

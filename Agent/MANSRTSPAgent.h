@@ -2,8 +2,10 @@
 #define MANSRTSP_AGENT_H
 
 #include <vector>
+#include <memory>
 #include "Agent.h"
 #include "MANSRTSP/Request.h"
+#include "Agent/SessionAgent.h"
 
 using namespace MANSRTSP;
 
@@ -22,6 +24,7 @@ public:
 
 public:
     bool dispatchRequest(const MANSRTSP::Message& message);
+    const std::shared_ptr<SessionPlayback> getMANSRTSPSession();
 };
 
 #endif

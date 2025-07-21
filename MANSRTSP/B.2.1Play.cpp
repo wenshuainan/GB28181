@@ -1,6 +1,10 @@
 #include "B.2.1Play.h"
+#include "UA.h"
+#include "Agent/MANSRTSPAgent.h"
+#include "Agent/SessionAgent.h"
 
-using namespace MANSRTSP;
+namespace MANSRTSP
+{
 
 bool Play::match(const Message& req)
 {
@@ -37,5 +41,15 @@ bool Play::match(const Message& req)
 
 bool Play::handle(const Message& req)
 {
-    return false;
+    auto rtsp = m_agent->getMANSRTSPSession();
+    if (rtsp != nullptr)
+    {
+        return rtsp->play();
+    }
+    else
+    {
+        return false;
+    }
+}
+
 }

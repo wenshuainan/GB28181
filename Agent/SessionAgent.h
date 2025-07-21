@@ -35,33 +35,25 @@ public:
     };
 
 private:
-    std::shared_ptr<PES> m_videoPES; // 视频分包器
-    std::shared_ptr<PES> m_audioPES; // 音频分包器
-    std::shared_ptr<PSMux> m_psMux; // PS复用器
+    std::shared_ptr<PES> m_vpes; // 视频分包器
+    std::shared_ptr<PES> m_apes; // 音频分包器
+    std::shared_ptr<PSMux> m_psmux; // PS复用器
     std::shared_ptr<RtpParticipant> m_rtpParticipant; // RTP流发布
     RtpPayload::Type m_rtpPayloadType;
-    std::shared_ptr<std::thread> m_thread;
-    bool m_bPublish;
-    Session *m_session;
 
 public:
     Media(Session* session, const Attr& attr, RtpPayload::Type payloadType);
     virtual ~Media();
 
-private:
-    void proc();
-
 public:
+    bool input(PES::ES_TYPE type, const uint8_t *data, int32_t size);
     void onProgramStream(const uint8_t *data, int32_t size);
     const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
-    const std::string& getType() const;
     RtpPayload::Type getRtpPaylodaType() const;
 
 public:
     bool connect();
     bool disconnect();
-    bool publish();
-    bool unpublish();
 };
 
 class Session
@@ -78,22 +70,34 @@ public:
     };
 
 protected:
-    std::string name;
+    SessionAgent *m_agent;
+    std::string m_name;
     std::vector<std::shared_ptr<Media>> m_media;
 
+private:
+    std::shared_ptr<std::thread> m_thread;
+    bool m_bStarted;
+    uint8_t *m_buffer;
+    int32_t m_bufferSize;
+
 public:
-    static std::shared_ptr<Session> create(const Attr& attr);
+    Session(SessionAgent *agent) : m_agent(agent) {}
+    static std::shared_ptr<Session> create(SessionAgent *agent, const Attr& attr);
+
+private:
+    void proc();
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
-    virtual int32_t readVideo(uint8_t *data, int32_t size) = 0;
-    virtual int32_t readAudio(uint8_t *data, int32_t size) = 0;
+    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size) = 0;
     virtual bool isMANSRTSP() = 0;
-    virtual const std::string& getName() const = 0;
+    virtual const char* getName() const = 0;
+    virtual bool isFileEnd() = 0;
 
 public:
     bool start();
     bool stop();
+    bool getSdp(SipUserMessage& sdp);
 };
 
 class SessionPlay : public Session
@@ -101,25 +105,35 @@ class SessionPlay : public Session
 private:
     std::shared_ptr<Play> m_devPlay;
 
+public:
+    SessionPlay(SessionAgent *m_agent);
+    virtual ~SessionPlay();
+
 private:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t readVideo(uint8_t *data, int32_t size);
-    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return false; }
-    const std::string& getName() const { return "Play"; }
+    virtual const char* getName() const { return "Play"; }
+    virtual bool isFileEnd() { return false; }
 };
 
 class SessionPlayback : public Session
 {
 private:
     std::shared_ptr<Playback> m_devPlayback;
+    time_t m_startTime;
+    time_t m_endTime;
+
+public:
+    SessionPlayback(SessionAgent *m_agent);
+    virtual ~SessionPlayback();
 
 private:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t readVideo(uint8_t *data, int32_t size);
-    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return true; }
-    const std::string& getName() const { return "Playback"; }
+    virtual const char* getName() const { return "Playback"; }
+    virtual bool isFileEnd();
 
 public:
     bool play();
@@ -133,23 +147,27 @@ class SessionDownload : public Session
 {
 private:
     std::shared_ptr<Download> m_devDownload;
+    time_t m_startTime;
+    time_t m_endTime;
+
+public:
+    SessionDownload(SessionAgent *m_agent);
+    virtual ~SessionDownload();
 
 private:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t readVideo(uint8_t *data, int32_t size);
-    virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return false; }
-    const std::string& getName() const { return "Download"; }
+    virtual const char* getName() const { return "Download"; }
+    virtual bool isFileEnd();
 };
 
 class SessionAgent : public Agent
 {
     friend class UA;
 
-    typedef uint64_t SessionIdentifier;
-
 private:
-    std::map<const SessionIdentifier&, std::shared_ptr<Session>> m_session;
+    std::map<const SessionIdentifier, std::shared_ptr<Session>> m_session;
 
 public:
     SessionAgent(UA *ua) : Agent(ua) {}
@@ -161,12 +179,14 @@ private:
     bool dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchACK(const SessionIdentifier& id);
     bool dispatchBYE(const SessionIdentifier& id);
+    bool isSessionExist(const std::string& name) const;
 
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipUserMessage& message);
-    const std::shared_ptr<Session>& getMANSRTSPSession();
-    bool isSessionExist(const std::string& name) const;
+    bool agent(const SessionIdentifier& id, const SipUserMessage& message);
+    const std::shared_ptr<SessionPlayback> getMANSRTSPSession() const;
+    bool notifyFileEnd() const;
 };
 
 #endif

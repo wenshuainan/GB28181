@@ -87,3 +87,8 @@ uint16_t RtpOverUdp::getEfficLen()
 {
     return 1460;
 }
+
+const char* RtpOverUdp::getType() const
+{
+    return "RTP/AVP";
+}

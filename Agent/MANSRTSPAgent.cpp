@@ -1,3 +1,4 @@
+#include "UA.h"
 #include "MANSRTSPAgent.h"
 #include "MANSRTSP/B.2.1Play.h"
 #include "MANSRTSP/B.2.2Pause.h"
@@ -41,4 +42,17 @@ bool MANSRTSPAgent::dispatchRequest(const MANSRTSP::Message& message)
         }
     }
     return false;
+}
+
+const std::shared_ptr<SessionPlayback> MANSRTSPAgent::getMANSRTSPSession()
+{
+    auto sessionAgent = m_ua->getSessionAgent();
+    if (sessionAgent != nullptr)
+    {
+        return sessionAgent->getMANSRTSPSession();
+    }
+    else
+    {
+        return nullptr;
+    }
 }

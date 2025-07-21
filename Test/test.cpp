@@ -3,12 +3,12 @@
 #include <unistd.h>
 #include "UA.h"
 
-#define TEST_GB28181 0
+#define TEST_GB28181 1
 #define TEST_MPEG2 0
 #define TEST_RTP 0
 #define TEST_BITSTREAM 0
 #define TEST_XML 0
-#define TEST_RTSP 1
+#define TEST_RTSP 0
 
 #if TEST_MPEG2
 #include <sys/prctl.h>
@@ -137,7 +137,7 @@ int main()
 
     SipUserAgent::ClientInfo client;
     client.id = "34020000001110000001";
-    client.port = 5160;
+    client.port = 5060;
     client.passwd = "12345678";
     client.transport = SipUserAgent::TRANSPORT_UDP;
     client.expire = 86400;

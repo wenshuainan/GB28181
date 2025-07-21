@@ -51,12 +51,14 @@ private:
 
 private:
     bool dispatchRegistrationResponse(const SipUserMessage& res);
-    bool dispatchSessionRequest(const SipUserMessage& req);
+    bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchKeepaliveResponse(int32_t code);
     bool dispatchMANSRTSPRequest(const MANSRTSP::Message& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
+    const std::shared_ptr<SessionAgent>& getSessionAgent() const { return m_sessionAgent; }
+    const std::shared_ptr<MANSCDPAgent>& getMANSCDPAgent() const { return m_cdpAgent; }
 
 public:
     bool start(const SipUserAgent::ClientInfo& client,

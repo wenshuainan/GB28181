@@ -16,36 +16,19 @@ DevPlay::~DevPlay()
     }
 }
 
-bool DevPlay::getVideo(Coded &coded)
+int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
-        int32_t size = fread(m_videoBuf, 1, sizeof(m_videoBuf), m_testVideo);
-        if (size <= 0)
-        {
-            // fseek(m_testVideo, 0, SEEK_SET);
-            return false;
-        }
-
-        coded.data = m_videoBuf;
-        coded.size = size;
-        coded.bFramed = false;
-        coded.userdata = 0;
-
-        return true;
+        return fread(data, 1, size, m_testVideo);
     }
-
-    return false;
+    else
+    {
+        return 0;
+    }
 }
 
-bool DevPlay::getAudio(Coded &coded)
+int32_t DevPlay::getAudio(uint8_t *data, int32_t size)
 {
-    (void) coded;
-    return false;
-}
-
-bool DevPlay::putCoded(const Coded &coded)
-{
-    (void) coded;
-    return true;
+    return 0;
 }

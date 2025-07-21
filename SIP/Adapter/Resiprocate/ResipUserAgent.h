@@ -16,7 +16,6 @@ private:
     resip::Uri mServerUri;
     resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
     resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
-    resip::InviteSessionHandle mInviteSessionHandle;
     
 public:
     ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
@@ -32,7 +31,8 @@ public:
     virtual bool sendKeepaliveRequest(const XMLDocument& notify);
     virtual bool sendMANSCDPResponse(const XMLDocument& res);
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code);
-    virtual bool sendSessionResponse(const SipUserMessage& res);
+    virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res);
+    virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////

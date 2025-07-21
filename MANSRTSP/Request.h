@@ -2,7 +2,9 @@
 #define MANSRTSP_REQUEST_H
 
 #include <string.h>
+#include <memory>
 #include "B.1Message.h"
+#include "Agent/SessionAgent.h"
 
 class MANSRTSPAgent;
 
@@ -11,12 +13,12 @@ namespace MANSRTSP
 
 class Request
 {
-private:
+protected:
     MANSRTSPAgent* m_agent;
 
 public:
     Request(MANSRTSPAgent* agent) { m_agent = agent; }
-    ~Request();
+    ~Request() {}
 
 protected:
     bool strCaseCmp(const std::string& str1, const std::string& str2)

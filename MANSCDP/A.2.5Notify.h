@@ -60,6 +60,32 @@ public:
 /* A.2.5.3 报警通知 */
 
 /* A.2.5.4 媒体通知 */
+class MediaStatusNotify : public CmdTypeSpecRequest
+{
+public:
+    struct Request : NotifyRequest::Request
+    {
+        /* 〈! --命令类型:媒体通知(必选)--〉 */
+        stringType CmdType;
+        /* 〈! --命令序列号(必选)--〉 */
+        SNType SN;
+        /* 〈! --媒体发送设备编码(必选)--〉 */
+        deviceIDType DeviceID;
+        /* 〈! --媒体发送设备编码(必选)--〉 */
+        stringType NotifyType;
+    };
+
+public:
+    MediaStatusNotify(MANSCDPAgent *agent, Status *status);
+    virtual ~MediaStatusNotify();
+
+public:
+    static bool encode(const Request& req, XMLDocument *xmldocReq);
+
+public:
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
+};
 
 /* A.2.5.5 语音广播通知 */
 

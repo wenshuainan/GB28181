@@ -134,3 +134,8 @@ uint16_t RtpOverTcp::getEfficLen()
 {
     return 0xFFFF - 12;
 }
+
+const char* RtpOverTcp::getType() const
+{
+    return "TCP/RTP/AVP";
+}

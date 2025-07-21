@@ -11,6 +11,8 @@ struct SipAdapterMessage;
 
 class UA;
 
+typedef uint64_t SessionIdentifier;
+
 class SipUserMessage
 {
 private:
@@ -32,8 +34,9 @@ public:
     const char* getSdpSessionOwner() const;
     const char* getSdpSessionName() const;
     const char* getSdpSessionIpv4() const;
-    const char* getSdpUri() const;
-    bool getSdpTime(time_t& start, time_t& end) const;
+    const char* getSdpSessionUri() const;
+    time_t getSdpTimeStart() const;
+    time_t getSdpTimeEnd() const;
     int32_t getSdpMediaNum() const;
     const char* getSdpMediaType(int32_t index) const;
     int32_t getSdpMediaPort(int32_t index) const;
@@ -47,6 +50,7 @@ public:
     bool setSdpMediaPort(int32_t index, int32_t port);
     bool setSdpMediaTransport(int32_t index, const char *transport);
     bool setSdpMediaPayloadType(int32_t index, int32_t type);
+    bool addSdpMediaAttr(int32_t index, const char *key, const char *value);
     bool setSdpMediaSSRC(int32_t index, uint32_t value);
 
     bool setExpires(int32_t expires);
@@ -96,13 +100,14 @@ public:
     virtual bool sendKeepaliveRequest(const XMLDocument& notify) = 0;
     virtual bool sendMANSCDPResponse(const XMLDocument& res) = 0;
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code) = 0;
-    virtual bool sendSessionResponse(const SipUserMessage& res) = 0;
+    virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res) = 0;
+    virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify) = 0;
 
 protected:
     bool postRegistrationResponse(const SipUserMessage& res);
     bool postKeepaliveResponse(int32_t code);
     bool postMANSCDPRequest(const XMLDocument& req);
-    bool postSessionRequest(const SipUserMessage& req);
+    bool postSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
 
 public:
     static std::shared_ptr<SipUserAgent> create(UA *user, const ClientInfo& client, const ServerInfo& server);

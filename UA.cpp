@@ -70,9 +70,9 @@ bool UA::dispatchRegistrationResponse(const SipUserMessage& res)
     return m_registAgent->agent(res);
 }
 
-bool UA::dispatchSessionRequest(const SipUserMessage& req)
+bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
 {
-    return m_sessionAgent->agent(req);
+    return m_sessionAgent->agent(id, req);
 }
 
 bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
@@ -83,6 +83,11 @@ bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
 bool UA::dispatchKeepaliveResponse(int32_t code)
 {
     return m_cdpAgent->recvedKeepaliveResponse(code);
+}
+
+bool UA::dispatchMANSRTSPRequest(const MANSRTSP::Message& req)
+{
+    return m_rtspAgent->dispatchRequest(req);
 }
 
 void UA::setStatus(bool online)
