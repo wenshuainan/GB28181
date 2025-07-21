@@ -69,7 +69,7 @@ public:
     bool getStatus() const;
 
     // 设备主动向服务器发送
-    bool updateStatus(const KeepAliveNotify::Request &notify); // 9.6.1 立即发送状态信息
+    bool updateStatus(const KeepAliveNotify::Notify &notify); // 9.6.1 立即发送状态信息
 };
 
 #endif

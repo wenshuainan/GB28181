@@ -97,7 +97,7 @@ public:
     virtual bool init() = 0;
     virtual bool makeRegistrationRequest(SipUserMessage& req) = 0;
     virtual bool sendRegistration(const SipUserMessage& req) = 0;
-    virtual bool sendKeepaliveRequest(const XMLDocument& notify) = 0;
+    virtual bool sendKeepaliveNotify(const XMLDocument& notify) = 0;
     virtual bool sendMANSCDPResponse(const XMLDocument& res) = 0;
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code) = 0;
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res) = 0;

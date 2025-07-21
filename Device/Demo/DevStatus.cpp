@@ -7,12 +7,12 @@ DevStatus::DevStatus()
 DevStatus::~DevStatus()
 {}
 
-void DevStatus::getStatus(KeepAliveNotify::Request& req)
+void DevStatus::getStatus(KeepAliveNotify::Notify& notify)
 {
-    req.CmdType = "Keepalive";
-    req.SN = "22";
-    req.DeviceID = "34020000001110000001";
-    req.Status = "OK";
+    notify.CmdType = "Keepalive";
+    notify.SN = "22";
+    notify.DeviceID = "34020000001110000001";
+    notify.Status = "OK";
 }
 
 void DevStatus::onKeepaliveSuccess()

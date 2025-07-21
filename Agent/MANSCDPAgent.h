@@ -37,8 +37,8 @@ public:
 
 public:
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
-    bool sendKeepaliveRequest(const KeepAliveNotify::Request *notify = nullptr) const;
-    bool sendMediaStatusRequest(const SessionIdentifier& id, const MediaStatusNotify::Request& notify) const;
+    bool sendKeepaliveNotify(const KeepAliveNotify::Notify *notify = nullptr) const;
+    bool sendMediaStatusNotify(const SessionIdentifier& id, const MediaStatusNotify::Notify& notify) const;
 };
 
 #endif

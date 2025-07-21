@@ -10,7 +10,7 @@ public:
     ~DevStatus();
 
 public:
-    virtual void getStatus(KeepAliveNotify::Request& req);
+    virtual void getStatus(KeepAliveNotify::Notify& notify);
     virtual void onKeepaliveSuccess();
     virtual void onKeepaliveTimeout(int32_t count);
 };

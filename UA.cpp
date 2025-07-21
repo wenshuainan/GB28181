@@ -39,7 +39,7 @@ void UA::proc()
             if (katick + 3 > m_kaInfo.interval)
             {
                 katick = 0;
-                m_cdpAgent->sendKeepaliveRequest();
+                m_cdpAgent->sendKeepaliveNotify();
             }
 
             katick++;
@@ -173,7 +173,7 @@ bool UA::getStatus() const
     return m_bOnline;
 }
 
-bool UA::updateStatus(const KeepAliveNotify::Request &notify)
+bool UA::updateStatus(const KeepAliveNotify::Notify &notify)
 {
-    return m_cdpAgent->sendKeepaliveRequest(&notify);
+    return m_cdpAgent->sendKeepaliveNotify(&notify);
 }

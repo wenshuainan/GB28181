@@ -12,19 +12,19 @@ NotifyRequest::~NotifyRequest()
     spec.clear();
 }
 
-bool NotifyRequest::encode(const Request& req, XMLDocument *xmldocReq)
+bool NotifyRequest::encode(const Notify& notify, XMLDocument *xmldocNotify)
 {
-    (void) req;
-    XMLDeclaration *dec = xmldocReq->NewDeclaration("xml version=\"1.0\"");
+    (void) notify;
+    XMLDeclaration *dec = xmldocNotify->NewDeclaration("xml version=\"1.0\"");
     if (dec != nullptr)
     {
-        xmldocReq->InsertFirstChild(dec);
+        xmldocNotify->InsertFirstChild(dec);
     }
 
-    XMLElement *rootElement = xmldocReq->NewElement("Notify");
+    XMLElement *rootElement = xmldocNotify->NewElement("Notify");
     if (rootElement != nullptr)
     {
-        return xmldocReq->InsertEndChild(rootElement) != nullptr;
+        return xmldocNotify->InsertEndChild(rootElement) != nullptr;
     }
     else
     {
@@ -57,33 +57,33 @@ KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent, Status *status)
 KeepAliveNotify::~KeepAliveNotify()
 {}
 
-bool KeepAliveNotify::encode(const Request& req, XMLDocument *xmldocReq)
+bool KeepAliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
 {
-    if (!NotifyRequest::encode(req, xmldocReq))
+    if (!NotifyRequest::encode(notify, xmldocNotify))
     {
         return false;
     }
 
-    XMLElement *rootElement = xmldocReq->LastChildElement();
+    XMLElement *rootElement = xmldocNotify->LastChildElement();
     if (rootElement == nullptr)
     {
         return false;
     }
 
-    XMLElement *xmlCmdType = xmldocReq->NewElement("CmdType");
+    XMLElement *xmlCmdType = xmldocNotify->NewElement("CmdType");
     xmlCmdType->SetText("Keepalive");
     rootElement->InsertEndChild(xmlCmdType);
 
-    XMLElement *xmlSN = xmldocReq->NewElement("SN");
-    xmlSN->SetText(req.SN.getValue());
+    XMLElement *xmlSN = xmldocNotify->NewElement("SN");
+    xmlSN->SetText(notify.SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
-    XMLElement *xmlDeviceID = xmldocReq->NewElement("DeviceID");
-    xmlDeviceID->SetText(req.DeviceID.getStr().c_str());
+    XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
+    xmlDeviceID->SetText(notify.DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
-    XMLElement *xmlStatus = xmldocReq->NewElement("Status");
-    xmlStatus->SetText(req.Status.getStr().c_str());
+    XMLElement *xmlStatus = xmldocNotify->NewElement("Status");
+    xmlStatus->SetText(notify.Status.getStr().c_str());
     rootElement->InsertEndChild(xmlStatus);
 
     return true;
@@ -108,33 +108,33 @@ MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, Status *status)
 MediaStatusNotify::~MediaStatusNotify()
 {}
 
-bool MediaStatusNotify::encode(const Request& req, XMLDocument *xmldocReq)
+bool MediaStatusNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
 {
-    if (!NotifyRequest::encode(req, xmldocReq))
+    if (!NotifyRequest::encode(notify, xmldocNotify))
     {
         return false;
     }
 
-    XMLElement *rootElement = xmldocReq->LastChildElement();
+    XMLElement *rootElement = xmldocNotify->LastChildElement();
     if (rootElement == nullptr)
     {
         return false;
     }
 
-    XMLElement *xmlCmdType = xmldocReq->NewElement("CmdType");
+    XMLElement *xmlCmdType = xmldocNotify->NewElement("CmdType");
     xmlCmdType->SetText("MediaStatus");
     rootElement->InsertEndChild(xmlCmdType);
 
-    XMLElement *xmlSN = xmldocReq->NewElement("SN");
-    xmlSN->SetText(req.SN.getValue());
+    XMLElement *xmlSN = xmldocNotify->NewElement("SN");
+    xmlSN->SetText(notify.SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
-    XMLElement *xmlDeviceID = xmldocReq->NewElement("DeviceID");
-    xmlDeviceID->SetText(req.DeviceID.getStr().c_str());
+    XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
+    xmlDeviceID->SetText(notify.DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
-    XMLElement *xmlNotifyType = xmldocReq->NewElement("NotifyType");
-    xmlNotifyType->SetText(req.NotifyType.getStr().c_str());
+    XMLElement *xmlNotifyType = xmldocNotify->NewElement("NotifyType");
+    xmlNotifyType->SetText(notify.NotifyType.getStr().c_str());
     rootElement->InsertEndChild(xmlNotifyType);
 
     return true;

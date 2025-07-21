@@ -11,7 +11,7 @@
 class NotifyRequest : public CmdTypeRequest
 {
 public:
-    struct Request
+    struct Notify
     {};
 
 private:
@@ -22,7 +22,7 @@ public:
     virtual ~NotifyRequest();
 
 public:
-    static bool encode(const Request& req, XMLDocument *xmldocReq);
+    static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
 
 public:
     virtual bool match(const std::string& ReqType);
@@ -33,7 +33,7 @@ public:
 class KeepAliveNotify : public CmdTypeSpecRequest
 {
 public:
-    struct Request : NotifyRequest::Request
+    struct Notify : NotifyRequest::Notify
     {
         /* 〈! -- 命令类型:设备状态信息报送(必选)--〉 */
         stringType CmdType;
@@ -50,7 +50,7 @@ public:
     virtual ~KeepAliveNotify();
 
 public:
-    static bool encode(const Request& req, XMLDocument *xmldocReq);
+    static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
 
 public:
     virtual bool match(const XMLElement *xmlReq);
@@ -63,7 +63,7 @@ public:
 class MediaStatusNotify : public CmdTypeSpecRequest
 {
 public:
-    struct Request : NotifyRequest::Request
+    struct Notify : NotifyRequest::Notify
     {
         /* 〈! --命令类型:媒体通知(必选)--〉 */
         stringType CmdType;
@@ -80,7 +80,7 @@ public:
     virtual ~MediaStatusNotify();
 
 public:
-    static bool encode(const Request& req, XMLDocument *xmldocReq);
+    static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
 
 public:
     virtual bool match(const XMLElement *xmlReq);

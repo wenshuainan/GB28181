@@ -1,6 +1,7 @@
 #ifndef GLOBAL_TYPES_H
 #define GLOBAL_TYPES_H
 
+#include <time.h>
 #include <string>
 #include <vector>
 #include "tinyxml2.h"

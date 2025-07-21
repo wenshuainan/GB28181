@@ -700,12 +700,12 @@ bool SessionAgent::notifyFileEnd() const
     {
         if (strCaseCmp(session.second->getName(), "Playback"))
         {
-            MediaStatusNotify::Request notify;
+            MediaStatusNotify::Notify notify;
             notify.SN = 2;
             notify.DeviceID = "64010000041310000345";
             notify.NotifyType = "121";
             const std::shared_ptr<MANSCDPAgent>& agent = m_ua->getMANSCDPAgent();
-            return agent->sendMediaStatusRequest(session.first, notify);
+            return agent->sendMediaStatusNotify(session.first, notify);
         }
     }
     return false;

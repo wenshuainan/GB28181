@@ -110,7 +110,7 @@ bool ResipUserAgent::sendRegistration(const SipUserMessage& req)
     return true;
 }
 
-bool ResipUserAgent::sendKeepaliveRequest(const XMLDocument &notify)
+bool ResipUserAgent::sendKeepaliveNotify(const XMLDocument &notify)
 {
     if (!mKeepaliveHandle.isValid())
     {

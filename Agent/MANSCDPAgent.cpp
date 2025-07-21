@@ -75,24 +75,24 @@ bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
     return sip->sendMANSCDPResponse(xmldocRes);
 }
 
-bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) const
+bool MANSCDPAgent::sendKeepaliveNotify(const KeepAliveNotify::Notify *notify) const
 {
-    KeepAliveNotify::Request req;
+    KeepAliveNotify::Notify keepalive;
 
     if (notify == nullptr)
     {
-        m_devStatus->getStatus(req);
+        m_devStatus->getStatus(keepalive);
     }
     else
     {
-        req = *notify;
+        keepalive = *notify;
     }
 
-    XMLDocument xmldocReq;
-    KeepAliveNotify::encode(req, &xmldocReq);
+    XMLDocument xmldocNotify;
+    KeepAliveNotify::encode(keepalive, &xmldocNotify);
 
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    if (sip->sendKeepaliveRequest(xmldocReq))
+    if (sip->sendKeepaliveNotify(xmldocNotify))
     {
         m_devStatus->addSentCount();
         return true;
@@ -103,11 +103,11 @@ bool MANSCDPAgent::sendKeepaliveRequest(const KeepAliveNotify::Request *notify) 
     }
 }
 
-bool MANSCDPAgent::sendMediaStatusRequest(const SessionIdentifier& id, const MediaStatusNotify::Request& notify) const
+bool MANSCDPAgent::sendMediaStatusNotify(const SessionIdentifier& id, const MediaStatusNotify::Notify& notify) const
 {
-    XMLDocument xmldocReq;
-    MediaStatusNotify::encode(notify, &xmldocReq);
+    XMLDocument xmldocNotify;
+    MediaStatusNotify::encode(notify, &xmldocNotify);
 
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendSessionNotify(id, xmldocReq);
+    return sip->sendSessionNotify(id, xmldocNotify);
 }
