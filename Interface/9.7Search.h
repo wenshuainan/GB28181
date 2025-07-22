@@ -1,4 +1,0 @@
-#ifndef SEARCH_INTERFACE_H
-#define SEARCH_INTERFACE_H
-
-#endif

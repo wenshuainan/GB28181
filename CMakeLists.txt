@@ -72,6 +72,12 @@ install(
 )
 
 install(
+	DIRECTORY MANSRTSP
+	DESTINATION "include"
+	FILES_MATCHING PATTERN "*.h"
+)
+
+install(
 	FILES UA.h
 	DESTINATION "include"
 )

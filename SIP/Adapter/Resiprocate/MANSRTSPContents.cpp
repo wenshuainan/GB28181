@@ -14,7 +14,7 @@ using namespace std;
 #define RESIPROCATE_SUBSYSTEM Subsystem::SIP
 
 const MANSRTSPContents MANSRTSPContents::Empty;
-static bool invokeMANSCDPXmlContentsInit = MANSRTSPContents::init();
+static bool invokeMANSRTSPContentsInit = MANSRTSPContents::init();
 
 
 bool

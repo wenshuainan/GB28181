@@ -7,15 +7,17 @@
 #include "DevControl.h"
 #include "DevQuery.h"
 #include "DevStatus.h"
+#include "DevRecordQuery.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
     m_devControl = std::make_shared<DevControl>();
     m_devQuery = std::make_shared<DevQuery>();
     m_devStatus = std::make_shared<DevStatus>();
+    m_devRecordQuery = std::make_shared<DevRecordQuery>();
 
     m_cmdRequests.push_back(std::make_shared<ControlReuest>(this, m_devControl.get()));
-    m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get()));
+    m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get(), m_devRecordQuery.get()));
     m_cmdRequests.push_back(std::make_shared<NotifyRequest>(this, m_devStatus.get()));
 }
 

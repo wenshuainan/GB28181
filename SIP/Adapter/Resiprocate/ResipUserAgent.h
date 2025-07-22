@@ -33,6 +33,7 @@ public:
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code);
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res);
     virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify);
+    virtual bool sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////
@@ -46,6 +47,7 @@ protected:
     virtual void onConnectedConfirmed(resip::InviteSessionHandle, const resip::SipMessage &msg);
     virtual void onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg);
     virtual void onOffer(resip::InviteSessionHandle handle, const resip::SipMessage& msg, const resip::SdpContents& offer);
+    virtual void onInfo(resip::InviteSessionHandle, const resip::SipMessage& msg);
 
     // PagerMessageHandler //////////////////////////////////////////////////////////
     virtual void onSuccess(resip::ClientPagerMessageHandle, const resip::SipMessage& status);

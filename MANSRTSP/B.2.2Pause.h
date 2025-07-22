@@ -13,7 +13,7 @@ public:
     
 public:
     virtual bool match(const Message& req);
-    virtual bool handle(const Message& req);
+    virtual bool handle(const SessionIdentifier& id, const Message& req);
 };
 
 }

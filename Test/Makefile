@@ -25,7 +25,7 @@ CFLAGS := $(INCLUDES) -g -MMD
 CPPFLAGS := $(CFLAGS)
 
 LDFLAGS := -L$(LIB_ROOT)/lib
-LDFLAGS += -lGB28181 -lrtp -lmpeg2 -lsipadapter -ldum -lresip -lrutil -lresipares -ltinyxml2 -pthread
+LDFLAGS += -Wl,--start-group -lGB28181 -lrtp -lmpeg2 -lsipadapter -ldum -lresip -lrutil -lresipares -ltinyxml2 -pthread -Wl,--end-group
 
 #不同的硬件平台
 ifeq ($(CROSS_PLATFORM), GK7201V200)

@@ -7,6 +7,7 @@ class MANSCDPAgent;
 class Control;
 class Query;
 class Status;
+class RecordQuery;
 
 /*  A.2.2.1 请求命令结构头文件定义
    〈elementref="tg:Control"/〉
@@ -62,6 +63,7 @@ protected:
     Control *m_control;
     Query *m_query;
     Status *m_status;
+    RecordQuery *m_recordQuery;
 
 public:
     CmdTypeSpecRequest(MANSCDPAgent *agent, Control *control)
@@ -81,6 +83,13 @@ public:
         , m_control(nullptr)
         , m_query(nullptr)
         , m_status(status)
+    {}
+    CmdTypeSpecRequest(MANSCDPAgent *agent, RecordQuery *recordQuery)
+        : m_agent(agent)
+        , m_control(nullptr)
+        , m_query(nullptr)
+        , m_status(nullptr)
+        , m_recordQuery(recordQuery)
     {}
     virtual ~CmdTypeSpecRequest() {}
 

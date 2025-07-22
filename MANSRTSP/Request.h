@@ -29,7 +29,7 @@ protected:
 
 public:
     virtual bool match(const Message& req) = 0;
-    virtual bool handle(const Message& req) = 0;
+    virtual bool handle(const SessionIdentifier& id, const Message& req) = 0;
 };
 
 }

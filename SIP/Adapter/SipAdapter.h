@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include "tinyxml2.h"
+#include "MANSRTSP/B.1Message.h"
 
 using namespace tinyxml2;
 
@@ -102,12 +103,14 @@ public:
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code) = 0;
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res) = 0;
     virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify) = 0;
+    virtual bool sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res) = 0;
 
 protected:
     bool postRegistrationResponse(const SipUserMessage& res);
     bool postKeepaliveResponse(int32_t code);
     bool postMANSCDPRequest(const XMLDocument& req);
     bool postSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
+    bool postMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req);
 
 public:
     static std::shared_ptr<SipUserAgent> create(UA *user, const ClientInfo& client, const ServerInfo& server);

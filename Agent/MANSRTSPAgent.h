@@ -23,8 +23,9 @@ public:
     virtual bool agent(const SipUserMessage& message);
 
 public:
-    bool dispatchRequest(const MANSRTSP::Message& message);
+    bool dispatchRequest(const SessionIdentifier& id, const MANSRTSP::Message& message);
     const std::shared_ptr<SessionPlayback> getMANSRTSPSession();
+    bool sendResponse(const SessionIdentifier& id, const MANSRTSP::Message& message);
 };
 
 #endif

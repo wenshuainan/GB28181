@@ -167,7 +167,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    //mProfile->addSupportedMethod(UPDATE);
    mProfile->addSupportedMethod(INFO);
    mProfile->addSupportedMethod(MESSAGE);
-   mProfile->addSupportedMethod(PRACK);
+   // mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
    mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
    mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
@@ -179,23 +179,23 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    // Support Mime Types
    mProfile->clearSupportedMimeTypes();
    mProfile->addSupportedMimeType(INVITE, Mime("application", "sdp"));
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(OPTIONS,Mime("application", "sdp"));
-   mProfile->addSupportedMimeType(OPTIONS,Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
-   mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
-   mProfile->addSupportedMimeType(MESSAGE, Mime("text","plain")); // Invite session in-dialog routing testing
-   mProfile->addSupportedMimeType(NOTIFY, Mime("text","plain"));  // subscription testing
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(INVITE, Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(OPTIONS,Mime("application", "sdp"));
+   // mProfile->addSupportedMimeType(OPTIONS,Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(OPTIONS, Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("application", "sdp"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(PRACK,  Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("application", "sdp"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "mixed"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "signed"));  
+   // mProfile->addSupportedMimeType(UPDATE, Mime("multipart", "alternative"));  
+   // mProfile->addSupportedMimeType(MESSAGE, Mime("text","plain")); // Invite session in-dialog routing testing
+   // mProfile->addSupportedMimeType(NOTIFY, Mime("text","plain"));  // subscription testing
    //mProfile->addSupportedMimeType(NOTIFY, Mime("message", "sipfrag"));  
    mProfile->addSupportedMimeType(MESSAGE, Mime("Application", "MANSCDP+xml"));
    mProfile->addSupportedMimeType(INFO, Mime("Application", "MANSRTSP"));
@@ -226,7 +226,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
 
    // Have stack add Allow/Supported/Accept headers to INVITE dialog establishment messages
    mProfile->clearAdvertisedCapabilities(); // Remove Profile Defaults, then add our preferences
-   mProfile->addAdvertisedCapability(Headers::Allow);  
+   // mProfile->addAdvertisedCapability(Headers::Allow);  
    //mProfile->addAdvertisedCapability(Headers::AcceptEncoding);  // This can be misleading - it might specify what is expected in response
    // mProfile->addAdvertisedCapability(Headers::AcceptLanguage);  
    // mProfile->addAdvertisedCapability(Headers::Supported);  

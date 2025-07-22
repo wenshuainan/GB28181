@@ -85,9 +85,9 @@ bool UA::dispatchKeepaliveResponse(int32_t code)
     return m_cdpAgent->recvedKeepaliveResponse(code);
 }
 
-bool UA::dispatchMANSRTSPRequest(const MANSRTSP::Message& req)
+bool UA::dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req)
 {
-    return m_rtspAgent->dispatchRequest(req);
+    return m_rtspAgent->dispatchRequest(id, req);
 }
 
 void UA::setStatus(bool online)
@@ -96,9 +96,10 @@ void UA::setStatus(bool online)
 }
 
 bool UA::start(const SipUserAgent::ClientInfo& client,
-                const SipUserAgent::ServerInfo& server,
-                const KeepaliveInfo &keepalive
-            )
+    const SipUserAgent::ServerInfo& server,
+    const KeepaliveInfo &keepalive,
+    const std::vector<std::string>& catalogIds
+)
 {
     if (m_bStarted)
     {
@@ -112,7 +113,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     m_cdpAgent = std::make_shared<MANSCDPAgent>(this);
     m_agents.push_back(m_cdpAgent);
     /* 创建INVITE会话代理 */
-    m_sessionAgent = std::make_shared<SessionAgent>(this);
+    m_sessionAgent = std::make_shared<SessionAgent>(this, catalogIds);
     m_agents.push_back(m_sessionAgent);
     /* 创建MANSRTSP协议代理 */
     m_rtspAgent = std::make_shared<MANSRTSPAgent>(this);

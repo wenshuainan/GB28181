@@ -1,4 +1,5 @@
 #include "B.2.4RangePlay.h"
+#include "Agent/MANSRTSPAgent.h"
 
 using namespace MANSRTSP;
 
@@ -28,7 +29,16 @@ bool RangePlay::match(const Message& req)
     return false;
 }
 
-bool RangePlay::handle(const Message& req)
+bool RangePlay::handle(const SessionIdentifier& id, const Message& req)
 {
-    return false;
+    bool ret = false;
+    auto rtsp = m_agent->getMANSRTSPSession();
+    if (rtsp != nullptr)
+    {
+        ret = rtsp->rangePlay();
+    }
+
+    MANSRTSP::Message res(req, ret ? 200 : 400);
+    m_agent->sendResponse(id, res);
+    return ret;
 }

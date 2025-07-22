@@ -2,11 +2,11 @@
 #include "A.2.6Response.h"
 #include "Agent/MANSCDPAgent.h"
 
-QueryRequest::QueryRequest(MANSCDPAgent *agent, Query *query)
+QueryRequest::QueryRequest(MANSCDPAgent *agent, Query *query, RecordQuery *recordQuery)
 {
     spec.push_back(std::make_shared<CatalogQuery>(agent, query));
     spec.push_back(std::make_shared<DeviceInfoQuery>(agent, query));
-    spec.push_back(std::make_shared<RecordInfoQuery>(agent, query));
+    spec.push_back(std::make_shared<RecordInfoQuery>(agent, recordQuery));
 }
 
 QueryRequest::~QueryRequest()
@@ -180,8 +180,8 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     return false;
 }
 
-RecordInfoQuery::RecordInfoQuery(MANSCDPAgent *agent, Query *query)
-    : CmdTypeSpecRequest(agent, query)
+RecordInfoQuery::RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *recordQuery)
+    : CmdTypeSpecRequest(agent, recordQuery)
 {}
 
 RecordInfoQuery::~RecordInfoQuery()
@@ -264,7 +264,7 @@ bool RecordInfoQuery::handle(const XMLElement *xmlReq)
     }
 
     RecordInfoQueryResponse::Response res;
-    if (m_query->handle(req, res))
+    if (m_recordQuery->handle(req, res))
     {
         XMLDocument doc;
         RecordInfoQueryResponse::encode(res, &doc);

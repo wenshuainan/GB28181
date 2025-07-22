@@ -8,7 +8,7 @@ using namespace resip;
 
 /**
    @ingroup sip_payload
-   @brief SIP body type for holding xml contents (MIME content-type Application/MANSCDP+xml).
+   @brief SIP body type for holding xml contents (MIME content-type Application/MANSRTSP).
 */
 class MANSRTSPContents : public Contents
 {
@@ -42,6 +42,6 @@ class MANSRTSPContents : public Contents
       MANSRTSP::Message mMessage;
 };
 
-static bool invokePlainContentsInit = MANSRTSPContents::init();
+// static bool invokeMANSRTSPContentsInit = MANSRTSPContents::init();
 
 #endif

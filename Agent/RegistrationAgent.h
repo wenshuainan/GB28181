@@ -7,8 +7,6 @@
 
 class RegistrationAgent : public Agent
 {
-    friend class UA;
-
 private:
     std::shared_ptr<Registration> m_devRegistration;
     std::string m_GBVerName;

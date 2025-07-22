@@ -44,7 +44,7 @@ private:
 
 public:
     UA();
-    ~UA();
+    virtual ~UA();
 
 private:
     void proc();
@@ -54,7 +54,7 @@ private:
     bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchKeepaliveResponse(int32_t code);
-    bool dispatchMANSRTSPRequest(const MANSRTSP::Message& req);
+    bool dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
     const std::shared_ptr<SessionAgent>& getSessionAgent() const { return m_sessionAgent; }
@@ -62,9 +62,10 @@ private:
 
 public:
     bool start(const SipUserAgent::ClientInfo& client,
-                const SipUserAgent::ServerInfo& server,
-                const KeepaliveInfo &keepalive
-            );
+        const SipUserAgent::ServerInfo& server,
+        const KeepaliveInfo &keepalive,
+        const std::vector<std::string>& catalogIds
+    );
     bool stop();
     bool getStatus() const;
 

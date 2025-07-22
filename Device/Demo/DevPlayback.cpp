@@ -2,7 +2,7 @@
 
 DevPlayback::DevPlayback()
 {
-m_testVideo = fopen("./assets/128x128.h264", "rb");
+    m_testVideo = fopen("./assets/128x128.h264", "rb");
 }
 
 DevPlayback::~DevPlayback()

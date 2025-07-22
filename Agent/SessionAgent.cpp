@@ -9,7 +9,7 @@
 #include "DevDownload.h"
 #include "MANSCDPAgent.h"
 
-Media::Media(Session* session, const Attr& attr, RtpPayload::Type payloadType)
+Media::Media(const Attr& attr, RtpPayload::Type payloadType)
 {
     m_rtpPayloadType = payloadType;
     if (m_rtpPayloadType == RtpPayload::PS)
@@ -29,6 +29,24 @@ Media::Media(Session* session, const Attr& attr, RtpPayload::Type payloadType)
 Media::~Media()
 {
     disconnect();
+}
+
+void Media::onProgramStream(const uint8_t *data, int32_t size)
+{
+    if (m_rtpParticipant != nullptr)
+    {
+        m_rtpParticipant->transport(data, size);
+    }
+}
+
+bool Media::connect()
+{
+    return m_rtpParticipant->connect();
+}
+
+bool Media::disconnect()
+{
+    return m_rtpParticipant->disconnect();
 }
 
 bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
@@ -95,23 +113,6 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
     return true;
 }
 
-void Media::onProgramStream(const uint8_t *data, int32_t size)
-{
-#if 0
-    static FILE *debugf = fopen("./stream.ps", "wb");
-    if (debugf != NULL)
-    {
-        fwrite(data, 1, size, debugf);
-        fflush(debugf);
-    }
-#endif
-
-    if (m_rtpParticipant != nullptr)
-    {
-        m_rtpParticipant->transport(data, size);
-    }
-}
-
 const std::shared_ptr<RtpParticipant>& Media::getRtpParticipant() const
 {
     return m_rtpParticipant;
@@ -122,14 +123,16 @@ RtpPayload::Type Media::getRtpPaylodaType() const
     return m_rtpPayloadType;
 }
 
-bool Media::connect()
-{
-    return m_rtpParticipant->connect();
-}
+Session::Session(SessionAgent *agent)
+    : m_agent(agent)
+    , m_bStarted(false)
+    , m_buffer(nullptr)
+    , m_size(0)
+{}
 
-bool Media::disconnect()
+Session::~Session()
 {
-    return m_rtpParticipant->disconnect();
+    stop();
 }
 
 std::shared_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr)
@@ -157,7 +160,7 @@ void Session::proc()
     while (m_bStarted)
     {
         PES::ES_TYPE type;
-        int32_t len = read(type, m_buffer, m_bufferSize);
+        int32_t len = read(type, m_buffer, m_size);
         if (len > 0)
         {
             for (auto& m : m_media)
@@ -168,7 +171,7 @@ void Session::proc()
 
         if (isFileEnd())
         {
-            m_agent->notifyFileEnd();
+            m_agent->notifyFileEnd(getName());
         }
 
         usleep(10000);
@@ -177,8 +180,17 @@ void Session::proc()
 
 bool Session::start()
 {
-    m_bufferSize = 64 * 1024;
-    m_buffer = new uint8_t[m_bufferSize];
+    if (m_bStarted)
+    {
+        return false;
+    }
+
+    m_size = 64 * 1024;
+    m_buffer = new uint8_t[m_size];
+    if (m_buffer == nullptr)
+    {
+        return false;
+    }
 
     m_bStarted = true;
     m_thread = std::make_shared<std::thread>(&Session::proc, this);
@@ -188,6 +200,11 @@ bool Session::start()
 
 bool Session::stop()
 {
+    if (!m_bStarted)
+    {
+        return false;
+    }
+
     m_bStarted = false;
     m_thread->join();
     m_thread = nullptr;
@@ -253,7 +270,7 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+            media = std::make_shared<Media>(attr, RtpPayload::PS);
         }
         else
         {
@@ -264,7 +281,7 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
             {
-                media = std::make_shared<Media>(this, attr, payloadType);
+                media = std::make_shared<Media>(attr, payloadType);
             }
             else // 不支持这个类型
             {
@@ -281,7 +298,7 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, payloadType);
+            media = std::make_shared<Media>(attr, payloadType);
         }
         else // 不支持这个类型
         {
@@ -323,7 +340,7 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+            media = std::make_shared<Media>(attr, RtpPayload::PS);
         }
         else
         {
@@ -334,7 +351,7 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
             {
-                media = std::make_shared<Media>(this, attr, payloadType);
+                media = std::make_shared<Media>(attr, payloadType);
             }
             else // 不支持这个类型
             {
@@ -351,7 +368,7 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, payloadType);
+            media = std::make_shared<Media>(attr, payloadType);
         }
         else // 不支持这个类型
         {
@@ -445,7 +462,7 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, RtpPayload::PS);
+            media = std::make_shared<Media>(attr, RtpPayload::PS);
         }
         else
         {
@@ -456,7 +473,7 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
             {
-                media = std::make_shared<Media>(this, attr, payloadType);
+                media = std::make_shared<Media>(attr, payloadType);
             }
             else // 不支持这个类型
             {
@@ -473,7 +490,7 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
         {
-            media = std::make_shared<Media>(this, attr, payloadType);
+            media = std::make_shared<Media>(attr, payloadType);
         }
         else // 不支持这个类型
         {
@@ -500,8 +517,40 @@ bool SessionDownload::isFileEnd()
 {
     /* 根据时间戳或者文件长度等判断是否结束 */
     /* ... */
+
+    static timeval tv1 = {
+        .tv_sec = 0,
+        .tv_usec = 0
+    };
+    
+    timeval tv2;
+    gettimeofday(&tv2, NULL);
+    if (tv1.tv_sec == 0)
+    {
+        tv1 = tv2;
+    }
+    else
+    {
+        if (tv2.tv_sec - tv1.tv_sec > 10)
+        {
+            tv1 = tv2;
+            return true;
+        }
+    }
     return false;
 }
+
+SessionAgent::SessionAgent(UA *ua, const std::vector<std::string>& senderIds)
+    : Agent(ua)
+{
+    for (auto& i : senderIds)
+    {
+        m_senders[i] = Sender();
+    }
+}
+
+SessionAgent::~SessionAgent()
+{}
 
 std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
 {
@@ -513,6 +562,15 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
         .startTime = req.getSdpTimeStart(),
         .endTime = req.getSdpTimeEnd()
     };
+
+    std::cout << "session:" << std::endl
+                << "version=" << attr.version << " "
+                << "owner=" << attr.owner.c_str() << " "
+                << "name=" << attr.name.c_str() << " "
+                << "uri=" << attr.uri.c_str() << " "
+                << "start=" << attr.startTime << " "
+                << "end=" << attr.endTime
+                << std::endl;
 
     std::shared_ptr<Session> session = Session::create(this, attr);
     if (session == nullptr)
@@ -544,7 +602,7 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
                     << "payload=";
                     for (int32_t j = 0; (uint32_t)j < mattr.payloadType.size(); j++)
                     {
-                    std::cout << mattr.payloadType[j]  << " ";
+                        std::cout << mattr.payloadType[j]  << " ";
                     }
                     std::cout << "ipv4=" << mattr.conInfo.ipv4.c_str()  << " "
                     << "ssrc=" << mattr.SSRC  << " "
@@ -694,11 +752,11 @@ bool SessionAgent::isSessionExist(const std::string& name) const
     return false;
 }
 
-bool SessionAgent::notifyFileEnd() const
+bool SessionAgent::notifyFileEnd(const std::string& name) const
 {
     for (auto& session : m_session)
     {
-        if (strCaseCmp(session.second->getName(), "Playback"))
+        if (strCaseCmp(session.second->getName(), name))
         {
             MediaStatusNotify::Notify notify;
             notify.SN = 2;

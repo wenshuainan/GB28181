@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include <map>
+#include <unordered_map>
 #include "Agent.h"
 #include "PS/PSMux.h"
 #include "PS/Packetizer/PacketizedES.h"
@@ -14,7 +15,6 @@
 #include "Interface/9.9Download.h"
 
 class SessionAgent;
-class Session;
 
 struct Connection
 {
@@ -42,18 +42,18 @@ private:
     RtpPayload::Type m_rtpPayloadType;
 
 public:
-    Media(Session* session, const Attr& attr, RtpPayload::Type payloadType);
+    Media(const Attr& attr, RtpPayload::Type payloadType);
     virtual ~Media();
 
 public:
-    bool input(PES::ES_TYPE type, const uint8_t *data, int32_t size);
-    void onProgramStream(const uint8_t *data, int32_t size);
-    const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
-    RtpPayload::Type getRtpPaylodaType() const;
+    virtual void onProgramStream(const uint8_t *data, int32_t size);
 
 public:
     bool connect();
     bool disconnect();
+    bool input(PES::ES_TYPE type, const uint8_t *data, int32_t size);
+    const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
+    RtpPayload::Type getRtpPaylodaType() const;
 };
 
 class Session
@@ -71,21 +71,26 @@ public:
 
 protected:
     SessionAgent *m_agent;
-    std::string m_name;
     std::vector<std::shared_ptr<Media>> m_media;
 
 private:
     std::shared_ptr<std::thread> m_thread;
     bool m_bStarted;
     uint8_t *m_buffer;
-    int32_t m_bufferSize;
+    int32_t m_size;
 
 public:
-    Session(SessionAgent *agent) : m_agent(agent) {}
+    Session(SessionAgent *agent);
+    virtual ~Session();
     static std::shared_ptr<Session> create(SessionAgent *agent, const Attr& attr);
 
 private:
     void proc();
+
+public:
+    bool start();
+    bool stop();
+    bool getSdp(SipUserMessage& sdp);
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
@@ -93,11 +98,6 @@ public:
     virtual bool isMANSRTSP() = 0;
     virtual const char* getName() const = 0;
     virtual bool isFileEnd() = 0;
-
-public:
-    bool start();
-    bool stop();
-    bool getSdp(SipUserMessage& sdp);
 };
 
 class SessionPlay : public Session
@@ -109,12 +109,12 @@ public:
     SessionPlay(SessionAgent *m_agent);
     virtual ~SessionPlay();
 
-private:
+public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
     virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return false; }
+    virtual bool isMANSRTSP() { return false; } // not support MANSRTSP
     virtual const char* getName() const { return "Play"; }
-    virtual bool isFileEnd() { return false; }
+    virtual bool isFileEnd() { return false; } // never end
 };
 
 class SessionPlayback : public Session
@@ -128,10 +128,10 @@ public:
     SessionPlayback(SessionAgent *m_agent);
     virtual ~SessionPlayback();
 
-private:
+public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
     virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return true; }
+    virtual bool isMANSRTSP() { return true; } // playback support MANSRTSP
     virtual const char* getName() const { return "Playback"; }
     virtual bool isFileEnd();
 
@@ -154,24 +154,24 @@ public:
     SessionDownload(SessionAgent *m_agent);
     virtual ~SessionDownload();
 
-private:
+public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
     virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return false; }
+    virtual bool isMANSRTSP() { return false; } // download not support MANSRTSP
     virtual const char* getName() const { return "Download"; }
     virtual bool isFileEnd();
 };
 
 class SessionAgent : public Agent
 {
-    friend class UA;
-
 private:
-    std::map<const SessionIdentifier, std::shared_ptr<Session>> m_session;
+    typedef std::map<const SessionIdentifier, std::shared_ptr<Session>> Sender;
+    // std::map<const SessionIdentifier, std::shared_ptr<Session>> m_session;
+    std::unordered_map<std::string, Sender> m_senders;
 
 public:
-    SessionAgent(UA *ua) : Agent(ua) {}
-    virtual ~SessionAgent() {}
+    SessionAgent(UA *ua, const std::vector<std::string>& senderIds);
+    virtual ~SessionAgent();
 
 private:
     RtpNet::Type parseNetType(const std::string& str) const;
@@ -186,7 +186,7 @@ public:
     bool agent(const SipUserMessage& message);
     bool agent(const SessionIdentifier& id, const SipUserMessage& message);
     const std::shared_ptr<SessionPlayback> getMANSRTSPSession() const;
-    bool notifyFileEnd() const;
+    bool notifyFileEnd(const std::string& name) const;
 };
 
 #endif

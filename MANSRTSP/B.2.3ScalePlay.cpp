@@ -1,4 +1,5 @@
 #include "B.2.3ScalePlay.h"
+#include "Agent/MANSRTSPAgent.h"
 
 using namespace MANSRTSP;
 
@@ -28,7 +29,16 @@ bool ScalePlay::match(const Message& req)
     return false;
 }
 
-bool ScalePlay::handle(const Message& req)
+bool ScalePlay::handle(const SessionIdentifier& id, const Message& req)
 {
-    return false;
+    bool ret = false;
+    auto rtsp = m_agent->getMANSRTSPSession();
+    if (rtsp != nullptr)
+    {
+        ret = rtsp->scalePlay();
+    }
+
+    MANSRTSP::Message res(req, ret ? 200 : 400);
+    m_agent->sendResponse(id, res);
+    return ret;
 }

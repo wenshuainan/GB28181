@@ -6,15 +6,15 @@
 #include "Interface/9.3Control.h"
 #include "Interface/9.5Query.h"
 #include "Interface/9.6Status.h"
+#include "Interface/9.7RecordQuery.h"
 
 class MANSCDPAgent : public Agent
 {
-    friend class UA;
-
 private:
     std::shared_ptr<Control> m_devControl;
     std::shared_ptr<Query> m_devQuery;
     std::shared_ptr<Status> m_devStatus;
+    std::shared_ptr<RecordQuery> m_devRecordQuery;
 
 private:
     /* 

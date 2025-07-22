@@ -43,6 +43,6 @@ class MANSCDPContents : public Contents
       XMLDocument mXml;
 };
 
-static bool invokePlainContentsInit = MANSCDPContents::init();
+// static bool invokeMANSCDPContentsInit = MANSCDPContents::init();
 
 #endif

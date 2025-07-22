@@ -3,6 +3,7 @@
 #include "ResipUserAgent.h"
 #include "UA.h"
 #include "MANSCDPContents.h"
+#include "MANSRTSPContents.h"
 #include "resip/dum/ClientPagerMessage.hxx"
 #include "resip/dum/ServerPagerMessage.hxx"
 #include "resip/dum/ServerInviteSession.hxx"
@@ -26,6 +27,11 @@ bool SipUserAgent::postMANSCDPRequest(const XMLDocument &req)
 bool SipUserAgent::postSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
 {
     return m_user->dispatchSessionRequest(id, req);
+}
+
+bool SipUserAgent::postMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req)
+{
+    return m_user->dispatchMANSRTSPRequest(id, req);
 }
 
 std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *user, const ClientInfo& client, const ServerInfo& server)
@@ -213,6 +219,14 @@ bool ResipUserAgent::sendSessionNotify(const SessionIdentifier& id, const XMLDoc
     return true;
 }
 
+bool ResipUserAgent::sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res)
+{
+    MANSRTSPContents contents(res);
+    resip::InviteSession *session = (resip::InviteSession *)id;
+    session->acceptNIT(200, &contents);
+    return true;
+}
+
 // Registration Handler ////////////////////////////////////////////////////////
 void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
 {
@@ -288,6 +302,16 @@ void ResipUserAgent::onOffer(resip::InviteSessionHandle handle, const resip::Sip
     SipUserMessage user;
     user.setAdapter(adapter);
     postSessionRequest((SessionIdentifier)(handle.get()), user);
+}
+
+void ResipUserAgent::onInfo(resip::InviteSessionHandle h, const resip::SipMessage& msg)
+{
+    Contents *contents = msg.getContents();
+    if (contents != nullptr)
+    {
+        MANSRTSPContents *rtsp = dynamic_cast<MANSRTSPContents*>(contents);
+        postMANSRTSPRequest((SessionIdentifier)(h.get()), rtsp->message());
+    }
 }
 
 // PagerMessageHandler //////////////////////////////////////////////////////////

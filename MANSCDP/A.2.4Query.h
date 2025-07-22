@@ -11,7 +11,7 @@ private:
     std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    QueryRequest(MANSCDPAgent *agent, Query *query);
+    QueryRequest(MANSCDPAgent *agent, Query *query, RecordQuery *recordQuery);
     virtual ~QueryRequest();
 
 public:
@@ -129,7 +129,7 @@ public:
     };
 
 public:
-    RecordInfoQuery(MANSCDPAgent *agent, Query *query);
+    RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *recordQuery);
     virtual ~RecordInfoQuery();
 
 private:
