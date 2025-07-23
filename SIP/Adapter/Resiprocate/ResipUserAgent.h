@@ -26,6 +26,7 @@ private:
 
 public:
     virtual bool init();
+    virtual const char* getUserId();
     virtual bool makeRegistrationRequest(SipUserMessage& req);
     virtual bool sendRegistration(const SipUserMessage& req);
     virtual bool sendKeepaliveNotify(const XMLDocument& notify);

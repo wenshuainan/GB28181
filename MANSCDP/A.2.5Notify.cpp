@@ -86,6 +86,17 @@ bool KeepAliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
     xmlStatus->SetText(notify.Status.getStr().c_str());
     rootElement->InsertEndChild(xmlStatus);
 
+    XMLElement *xmlInfo = xmldocNotify->NewElement("Info");
+    rootElement->InsertEndChild(xmlInfo);
+
+    auto size = notify.Info.DeviceID.size();
+    for (int i = 0; (std::size_t)i < size; i++)
+    {
+        XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
+        xmlDeviceID->SetText(notify.Info.DeviceID[i].getStr().c_str());
+        xmlInfo->InsertEndChild(xmlDeviceID);
+    }
+
     return true;
 }
 

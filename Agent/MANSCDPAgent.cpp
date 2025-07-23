@@ -18,7 +18,7 @@ MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 
     m_cmdRequests.push_back(std::make_shared<ControlReuest>(this, m_devControl.get()));
     m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get(), m_devRecordQuery.get()));
-    m_cmdRequests.push_back(std::make_shared<NotifyRequest>(this, m_devStatus.get()));
+    // m_cmdRequests.push_back(std::make_shared<NotifyRequest>(this, m_devStatus.get()));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
@@ -77,21 +77,13 @@ bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
     return sip->sendMANSCDPResponse(xmldocRes);
 }
 
-bool MANSCDPAgent::sendKeepaliveNotify(const KeepAliveNotify::Notify *notify) const
+bool MANSCDPAgent::sendKeepaliveNotify() const
 {
-    KeepAliveNotify::Notify keepalive;
-
-    if (notify == nullptr)
-    {
-        m_devStatus->getStatus(keepalive);
-    }
-    else
-    {
-        keepalive = *notify;
-    }
+    KeepAliveNotify::Notify notify;
+    m_devStatus->getStatus(notify);
 
     XMLDocument xmldocNotify;
-    KeepAliveNotify::encode(keepalive, &xmldocNotify);
+    KeepAliveNotify::encode(notify, &xmldocNotify);
 
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
     if (sip->sendKeepaliveNotify(xmldocNotify))

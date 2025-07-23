@@ -723,16 +723,16 @@ bool SessionAgent::agent(const SessionIdentifier& id, const SipUserMessage& mess
     }
 }
 
-const std::shared_ptr<SessionPlayback> SessionAgent::getMANSRTSPSession() const
+const std::pair<const SessionIdentifier, std::shared_ptr<SessionPlayback>> SessionAgent::getMANSRTSPSession() const
 {
     for (auto& session : m_session)
     {
         if (strCaseCmp(session.second->getName(), "Playback"))
         {
-            return std::dynamic_pointer_cast<SessionPlayback>(session.second);
+            return std::make_pair(session.first, std::dynamic_pointer_cast<SessionPlayback>(session.second));
         }
     }
-    return nullptr;
+    return std::make_pair(0, nullptr);
 }
 
 bool SessionAgent::isSessionExist(const std::string& name) const

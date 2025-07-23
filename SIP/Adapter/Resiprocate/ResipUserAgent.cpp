@@ -29,9 +29,9 @@ bool SipUserAgent::postSessionRequest(const SessionIdentifier& id, const SipUser
     return m_user->dispatchSessionRequest(id, req);
 }
 
-bool SipUserAgent::postMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req)
+bool SipUserAgent::postMANSRTSPRequest(const SipUserMessage& req)
 {
-    return m_user->dispatchMANSRTSPRequest(id, req);
+    return m_user->dispatchMANSRTSPRequest(req);
 }
 
 std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *user, const ClientInfo& client, const ServerInfo& server)
@@ -84,6 +84,11 @@ bool ResipUserAgent::init()
     t.detach();
 
     return true;
+}
+
+const char* ResipUserAgent::getUserId()
+{
+    return mAor.user().c_str();
 }
 
 bool ResipUserAgent::makeRegistrationRequest(SipUserMessage& req)
@@ -304,14 +309,15 @@ void ResipUserAgent::onOffer(resip::InviteSessionHandle handle, const resip::Sip
     postSessionRequest((SessionIdentifier)(handle.get()), user);
 }
 
-void ResipUserAgent::onInfo(resip::InviteSessionHandle h, const resip::SipMessage& msg)
+void ResipUserAgent::onInfo(resip::InviteSessionHandle, const resip::SipMessage& msg)
 {
-    Contents *contents = msg.getContents();
-    if (contents != nullptr)
-    {
-        MANSRTSPContents *rtsp = dynamic_cast<MANSRTSPContents*>(contents);
-        postMANSRTSPRequest((SessionIdentifier)(h.get()), rtsp->message());
-    }
+    SipAdapterMessage adapter = {
+        .instance = std::make_shared<resip::SipMessage>(msg)
+    };
+
+    SipUserMessage user;
+    user.setAdapter(adapter);
+    postMANSRTSPRequest(user);
 }
 
 // PagerMessageHandler //////////////////////////////////////////////////////////

@@ -39,18 +39,9 @@ bool Play::match(const Message& req)
     return false;
 }
 
-bool Play::handle(const SessionIdentifier& id, const Message& req)
+bool Play::handle(SessionPlayback& session, const Message& req)
 {
-    bool ret = false;
-    auto rtsp = m_agent->getMANSRTSPSession();
-    if (rtsp != nullptr)
-    {
-        ret = rtsp->play();
-    }
-
-    MANSRTSP::Message res(req, ret ? 200 : 400);
-    m_agent->sendResponse(id, res);
-    return ret;
+    return session.play();
 }
 
 }

@@ -43,6 +43,11 @@ public:
         deviceIDType DeviceID;
         /* 〈! -- 是否正常工作(必选)--〉 */
         resultType Status;
+        /* 〈! --故障设备列表--〉 */
+        struct
+        {
+            std::vector<deviceIDType> DeviceID;
+        } Info;
     };
 
 public:

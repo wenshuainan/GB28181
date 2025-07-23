@@ -8,6 +8,7 @@
 #include "resip/stack/PlainContents.hxx"
 #include "ResipUserAgent.h"
 #include "MANSCDPContents.h"
+#include "MANSRTSPContents.h"
 
 SipUserMessage::SipUserMessage()
     : m_adapter(std::make_shared<SipAdapterMessage>())
@@ -541,6 +542,31 @@ uint32_t SipUserMessage::getSdpMediaSSRC(int32_t index) const
     else
     {
         return 0;
+    }
+}
+
+const MANSRTSP::Message* SipUserMessage::getMANSRTSP() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return nullptr;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return nullptr;
+    }
+
+    MANSRTSPContents *rtsp = dynamic_cast<MANSRTSPContents*>(contents);
+    if (rtsp != nullptr)
+    {
+        return &rtsp->message();
+    }
+    else
+    {
+        return nullptr;
     }
 }
 

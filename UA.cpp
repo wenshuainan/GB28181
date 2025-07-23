@@ -7,6 +7,8 @@
 #include "Agent/MANSCDPAgent.h"
 #include "Agent/SessionAgent.h"
 #include "Agent/MANSRTSPAgent.h"
+#include "MANSCDP/A.2.5Notify.h"
+#include "MANSRTSP/B.1Message.h"
 
 UA::UA()
 {
@@ -91,9 +93,23 @@ bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessag
     return m_sessionAgent[ch]->agent(id, req);
 }
 
-bool UA::dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req)
+bool UA::dispatchMANSRTSPRequest(const SipUserMessage& req)
 {
-    return m_rtspAgent->dispatchRequest(id, req);
+    int32_t ch = getChNum(req.getUriUser());
+    if (ch < 0)
+    {
+        return false;
+    }
+    
+    const MANSRTSP::Message* message = req.getMANSRTSP();
+    if (message != nullptr)
+    {
+        return m_rtspAgent->agent(*(m_sessionAgent[ch]), *message);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void UA::setStatus(bool online)
@@ -201,12 +217,12 @@ bool UA::stop()
     return true;
 }
 
-bool UA::getStatus() const
+bool UA::getOnline() const
 {
     return m_bOnline;
 }
 
-bool UA::updateStatus(const KeepAliveNotify::Notify &notify)
+bool UA::updateStatus()
 {
-    return m_cdpAgent->sendKeepaliveNotify(&notify);
+    return m_cdpAgent->sendKeepaliveNotify();
 }

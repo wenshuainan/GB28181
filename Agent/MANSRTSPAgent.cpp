@@ -32,29 +32,25 @@ bool MANSRTSPAgent::agent(const SipUserMessage& message)
     return false;
 }
 
-bool MANSRTSPAgent::dispatchRequest(const SessionIdentifier& id, const MANSRTSP::Message& message)
+bool MANSRTSPAgent::agent(const SessionAgent& sessionAgent, const MANSRTSP::Message& message)
 {
+    const std::pair<const SessionIdentifier, std::shared_ptr<SessionPlayback>> pair = sessionAgent.getMANSRTSPSession();
+    if (pair.second == nullptr)
+    {
+        return false;
+    }
+
+    int code = 400;
     for (auto req : m_requests)
     {
         if (req->match(message))
         {
-            return req->handle(id, message);
+            code = req->handle(*(pair.second), message) ? 200 : 400;
         }
     }
-    return false;
-}
 
-const std::shared_ptr<SessionPlayback> MANSRTSPAgent::getMANSRTSPSession()
-{
-    auto sessionAgent = m_ua->getSessionAgent(0);
-    if (sessionAgent != nullptr)
-    {
-        return sessionAgent->getMANSRTSPSession();
-    }
-    else
-    {
-        return nullptr;
-    }
+    MANSRTSP::Message res(message, code);
+    return sendResponse(pair.first, res);
 }
 
 bool MANSRTSPAgent::sendResponse(const SessionIdentifier& id, const MANSRTSP::Message& message)

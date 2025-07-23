@@ -6,8 +6,6 @@
 #include <thread>
 #include <unordered_map>
 #include "SipAdapter.h"
-#include "MANSCDP/A.2.5Notify.h"
-#include "MANSRTSP/B.1Message.h"
 
 class Agent;
 class RegistrationAgent;
@@ -56,7 +54,7 @@ private:
     bool dispatchKeepaliveResponse(int32_t code);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
-    bool dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req);
+    bool dispatchMANSRTSPRequest(const SipUserMessage& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
     const std::shared_ptr<SessionAgent>& getSessionAgent(int32_t ch) const { return m_sessionAgent[ch]; }
@@ -70,10 +68,10 @@ public:
         const std::vector<std::string>& catalogIds
     );
     bool stop();
-    bool getStatus() const;
+    bool getOnline() const;
 
     // 设备主动向服务器发送
-    bool updateStatus(const KeepAliveNotify::Notify &notify); // 9.6.1 立即发送状态信息
+    bool updateStatus(); // 9.6.1 立即发送状态信息
 };
 
 #endif

@@ -47,6 +47,8 @@ public:
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
 
+    const MANSRTSP::Message* getMANSRTSP() const;
+
     bool setSdpMediaNum(int32_t num);
     bool setSdpMediaType(int32_t index, const char *type);
     bool setSdpMediaPort(int32_t index, int32_t port);
@@ -97,6 +99,7 @@ public:
 
 public:
     virtual bool init() = 0;
+    virtual const char* getUserId() = 0;
     virtual bool makeRegistrationRequest(SipUserMessage& req) = 0;
     virtual bool sendRegistration(const SipUserMessage& req) = 0;
     virtual bool sendKeepaliveNotify(const XMLDocument& notify) = 0;
@@ -111,7 +114,7 @@ protected:
     bool postKeepaliveResponse(int32_t code);
     bool postMANSCDPRequest(const XMLDocument& req);
     bool postSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
-    bool postMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req);
+    bool postMANSRTSPRequest(const SipUserMessage& req);
 
 public:
     static std::shared_ptr<SipUserAgent> create(UA *user, const ClientInfo& client, const ServerInfo& server);

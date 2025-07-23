@@ -12,16 +12,7 @@ bool Teardown::match(const Message& req)
     return false;
 }
 
-bool Teardown::handle(const SessionIdentifier& id, const Message& req)
+bool Teardown::handle(SessionPlayback& session, const Message& req)
 {
-    bool ret = false;
-    auto rtsp = m_agent->getMANSRTSPSession();
-    if (rtsp != nullptr)
-    {
-        ret = rtsp->teardown();
-    }
-
-    MANSRTSP::Message res(req, ret ? 200 : 400);
-    m_agent->sendResponse(id, res);
-    return ret;
+    return session.teardown();
 }

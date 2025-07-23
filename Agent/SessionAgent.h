@@ -185,7 +185,7 @@ public:
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipUserMessage& message);
     bool agent(const SessionIdentifier& id, const SipUserMessage& message);
-    const std::shared_ptr<SessionPlayback> getMANSRTSPSession() const;
+    const std::pair<const SessionIdentifier, std::shared_ptr<SessionPlayback>> getMANSRTSPSession() const;
     bool notifyFileEnd(const std::string& name) const;
 };
 

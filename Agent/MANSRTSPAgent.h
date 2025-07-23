@@ -21,10 +21,9 @@ public:
 public:
     virtual bool match(const std::string& method, const std::string& contentType);
     virtual bool agent(const SipUserMessage& message);
+    virtual bool agent(const SessionAgent& sessionAgent, const MANSRTSP::Message& message);
 
 public:
-    bool dispatchRequest(const SessionIdentifier& id, const MANSRTSP::Message& message);
-    const std::shared_ptr<SessionPlayback> getMANSRTSPSession();
     bool sendResponse(const SessionIdentifier& id, const MANSRTSP::Message& message);
 };
 
