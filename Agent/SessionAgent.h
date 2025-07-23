@@ -5,7 +5,6 @@
 #include <memory>
 #include <thread>
 #include <map>
-#include <unordered_map>
 #include "Agent.h"
 #include "PS/PSMux.h"
 #include "PS/Packetizer/PacketizedES.h"
@@ -94,7 +93,7 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
-    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size) = 0;
+    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size) = 0;
     virtual bool isMANSRTSP() = 0;
     virtual const char* getName() const = 0;
     virtual bool isFileEnd() = 0;
@@ -111,7 +110,7 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
+    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return false; } // not support MANSRTSP
     virtual const char* getName() const { return "Play"; }
     virtual bool isFileEnd() { return false; } // never end
@@ -130,7 +129,7 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
+    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return true; } // playback support MANSRTSP
     virtual const char* getName() const { return "Playback"; }
     virtual bool isFileEnd();
@@ -156,7 +155,7 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(PES::ES_TYPE &type, uint8_t *data, int32_t size);
+    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
     virtual bool isMANSRTSP() { return false; } // download not support MANSRTSP
     virtual const char* getName() const { return "Download"; }
     virtual bool isFileEnd();
@@ -164,13 +163,14 @@ public:
 
 class SessionAgent : public Agent
 {
+    friend Session;
+    
 private:
-    typedef std::map<const SessionIdentifier, std::shared_ptr<Session>> Sender;
-    // std::map<const SessionIdentifier, std::shared_ptr<Session>> m_session;
-    std::unordered_map<std::string, Sender> m_senders;
+    int32_t m_ch;
+    std::map<const SessionIdentifier, std::shared_ptr<Session>> m_session;
 
 public:
-    SessionAgent(UA *ua, const std::vector<std::string>& senderIds);
+    SessionAgent(UA *ua, int32_t ch);
     virtual ~SessionAgent();
 
 private:

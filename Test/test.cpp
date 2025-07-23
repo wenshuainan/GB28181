@@ -153,7 +153,10 @@ int main()
     keepalive.interval = 60;
     keepalive.timeoutCount = 3;
 
-    ua.start(client, server, keepalive);
+    std::vector<std::string> catalogIds;
+    catalogIds.push_back("34020000001310000001");
+
+    ua.start(client, server, keepalive, catalogIds);
 #elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \

@@ -70,9 +70,9 @@ bool UA::dispatchRegistrationResponse(const SipUserMessage& res)
     return m_registAgent->agent(res);
 }
 
-bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
+bool UA::dispatchKeepaliveResponse(int32_t code)
 {
-    return m_sessionAgent->agent(id, req);
+    return m_cdpAgent->recvedKeepaliveResponse(code);
 }
 
 bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
@@ -80,9 +80,15 @@ bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
     return m_cdpAgent->agent(req);
 }
 
-bool UA::dispatchKeepaliveResponse(int32_t code)
+bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
 {
-    return m_cdpAgent->recvedKeepaliveResponse(code);
+    int32_t ch = getChNum(req.getUriUser());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    return m_sessionAgent[ch]->agent(id, req);
 }
 
 bool UA::dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req)
@@ -95,6 +101,19 @@ void UA::setStatus(bool online)
     m_bOnline = online;
 }
 
+int32_t UA::getChNum(const std::string& id) const
+{
+    auto it = m_channels.find(id);
+    if (it != m_channels.end())
+    {
+        return it->second;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
 bool UA::start(const SipUserAgent::ClientInfo& client,
     const SipUserAgent::ServerInfo& server,
     const KeepaliveInfo &keepalive,
@@ -105,6 +124,19 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     {
         return false;
     }
+
+    auto size = catalogIds.size();
+    if (size == 0)
+    {
+        return false;
+    }
+    int i;
+    for (i = 0; (std::size_t)i < size; i++)
+    {
+        m_channels[catalogIds[i]] = i;
+        std::shared_ptr<SessionAgent> sessionAgent = std::make_shared<SessionAgent>(this, i);
+        m_sessionAgent.push_back(sessionAgent);
+    }
     
     /* 创建注册协议代理 */
     m_registAgent = std::make_shared<RegistrationAgent>(this);
@@ -113,8 +145,8 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     m_cdpAgent = std::make_shared<MANSCDPAgent>(this);
     m_agents.push_back(m_cdpAgent);
     /* 创建INVITE会话代理 */
-    m_sessionAgent = std::make_shared<SessionAgent>(this, catalogIds);
-    m_agents.push_back(m_sessionAgent);
+    // m_sessionAgent = std::make_shared<SessionAgent>(this);
+    // m_agents.push_back(m_sessionAgent);
     /* 创建MANSRTSP协议代理 */
     m_rtspAgent = std::make_shared<MANSRTSPAgent>(this);
     m_agents.push_back(m_rtspAgent);

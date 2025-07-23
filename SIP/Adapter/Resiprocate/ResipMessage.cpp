@@ -90,6 +90,22 @@ const char* SipUserMessage::getReasonPhrase() const
     return instance->header(resip::h_StatusLine).reason().c_str();
 }
 
+const char* SipUserMessage::getUriUser() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (!instance->isRequest())
+    {
+        return "";
+    }
+
+    return instance->header(resip::h_RequestLine).uri().user().c_str();
+}
+
 int32_t SipUserMessage::getSdpSessionVersion() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)

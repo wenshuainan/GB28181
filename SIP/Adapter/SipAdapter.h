@@ -30,6 +30,7 @@ public:
     const char* getMethod() const;
     int getCode() const;
     const char* getReasonPhrase() const;
+    const char* getUriUser() const;
 
     int32_t getSdpSessionVersion() const;
     const char* getSdpSessionOwner() const;

@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <thread>
+#include <unordered_map>
 #include "SipAdapter.h"
 #include "MANSCDP/A.2.5Notify.h"
 #include "MANSRTSP/B.1Message.h"
@@ -37,10 +38,11 @@ private:
     std::vector<std::shared_ptr<Agent>> m_agents;
     std::shared_ptr<RegistrationAgent> m_registAgent;
     std::shared_ptr<MANSCDPAgent> m_cdpAgent;
-    std::shared_ptr<SessionAgent> m_sessionAgent;
+    std::vector<std::shared_ptr<SessionAgent>> m_sessionAgent;
     std::shared_ptr<MANSRTSPAgent> m_rtspAgent;
     std::shared_ptr<std::thread> m_thread;
     KeepaliveInfo m_kaInfo;
+    std::unordered_map<std::string, int32_t> m_channels;
 
 public:
     UA();
@@ -51,14 +53,15 @@ private:
 
 private:
     bool dispatchRegistrationResponse(const SipUserMessage& res);
-    bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
-    bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchKeepaliveResponse(int32_t code);
+    bool dispatchMANSCDPRequest(const XMLDocument &req);
+    bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchMANSRTSPRequest(const SessionIdentifier& id, const MANSRTSP::Message& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
-    const std::shared_ptr<SessionAgent>& getSessionAgent() const { return m_sessionAgent; }
+    const std::shared_ptr<SessionAgent>& getSessionAgent(int32_t ch) const { return m_sessionAgent[ch]; }
     const std::shared_ptr<MANSCDPAgent>& getMANSCDPAgent() const { return m_cdpAgent; }
+    int32_t getChNum(const std::string& id) const;
 
 public:
     bool start(const SipUserAgent::ClientInfo& client,

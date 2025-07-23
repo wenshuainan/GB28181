@@ -160,7 +160,7 @@ void Session::proc()
     while (m_bStarted)
     {
         PES::ES_TYPE type;
-        int32_t len = read(type, m_buffer, m_size);
+        int32_t len = read(m_agent->m_ch, type, m_buffer, m_size);
         if (len > 0)
         {
             for (auto& m : m_media)
@@ -315,10 +315,10 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionPlay::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionPlay::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
 {
     type = PES::AVC;
-    return m_devPlay->getVideo(data, size);
+    return m_devPlay->getVideo(ch, data, size);
 }
 
 SessionPlayback::SessionPlayback(SessionAgent *agent)
@@ -385,10 +385,10 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionPlayback::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionPlayback::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
 {
     type = PES::AVC;
-    return m_devPlayback->read(data, size);
+    return m_devPlayback->read(ch, data, size);
 }
 
 bool SessionPlayback::play()
@@ -507,10 +507,10 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionDownload::read(PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionDownload::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
 {
     type = PES::AVC;
-    return m_devDownload->read(data, size);
+    return m_devDownload->read(ch, data, size);
 }
 
 bool SessionDownload::isFileEnd()
@@ -540,14 +540,9 @@ bool SessionDownload::isFileEnd()
     return false;
 }
 
-SessionAgent::SessionAgent(UA *ua, const std::vector<std::string>& senderIds)
-    : Agent(ua)
-{
-    for (auto& i : senderIds)
-    {
-        m_senders[i] = Sender();
-    }
-}
+SessionAgent::SessionAgent(UA *ua, int32_t ch)
+    : Agent(ua), m_ch(ch)
+{}
 
 SessionAgent::~SessionAgent()
 {}

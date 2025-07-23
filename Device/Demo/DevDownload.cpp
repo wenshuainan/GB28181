@@ -14,12 +14,12 @@ DevDownload::~DevDownload()
     }
 }
 
-bool DevDownload::seek(time_t timestamp)
+bool DevDownload::seek(int32_t ch, time_t timestamp)
 {
     return false;
 }
 
-int32_t DevDownload::read(uint8_t *data, int32_t size)
+int32_t DevDownload::read(int32_t ch, uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {

@@ -13,8 +13,8 @@ public:
     virtual ~DevPlay();
 
 public:
-    virtual int32_t getVideo(uint8_t *data, int32_t size);
-    virtual int32_t getAudio(uint8_t *data, int32_t size);
+    virtual int32_t getVideo(int32_t ch, uint8_t *data, int32_t size);
+    virtual int32_t getAudio(int32_t ch, uint8_t *data, int32_t size);
 };
 
 #endif

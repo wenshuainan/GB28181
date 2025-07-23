@@ -46,7 +46,7 @@ bool MANSRTSPAgent::dispatchRequest(const SessionIdentifier& id, const MANSRTSP:
 
 const std::shared_ptr<SessionPlayback> MANSRTSPAgent::getMANSRTSPSession()
 {
-    auto sessionAgent = m_ua->getSessionAgent();
+    auto sessionAgent = m_ua->getSessionAgent(0);
     if (sessionAgent != nullptr)
     {
         return sessionAgent->getMANSRTSPSession();

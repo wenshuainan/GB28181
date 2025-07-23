@@ -16,7 +16,7 @@ DevPlay::~DevPlay()
     }
 }
 
-int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
+int32_t DevPlay::getVideo(int32_t ch, uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
@@ -28,7 +28,7 @@ int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
     }
 }
 
-int32_t DevPlay::getAudio(uint8_t *data, int32_t size)
+int32_t DevPlay::getAudio(int32_t ch, uint8_t *data, int32_t size)
 {
     return 0;
 }
