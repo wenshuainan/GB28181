@@ -10,9 +10,9 @@ public:
     ~DevControl();
 
 public:
-    bool handle(const PTZCmdControl::Request& req);
-    bool handle(const TeleBootControl::Request& req);
-    bool handle(const RecordControl::Request& req, DeviceControlResponse::Response& res);
+    bool handle(int32_t ch, const PTZCmdControl::Request& req);
+    bool handle(int32_t ch, const TeleBootControl::Request& req);
+    bool handle(int32_t ch, const RecordControl::Request& req);
 };
 
 #endif

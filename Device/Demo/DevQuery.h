@@ -10,8 +10,8 @@ public:
     virtual ~DevQuery();
 
 public:
-    virtual bool handle(const CatalogQuery::Request& req, CatalogQueryResponse::Response& res);
-    virtual bool handle(const DeviceInfoQuery::Request& req, DeviceInfoQueryResponse::Response& res);
+    virtual bool handle(int32_t ch, itemType& item);
+    virtual bool handle(DeviceInfoQueryResponse& res);
 };
 
 #endif

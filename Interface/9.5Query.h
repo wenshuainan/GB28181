@@ -11,8 +11,8 @@ public:
     virtual ~Query() {}
 
 public:
-    virtual bool handle(const CatalogQuery::Request& req, CatalogQueryResponse::Response& res) = 0;
-    virtual bool handle(const DeviceInfoQuery::Request& req, DeviceInfoQueryResponse::Response& res) = 0;
+    virtual bool handle(int32_t ch, itemType& item) = 0;
+    virtual bool handle(DeviceInfoQueryResponse& res) = 0;
 };
 
 #endif

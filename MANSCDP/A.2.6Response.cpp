@@ -1,8 +1,7 @@
 #include "A.2.6Response.h"
 
-bool CmdTypeResponse::encode(const Response& res, XMLDocument *xmldocRes)
+bool CmdTypeResponse::encode(XMLDocument *xmldocRes)
 {
-    (void) res;
     XMLDeclaration *dec = xmldocRes->NewDeclaration("xml version=\"1.0\"");
     if (dec != nullptr)
     {
@@ -20,9 +19,17 @@ bool CmdTypeResponse::encode(const Response& res, XMLDocument *xmldocRes)
     }
 }
 
-bool DeviceControlResponse::encode(const Response& res, XMLDocument *xmldocRes)
+DeviceControlResponse::DeviceControlResponse(const DeviceControlRequest::Request& req)
 {
-    if (!CmdTypeResponse::encode(res, xmldocRes))
+    CmdType = req.CmdType;
+    SN = req.SN;
+    DeviceID = req.DeviceID;
+    Result = resultType::ERROR;
+}
+
+bool DeviceControlResponse::encode(XMLDocument *xmldocRes)
+{
+    if (!CmdTypeResponse::encode(xmldocRes))
     {
         return false;
     }
@@ -38,23 +45,32 @@ bool DeviceControlResponse::encode(const Response& res, XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(res.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
-    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlResult = xmldocRes->NewElement("Result");
-    xmlResult->SetText(res.Result.getStr().c_str());
+    xmlResult->SetText(Result.getStr().c_str());
     rootElement->InsertEndChild(xmlResult);
 
     return true;
 }
 
-bool CatalogQueryResponse::encode(const Response& res, XMLDocument *xmldocRes)
+CatalogQueryResponse::CatalogQueryResponse(const CatalogQuery::Request& req)
 {
-    if (!CmdTypeResponse::encode(res, xmldocRes))
+    CmdType = req.CmdType;
+    SN = req.SN;
+    DeviceID = req.DeviceID;
+    SumNum = 0;
+    DeviceList.Num = 0;
+}
+
+bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
+{
+    if (!CmdTypeResponse::encode(xmldocRes))
     {
         return false;
     }
@@ -70,24 +86,24 @@ bool CatalogQueryResponse::encode(const Response& res, XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(res.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
-    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlSumNum = xmldocRes->NewElement("SumNum");
-    xmlSumNum->SetText(res.SumNum.getValue());
+    xmlSumNum->SetText(SumNum.getValue());
     rootElement->InsertEndChild(xmlSumNum);
 
     XMLElement *xmlDeviceList = xmldocRes->NewElement("DeviceList");
     rootElement->InsertEndChild(xmlDeviceList);
-    xmlDeviceList->SetAttribute("Num", res.DeviceList.Num.getValue());
+    xmlDeviceList->SetAttribute("Num", DeviceList.Num.getValue());
 
-    if (res.DeviceList.Item.size() > 0)
+    if (DeviceList.Item.size() > 0)
     {
-        for (auto item : res.DeviceList.Item)
+        for (auto item : DeviceList.Item)
         {
             XMLElement *xmlItem = xmldocRes->NewElement("Item");
             xmlDeviceList->InsertEndChild(xmlItem);
@@ -98,9 +114,17 @@ bool CatalogQueryResponse::encode(const Response& res, XMLDocument *xmldocRes)
     return true;
 }
 
-bool DeviceInfoQueryResponse::encode(const Response& res, XMLDocument *xmldocRes)
+DeviceInfoQueryResponse::DeviceInfoQueryResponse(const DeviceInfoQuery::Request& req)
 {
-    if (!CmdTypeResponse::encode(res, xmldocRes))
+    CmdType = req.CmdType;
+    SN = req.SN;
+    DeviceID = req.DeviceID;
+    Result = resultType::ERROR;
+}
+
+bool DeviceInfoQueryResponse::encode(XMLDocument *xmldocRes)
+{
+    if (!CmdTypeResponse::encode(xmldocRes))
     {
         return false;
     }
@@ -116,58 +140,67 @@ bool DeviceInfoQueryResponse::encode(const Response& res, XMLDocument *xmldocRes
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(res.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
-    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
-    if (res.DeviceName.isValid())
+    if (DeviceName.isValid())
     {
         XMLElement *xmlDeviceName = xmldocRes->NewElement("DeviceName");
-        xmlDeviceName->SetText(res.DeviceName.getStr().c_str());
+        xmlDeviceName->SetText(DeviceName.getStr().c_str());
         rootElement->InsertEndChild(xmlDeviceName);
     }
 
     XMLElement *xmlResult = xmldocRes->NewElement("Result");
-    xmlResult->SetText(res.Result.getStr().c_str());
+    xmlResult->SetText(Result.getStr().c_str());
     rootElement->InsertEndChild(xmlResult);
 
-    if (res.Manufacturer.isValid())
+    if (Manufacturer.isValid())
     {
         XMLElement *xmlManufacturer = xmldocRes->NewElement("Manufacturer");
-        xmlManufacturer->SetText(res.Manufacturer.getStr().c_str());
+        xmlManufacturer->SetText(Manufacturer.getStr().c_str());
         rootElement->InsertEndChild(xmlManufacturer);
     }
 
-    if (res.Model.isValid())
+    if (Model.isValid())
     {
         XMLElement *xmlModel = xmldocRes->NewElement("Model");
-        xmlModel->SetText(res.Model.getStr().c_str());
+        xmlModel->SetText(Model.getStr().c_str());
         rootElement->InsertEndChild(xmlModel);
     }
 
-    if (res.Firmware.isValid())
+    if (Firmware.isValid())
     {
         XMLElement *xmlFirmware = xmldocRes->NewElement("Firmware");
-        xmlFirmware->SetText(res.Firmware.getStr().c_str());
+        xmlFirmware->SetText(Firmware.getStr().c_str());
         rootElement->InsertEndChild(xmlFirmware);
     }
 
-    if (res.Channel.isValid())
+    if (Channel.isValid())
     {
         XMLElement *xmlChannel = xmldocRes->NewElement("Channel");
-        xmlChannel->SetText(res.Channel.getValue());
+        xmlChannel->SetText(Channel.getValue());
         rootElement->InsertEndChild(xmlChannel);
     }
 
     return true;
 }
 
-bool RecordInfoQueryResponse::encode(const Response& res, XMLDocument *xmldocRes)
+RecordInfoQueryResponse::RecordInfoQueryResponse(const RecordInfoQuery::Request& req)
 {
-    if (!CmdTypeResponse::encode(res, xmldocRes))
+    CmdType = req.CmdType;
+    SN = req.SN;
+    DeviceID = req.DeviceID;
+    SumNum = 0;
+    RecordList.Num = 0;
+}
+
+bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
+{
+    if (!CmdTypeResponse::encode(xmldocRes))
     {
         return false;
     }
@@ -183,28 +216,28 @@ bool RecordInfoQueryResponse::encode(const Response& res, XMLDocument *xmldocRes
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(res.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
-    xmlDeviceID->SetText(res.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlName = xmldocRes->NewElement("Name");
-    xmlName->SetText(res.Name.getStr().c_str());
+    xmlName->SetText(Name.getStr().c_str());
     rootElement->InsertEndChild(xmlName);
 
     XMLElement *xmlSumNum = xmldocRes->NewElement("SumNum");
-    xmlSumNum->SetText(res.SumNum.getValue());
+    xmlSumNum->SetText(SumNum.getValue());
     rootElement->InsertEndChild(xmlSumNum);
 
     XMLElement *xmlRecordList = xmldocRes->NewElement("RecordList");
     rootElement->InsertEndChild(xmlRecordList);
-    xmlRecordList->SetAttribute("Num", res.RecordList.Num.getValue());
+    xmlRecordList->SetAttribute("Num", RecordList.Num.getValue());
 
-    if (res.RecordList.Item.size() > 0)
+    if (RecordList.Item.size() > 0)
     {
-        for (auto item : res.RecordList.Item)
+        for (auto item : RecordList.Item)
         {
             XMLElement *xmlItem = xmldocRes->NewElement("Item");
             xmlRecordList->InsertEndChild(xmlItem);

@@ -38,6 +38,7 @@ public:
     const std::unordered_map<std::string, int32_t>& getChannels() const;
     const char* getDeviceID() const;
     bool makeKeepaliveNotify();
+    int32_t getChNum(const std::string& deviceId) const;
 
 public:
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令

@@ -62,7 +62,6 @@ protected:
     MANSCDPAgent *m_agent;
     Control *m_control;
     Query *m_query;
-    Status *m_status;
     RecordQuery *m_recordQuery;
 
 public:
@@ -70,25 +69,16 @@ public:
         : m_agent(agent)
         , m_control(control)
         , m_query(nullptr)
-        , m_status(nullptr)
     {}
     CmdTypeSpecRequest(MANSCDPAgent *agent, Query *query)
         : m_agent(agent)
         , m_control(nullptr)
         , m_query(query)
-        , m_status(nullptr)
-    {}
-    CmdTypeSpecRequest(MANSCDPAgent *agent, Status *status)
-        : m_agent(agent)
-        , m_control(nullptr)
-        , m_query(nullptr)
-        , m_status(status)
     {}
     CmdTypeSpecRequest(MANSCDPAgent *agent, RecordQuery *recordQuery)
         : m_agent(agent)
         , m_control(nullptr)
         , m_query(nullptr)
-        , m_status(nullptr)
         , m_recordQuery(recordQuery)
     {}
     virtual ~CmdTypeSpecRequest() {}

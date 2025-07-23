@@ -1,5 +1,6 @@
 #include "A.2.3Control.h"
 #include "Agent/MANSCDPAgent.h"
+#include "A.2.6Response.h"
 
 ControlReuest::ControlReuest(MANSCDPAgent *agent, Control *control)
 {
@@ -145,7 +146,117 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    return m_control->handle(req);
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    return m_control->handle(ch, req);
+}
+
+TeleBootControl::TeleBootControl(MANSCDPAgent *agent, Control *control)
+    : CmdTypeSpecRequest(agent, control)
+{}
+
+TeleBootControl::~TeleBootControl()
+{}
+
+bool TeleBootControl::parse(const XMLElement *xmlReq, Request& req)
+{
+    if (!DeviceControlRequest::parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    const XMLElement *xmlTeleBoot = xmlReq->FirstChildElement("TeleBoot");
+    if (xmlTeleBoot)
+    {
+        req.TeleBoot = xmlTeleBoot->GetText();
+    }
+
+    return true;
+}
+
+bool TeleBootControl::match(const XMLElement *xmlReq)
+{
+    return xmlReq->FirstChildElement("TeleBoot") != nullptr;
+}
+
+bool TeleBootControl::handle(const XMLElement *xmlReq)
+{
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    return m_control->handle(ch, req);
+}
+
+RecordControl::RecordControl(MANSCDPAgent *agent, Control *control)
+    : CmdTypeSpecRequest(agent, control)
+{}
+
+RecordControl::~RecordControl()
+{}
+
+bool RecordControl::parse(const XMLElement *xmlReq, Request& req)
+{
+    if (!DeviceControlRequest::parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    const XMLElement *xmlRecordCmd = xmlReq->FirstChildElement("RecordCmd");
+    if (xmlRecordCmd)
+    {
+        req.RecordCmd = xmlRecordCmd->GetText();
+    }
+
+    const XMLElement *xmlStreamNumber = xmlReq->FirstChildElement("StreamNumber");
+    if (xmlStreamNumber)
+    {
+        req.StreamNumber = xmlStreamNumber->GetText();
+    }
+
+    return true;
+}
+
+bool RecordControl::match(const XMLElement *xmlReq)
+{
+    return xmlReq->FirstChildElement("RecordCmd") != nullptr;
+}
+
+bool RecordControl::handle(const XMLElement *xmlReq)
+{
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    DeviceControlResponse res(req);
+    res.Result = m_control->handle(ch, req);
+    
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
+    return false;
 }
 
 DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)

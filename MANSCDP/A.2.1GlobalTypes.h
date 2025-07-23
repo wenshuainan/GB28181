@@ -63,6 +63,14 @@ public:
         bValid = true;
         return *this;
     }
+
+    integerType& operator++(int)
+    {
+        value++;
+        strValue = std::to_string(value);
+        bValid = true;
+        return *this;
+    }
 };
 
 class stringType
@@ -285,6 +293,13 @@ public:
         default:
             break;
         }
+        bValid = true;
+        return *this;
+    }
+
+    resultType& operator=(const bool& b)
+    {
+        value = b ? "OK" : "ERROR";
         bValid = true;
         return *this;
     }

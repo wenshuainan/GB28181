@@ -95,14 +95,25 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    CatalogQueryResponse::Response res;
-    if (m_query->handle(req, res))
+    CatalogQueryResponse res(req);
+    const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();
+    res.SumNum = channels.size();
+    for (auto& i : channels)
     {
-        XMLDocument doc;
-        CatalogQueryResponse::encode(res, &doc);
-        return m_agent->sendResponseCmd(doc);
+        res.DeviceList.Num++;
+        itemType item;
+        item.DeviceID = i.first;
+        item.Parental = 1;
+        item.ParentID = m_agent->getDeviceID();
+        m_query->handle(i.second, item);
+        res.DeviceList.Item.push_back(item);
     }
 
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
     return false;
 }
 
@@ -169,14 +180,14 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    DeviceInfoQueryResponse::Response res;
-    if (m_query->handle(req, res))
-    {
-        XMLDocument doc;
-        DeviceInfoQueryResponse::encode(res, &doc);
-        return m_agent->sendResponseCmd(doc);
-    }
+    DeviceInfoQueryResponse res(req);
+    res.Result = m_query->handle(res);
 
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
     return false;
 }
 
@@ -263,15 +274,19 @@ bool RecordInfoQuery::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    RecordInfoQueryResponse::Response res;
-    if (m_recordQuery->handle(req, res))
-    {
-        XMLDocument doc;
-        RecordInfoQueryResponse::encode(res, &doc);
-        return m_agent->sendResponseCmd(doc);
-    }
-    else
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
     {
         return false;
     }
+
+    RecordInfoQueryResponse res(req);
+    m_recordQuery->handle(ch, req, res);
+
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
+    return false;
 }

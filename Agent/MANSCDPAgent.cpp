@@ -19,7 +19,6 @@ MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 
     m_cmdRequests.push_back(std::make_shared<ControlReuest>(this, m_devControl.get()));
     m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get(), m_devRecordQuery.get()));
-    // m_cmdRequests.push_back(std::make_shared<NotifyRequest>(this, m_devStatus.get()));
 }
 
 MANSCDPAgent::~MANSCDPAgent()
@@ -86,6 +85,11 @@ bool MANSCDPAgent::makeKeepaliveNotify()
 {
     KeepaliveNotify notify(this, m_devStatus.get());
     return notify.handle();
+}
+
+int32_t MANSCDPAgent::getChNum(const std::string& deviceId) const
+{
+    return m_ua->getChNum(deviceId);
 }
 
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const

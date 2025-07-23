@@ -7,7 +7,7 @@ DevControl::DevControl()
 DevControl::~DevControl()
 {}
 
-bool DevControl::handle(const PTZCmdControl::Request& req)
+bool DevControl::handle(int32_t ch, const PTZCmdControl::Request& req)
 {
     std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
@@ -17,10 +17,10 @@ bool DevControl::handle(const PTZCmdControl::Request& req)
     std::cout << "PresetName:" << req.PTZCmdParams.PresetName.getValue() << std::endl;
     std::cout << "CruiseTrackName:" << req.PTZCmdParams.CruiseTrackName.getValue() << std::endl;
 
-    return true;
+    return false;
 }
 
-bool DevControl::handle(const TeleBootControl::Request& req)
+bool DevControl::handle(int32_t ch, const TeleBootControl::Request& req)
 {
     std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
@@ -28,12 +28,10 @@ bool DevControl::handle(const TeleBootControl::Request& req)
     return false;
 }
 
-bool DevControl::handle(const RecordControl::Request& req, DeviceControlResponse::Response& res)
+bool DevControl::handle(int32_t ch, const RecordControl::Request& req)
 {
     std::cout << "DevControl::handle" << std::endl;
     std::cout << "CMD:" << req.CmdType.getValue() << std::endl;
-
-    res.CmdType = req.CmdType;
 
     return false;
 }

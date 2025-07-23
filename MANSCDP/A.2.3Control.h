@@ -84,14 +84,10 @@ public:
 class TeleBootControl : public CmdTypeSpecRequest
 {
 public:
-    enum EBoot
-    {
-        Boot
-    };
-
     struct Request : DeviceControlRequest::Request
     {
-        integerType Boot;
+        /* <!-- 远程启动控制命令（可选） --> */
+        stringType TeleBoot;
     };
 
 public:
