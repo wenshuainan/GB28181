@@ -753,12 +753,9 @@ bool SessionAgent::notifyFileEnd(const std::string& name) const
     {
         if (strCaseCmp(session.second->getName(), name))
         {
-            MediaStatusNotify::Notify notify;
-            notify.SN = 2;
-            notify.DeviceID = "64010000041310000345";
-            notify.NotifyType = "121";
-            const std::shared_ptr<MANSCDPAgent>& agent = m_ua->getMANSCDPAgent();
-            return agent->sendMediaStatusNotify(session.first, notify);
+            const std::shared_ptr<MANSCDPAgent>& cdpAgent = m_ua->m_cdpAgent;
+            MediaStatusNotify notify(cdpAgent.get(), session.first);
+            return notify.handle("64010000041310000345", "121");
         }
     }
     return false;

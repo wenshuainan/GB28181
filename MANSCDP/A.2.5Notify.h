@@ -4,33 +4,23 @@
 #include <vector>
 #include <memory>
 #include "A.2.2CmdType.h"
+#include "SIP/Adapter/SipAdapter.h"
 
 /* A.2.5 通知命令 */
 
 /* A.2.5.1 通知命令消息体 */
-class NotifyRequest : public CmdTypeRequest
+class NotifyRequest
 {
 public:
     struct Notify
     {};
 
-private:
-    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
-
-public:
-    NotifyRequest(MANSCDPAgent *agent, Status *status);
-    virtual ~NotifyRequest();
-
 public:
     static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
-
-public:
-    virtual bool match(const std::string& ReqType);
-    virtual bool dispatch(const XMLElement *xmlReq);
 };
 
 /* A.2.5.2 状态信息报送 */
-class KeepAliveNotify : public CmdTypeSpecRequest
+class KeepaliveNotify
 {
 public:
     struct Notify : NotifyRequest::Notify
@@ -50,22 +40,25 @@ public:
         } Info;
     };
 
-public:
-    KeepAliveNotify(MANSCDPAgent *agent, Status *status);
-    virtual ~KeepAliveNotify();
+private:
+    MANSCDPAgent *m_agent;
+    Status *m_devStatus;
 
 public:
-    static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
+    KeepaliveNotify(MANSCDPAgent *agent, Status *status);
+    virtual ~KeepaliveNotify();
+
+private:
+    bool encode(const Notify& notify, XMLDocument *xmldocNotify);
 
 public:
-    virtual bool match(const XMLElement *xmlReq);
-    virtual bool handle(const XMLElement *xmlReq);
+    virtual bool handle();
 };
 
 /* A.2.5.3 报警通知 */
 
 /* A.2.5.4 媒体通知 */
-class MediaStatusNotify : public CmdTypeSpecRequest
+class MediaStatusNotify
 {
 public:
     struct Notify : NotifyRequest::Notify
@@ -80,16 +73,19 @@ public:
         stringType NotifyType;
     };
 
+private:
+    MANSCDPAgent *m_agent;
+    const SessionIdentifier& m_sessionId;
+
 public:
-    MediaStatusNotify(MANSCDPAgent *agent, Status *status);
+    MediaStatusNotify(MANSCDPAgent *agent, const SessionIdentifier& sessionId);
     virtual ~MediaStatusNotify();
 
-public:
-    static bool encode(const Notify& notify, XMLDocument *xmldocNotify);
+private:
+    bool encode(const Notify& notify, XMLDocument *xmldocNotify);
 
 public:
-    virtual bool match(const XMLElement *xmlReq);
-    virtual bool handle(const XMLElement *xmlReq);
+    virtual bool handle(const std::string& deviceId, const std::string& notifyType);
 };
 
 /* A.2.5.5 语音广播通知 */

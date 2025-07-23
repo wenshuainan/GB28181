@@ -73,6 +73,7 @@ protected:
 
 public:
     stringType() : bValid(false) {}
+    stringType(const std::string& str) : value(str), bValid(true) {}
     virtual ~stringType() {}
 
 public:

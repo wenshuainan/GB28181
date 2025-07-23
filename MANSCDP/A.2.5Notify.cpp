@@ -1,17 +1,6 @@
 #include "A.2.5Notify.h"
 #include "Agent/MANSCDPAgent.h"
 
-NotifyRequest::NotifyRequest(MANSCDPAgent *agent, Status *status)
-{
-    spec.push_back(std::make_shared<KeepAliveNotify>(agent, status));
-    spec.push_back(std::make_shared<MediaStatusNotify>(agent, status));
-}
-
-NotifyRequest::~NotifyRequest()
-{
-    spec.clear();
-}
-
 bool NotifyRequest::encode(const Notify& notify, XMLDocument *xmldocNotify)
 {
     (void) notify;
@@ -32,32 +21,14 @@ bool NotifyRequest::encode(const Notify& notify, XMLDocument *xmldocNotify)
     }
 }
 
-bool NotifyRequest::match(const std::string& ReqType)
-{
-    return ReqType == "Notify";
-}
-
-bool NotifyRequest::dispatch(const XMLElement *xmlReq)
-{
-    for (auto i : spec)
-    {
-        if (i->match(xmlReq))
-        {
-            return i->handle(xmlReq);
-        }
-    }
-
-    return false;
-}
-
-KeepAliveNotify::KeepAliveNotify(MANSCDPAgent *agent, Status *status)
-    : CmdTypeSpecRequest(agent, status)
+KeepaliveNotify::KeepaliveNotify(MANSCDPAgent *agent, Status *status)
+    : m_agent(agent), m_devStatus(status)
 {}
 
-KeepAliveNotify::~KeepAliveNotify()
+KeepaliveNotify::~KeepaliveNotify()
 {}
 
-bool KeepAliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
+bool KeepaliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
 {
     if (!NotifyRequest::encode(notify, xmldocNotify))
     {
@@ -100,20 +71,37 @@ bool KeepAliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
     return true;
 }
 
-bool KeepAliveNotify::match(const XMLElement *xmlReq)
+bool KeepaliveNotify::handle()
 {
-    (void)xmlReq;
+    Notify notify;
+    notify.CmdType = "Keepalive";
+    notify.SN = "22";
+    notify.DeviceID = m_agent->getDeviceID();
+    notify.Status = "OK";
+
+    const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();
+    for (auto i : channels)
+    {
+        if (!m_devStatus->getStatus(i.second))
+        {
+            notify.Info.DeviceID.push_back(i.first);
+        }
+    }
+
+    XMLDocument xmldocNotify;
+    if (encode(notify, &xmldocNotify))
+    {
+        if (m_agent->sendKeepaliveNotify(xmldocNotify))
+        {
+            m_devStatus->addSentCount();
+            return true;
+        }
+    }
     return false;
 }
 
-bool KeepAliveNotify::handle(const XMLElement *xmlReq)
-{
-    (void) xmlReq;
-    return false;
-}
-
-MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, Status *status)
-    : CmdTypeSpecRequest(agent, status)
+MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, const SessionIdentifier& sessionId)
+    : m_agent(agent), m_sessionId(sessionId)
 {}
 
 MediaStatusNotify::~MediaStatusNotify()
@@ -151,14 +139,18 @@ bool MediaStatusNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
     return true;
 }
 
-bool MediaStatusNotify::match(const XMLElement *xmlReq)
+bool MediaStatusNotify::handle(const std::string& deviceId, const std::string& notifyType)
 {
-    (void)xmlReq;
-    return false;
-}
+    Notify notify;
+    notify.CmdType = "MediaStatus";
+    notify.SN = "22";
+    notify.DeviceID = deviceId;
+    notify.NotifyType = notifyType;
 
-bool MediaStatusNotify::handle(const XMLElement *xmlReq)
-{
-    (void)xmlReq;
+    XMLDocument xmldocNotify;
+    if (encode(notify, &xmldocNotify))
+    {
+        return m_agent->sendMediaStatusNotify(m_sessionId, xmldocNotify);
+    }
     return false;
 }

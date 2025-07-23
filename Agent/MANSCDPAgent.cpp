@@ -8,6 +8,7 @@
 #include "DevQuery.h"
 #include "DevStatus.h"
 #include "DevRecordQuery.h"
+#include "MANSCDP/A.2.5Notify.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
@@ -71,37 +72,36 @@ bool MANSCDPAgent::recvedKeepaliveResponse(int32_t code) const
     }
 }
 
+const std::unordered_map<std::string, int32_t>& MANSCDPAgent::getChannels() const
+{
+    return m_ua->m_channels;
+}
+
+const char* MANSCDPAgent::getDeviceID() const
+{
+    return m_ua->m_sip->getUserId();
+}
+
+bool MANSCDPAgent::makeKeepaliveNotify()
+{
+    KeepaliveNotify notify(this, m_devStatus.get());
+    return notify.handle();
+}
+
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
 {
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
     return sip->sendMANSCDPResponse(xmldocRes);
 }
 
-bool MANSCDPAgent::sendKeepaliveNotify() const
+bool MANSCDPAgent::sendKeepaliveNotify(const XMLDocument& notify) const
 {
-    KeepAliveNotify::Notify notify;
-    m_devStatus->getStatus(notify);
-
-    XMLDocument xmldocNotify;
-    KeepAliveNotify::encode(notify, &xmldocNotify);
-
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    if (sip->sendKeepaliveNotify(xmldocNotify))
-    {
-        m_devStatus->addSentCount();
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return sip->sendKeepaliveNotify(notify);
 }
 
-bool MANSCDPAgent::sendMediaStatusNotify(const SessionIdentifier& id, const MediaStatusNotify::Notify& notify) const
+bool MANSCDPAgent::sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const
 {
-    XMLDocument xmldocNotify;
-    MediaStatusNotify::encode(notify, &xmldocNotify);
-
     const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendSessionNotify(id, xmldocNotify);
+    return sip->sendSessionNotify(id, notify);
 }

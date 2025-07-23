@@ -2,6 +2,7 @@
 #define MANSCDP_AGENT_H
 
 #include <memory>
+#include "UA.h"
 #include "Agent.h"
 #include "Interface/9.3Control.h"
 #include "Interface/9.5Query.h"
@@ -34,11 +35,14 @@ public:
     bool agent(const XMLDocument &xmldocReq) const;
     int32_t getKeepaliveTimeoutCount() const;
     bool recvedKeepaliveResponse(int32_t code) const;
+    const std::unordered_map<std::string, int32_t>& getChannels() const;
+    const char* getDeviceID() const;
+    bool makeKeepaliveNotify();
 
 public:
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
-    bool sendKeepaliveNotify() const;
-    bool sendMediaStatusNotify(const SessionIdentifier& id, const MediaStatusNotify::Notify& notify) const;
+    bool sendKeepaliveNotify(const XMLDocument& notify) const;
+    bool sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const;
 };
 
 #endif

@@ -57,8 +57,6 @@ private:
     bool dispatchMANSRTSPRequest(const SipUserMessage& req);
     const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
-    const std::shared_ptr<SessionAgent>& getSessionAgent(int32_t ch) const { return m_sessionAgent[ch]; }
-    const std::shared_ptr<MANSCDPAgent>& getMANSCDPAgent() const { return m_cdpAgent; }
     int32_t getChNum(const std::string& id) const;
 
 public:

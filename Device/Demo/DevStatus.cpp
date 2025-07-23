@@ -7,12 +7,9 @@ DevStatus::DevStatus()
 DevStatus::~DevStatus()
 {}
 
-void DevStatus::getStatus(KeepAliveNotify::Notify& notify)
+bool DevStatus::getStatus(int32_t ch)
 {
-    notify.CmdType = "Keepalive";
-    notify.SN = "22";
-    notify.DeviceID = "34020000001110000001";
-    notify.Status = "OK";
+    return true; // 正常
 }
 
 void DevStatus::onKeepaliveSuccess()

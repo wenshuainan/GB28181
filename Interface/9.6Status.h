@@ -36,7 +36,7 @@ public:
     }
 
 public:
-    virtual void getStatus(KeepAliveNotify::Notify& notify) = 0; //定时获取当前状态
+    virtual bool getStatus(int32_t ch) = 0; //定时获取当前状态
     virtual void onKeepaliveSuccess() = 0;
     virtual void onKeepaliveTimeout(int32_t count) = 0;
 };
