@@ -11,17 +11,15 @@
 #include "MANSRTSP/B.1Message.h"
 
 UA::UA()
-{
-    m_bStarted = false;
-    m_bOnline = false;
-}
+    : m_bStarted(false), m_bOnline(false)
+{}
 
 UA::~UA()
 {
     stop();
 }
 
-void UA::proc()
+void UA::threadProc()
 {
     int32_t katick = 0x0FFFFFFF;
     int32_t tickinterval = 1000000;
@@ -84,7 +82,7 @@ bool UA::dispatchMANSCDPRequest(const XMLDocument &req)
 
 bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
 {
-    int32_t ch = getChNum(req.getUriUser());
+    int32_t ch = getChNum(req.getRequestUser());
     if (ch < 0)
     {
         return false;
@@ -95,7 +93,7 @@ bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessag
 
 bool UA::dispatchMANSRTSPRequest(const SipUserMessage& req)
 {
-    int32_t ch = getChNum(req.getUriUser());
+    int32_t ch = getChNum(req.getRequestUser());
     if (ch < 0)
     {
         return false;
@@ -112,7 +110,7 @@ bool UA::dispatchMANSRTSPRequest(const SipUserMessage& req)
     }
 }
 
-void UA::setStatus(bool online)
+void UA::setOnline(bool online)
 {
     m_bOnline = online;
 }
@@ -173,7 +171,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
 
     /* 创建状态维护线程 */
     m_bStarted = true;
-    m_thread = std::make_shared<std::thread>(&UA::proc, this);
+    m_thread = std::make_shared<std::thread>(&UA::threadProc, this);
     if (m_thread == nullptr)
     {
         return m_bStarted = false;
@@ -194,6 +192,11 @@ bool UA::stop()
     m_bStarted = false;
     m_thread->join();
 
+    m_sip = nullptr;
+    m_sessionAgent.clear();
+    m_registAgent = nullptr;
+    m_cdpAgent = nullptr;
+    m_rtspAgent = nullptr;
     m_bOnline = false;
 
     return true;
@@ -204,7 +207,7 @@ bool UA::getOnline() const
     return m_bOnline;
 }
 
-bool UA::updateStatus()
+bool UA::sendStatusNotify()
 {
     return m_cdpAgent->makeKeepaliveNotify();
 }

@@ -7,7 +7,6 @@
 #include <unordered_map>
 #include "SipAdapter.h"
 
-class Agent;
 class RegistrationAgent;
 class MANSCDPAgent;
 class SessionAgent;
@@ -16,7 +15,6 @@ class MANSRTSPAgent;
 class UA
 {
     friend class SipUserAgent;
-    friend class Agent;
     friend class RegistrationAgent;
     friend class MANSCDPAgent;
     friend class SessionAgent;
@@ -46,15 +44,13 @@ public:
     virtual ~UA();
 
 private:
-    void proc();
-
-private:
+    void threadProc();
     bool dispatchRegistrationResponse(const SipUserMessage& res);
     bool dispatchKeepaliveResponse(int32_t code);
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchMANSRTSPRequest(const SipUserMessage& req);
-    void setStatus(bool online);
+    void setOnline(bool online);
     int32_t getChNum(const std::string& id) const;
 
 public:
@@ -67,7 +63,7 @@ public:
     bool getOnline() const;
 
     /* 设备主动向服务器发送 */
-    bool updateStatus(); // 9.6.1 立即发送状态信息
+    bool sendStatusNotify(); // 9.6.1 立即发送状态信息
 };
 
 #endif

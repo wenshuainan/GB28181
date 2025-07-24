@@ -104,7 +104,7 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
         itemType item;
         item.DeviceID = i.first;
         item.Parental = 1;
-        item.ParentID = m_agent->getDeviceID();
+        item.ParentID = m_agent->getMainDeviceId();
         m_query->handle(i.second, item);
         res.DeviceList.Item.push_back(item);
     }

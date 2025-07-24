@@ -138,7 +138,7 @@ int main()
     SipUserAgent::ClientInfo client;
     client.id = "34020000001110000001";
     client.port = 5060;
-    client.passwd = "12345678";
+    client.passwd = "1234567";
     client.transport = SipUserAgent::TRANSPORT_UDP;
     client.expire = 86400;
     client.interval = 60;
@@ -156,7 +156,15 @@ int main()
     std::vector<std::string> catalogIds;
     catalogIds.push_back("34020000001310000001");
 
-    ua.start(client, server, keepalive, catalogIds);
+    int i = 2;
+    // while (i-- > 0)
+    {
+        ua.start(client, server, keepalive, catalogIds);
+        getchar();
+        ua.stop();
+        getchar();
+    }
+    return 1;
 #elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \

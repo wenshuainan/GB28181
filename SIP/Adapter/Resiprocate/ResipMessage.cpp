@@ -91,7 +91,7 @@ const char* SipUserMessage::getReasonPhrase() const
     return instance->header(resip::h_StatusLine).reason().c_str();
 }
 
-const char* SipUserMessage::getUriUser() const
+const char* SipUserMessage::getRequestUser() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {

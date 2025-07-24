@@ -36,7 +36,7 @@ public:
     int32_t getKeepaliveTimeoutCount() const;
     bool recvedKeepaliveResponse(int32_t code) const;
     const std::unordered_map<std::string, int32_t>& getChannels() const;
-    const char* getDeviceID() const;
+    const char* getMainDeviceId() const;
     bool makeKeepaliveNotify();
     int32_t getChNum(const std::string& deviceId) const;
 

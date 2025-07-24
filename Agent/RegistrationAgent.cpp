@@ -77,7 +77,7 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
     switch (code)
     {
     case 200:
-        m_ua->setStatus(true); //注册成功，设置在线状态
+        m_ua->setOnline(true); //注册成功，设置在线状态
 
         if (oldState == Registration::REGISTERED)
         {

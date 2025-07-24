@@ -64,7 +64,8 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const Sip
 
 ResipUserAgent::~ResipUserAgent()
 {
-    shutdown();
+    // shutdown();
+    mDum->forceShutdown(this);
     if (mThread != nullptr)
     {
         mThread->join();
@@ -74,10 +75,12 @@ ResipUserAgent::~ResipUserAgent()
 void ResipUserAgent::threadProc()
 {
     while (process(1000))
-    {}
+    {
+        // std::cout << "sip user agent proc processing" << std::endl;
+    }
 }
 
-const char* ResipUserAgent::getUserId()
+const char* ResipUserAgent::getSipUser()
 {
     return mAor.user().c_str();
 }

@@ -34,7 +34,7 @@ public:
     const char* getMethod() const;
     int getCode() const;
     const char* getReasonPhrase() const;
-    const char* getUriUser() const;
+    const char* getRequestUser() const;
 
     int32_t getSdpSessionVersion() const;
     const char* getSdpSessionOwner() const;
@@ -103,7 +103,7 @@ public:
     virtual ~SipUserAgent() {}
 
 public:
-    virtual const char* getUserId() = 0;
+    virtual const char* getSipUser() = 0;
     virtual bool makeRegistrationRequest(SipUserMessage& req) = 0;
     virtual bool sendRegistration(const SipUserMessage& req) = 0;
     virtual bool sendKeepaliveNotify(const XMLDocument& notify) = 0;

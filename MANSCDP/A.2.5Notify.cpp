@@ -76,7 +76,7 @@ bool KeepaliveNotify::handle()
     Notify notify;
     notify.CmdType = "Keepalive";
     notify.SN = "22";
-    notify.DeviceID = m_agent->getDeviceID();
+    notify.DeviceID = m_agent->getMainDeviceId();
     notify.Status = "OK";
 
     const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();

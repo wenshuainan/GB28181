@@ -178,13 +178,13 @@ private:
     bool dispatchACK(const SessionIdentifier& id);
     bool dispatchBYE(const SessionIdentifier& id);
     bool isSessionExist(const std::string& name) const;
+    bool notifyFileEnd(const std::string& name, const std::string& uriId) const;
 
 public:
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipUserMessage& message);
     bool agent(const SessionIdentifier& id, const SipUserMessage& message);
     const std::pair<const SessionIdentifier, std::shared_ptr<SessionPlayback>> getMANSRTSPSession() const;
-    bool notifyFileEnd(const std::string& name, const std::string& uriId) const;
 };
 
 #endif

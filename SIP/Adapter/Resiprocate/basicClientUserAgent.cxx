@@ -1105,7 +1105,6 @@ BasicClientUserAgent::onSuccess(ClientPagerMessageHandle, const SipMessage& stat
 void
 BasicClientUserAgent::onFailure(ClientPagerMessageHandle, const SipMessage& status, std::unique_ptr<Contents> contents)
 {
-   (void) contents;
    InfoLog(<< "onFailure(ClientPagerMessageHandle): " << status.brief());
 }
 

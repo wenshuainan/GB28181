@@ -76,9 +76,9 @@ const std::unordered_map<std::string, int32_t>& MANSCDPAgent::getChannels() cons
     return m_ua->m_channels;
 }
 
-const char* MANSCDPAgent::getDeviceID() const
+const char* MANSCDPAgent::getMainDeviceId() const
 {
-    return m_ua->m_sip->getUserId();
+    return m_ua->m_sip->getSipUser();
 }
 
 bool MANSCDPAgent::makeKeepaliveNotify()

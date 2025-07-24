@@ -27,7 +27,7 @@ private:
     void threadProc();
 
 public:
-    virtual const char* getUserId();
+    virtual const char* getSipUser();
     virtual bool makeRegistrationRequest(SipUserMessage& req);
     virtual bool sendRegistration(const SipUserMessage& req);
     virtual bool sendKeepaliveNotify(const XMLDocument& notify);
