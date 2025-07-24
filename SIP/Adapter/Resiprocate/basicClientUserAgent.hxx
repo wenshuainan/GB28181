@@ -19,7 +19,7 @@
 
 namespace resip
 {
-class BasicClientCall;
+// class BasicClientCall;
 class FdPollGrp;
 
 class BasicClientUserAgent : public BasicClientCmdLineParser, 
@@ -44,7 +44,7 @@ public:
    bool process(int timeoutMs);  // returns false when shutdown is complete and process should no longer be called
 
    DialogUsageManager& getDialogUsageManager() { return *mDum; }
-   std::shared_ptr<UserProfile> getIncomingUserProfile(const SipMessage& msg) { (void) msg; return mProfile; } // This test program only uses the one global Master Profile - just return it
+   std::shared_ptr<UserProfile> getIncomingUserProfile(const SipMessage& msg) { return mProfile; } // This test program only uses the one global Master Profile - just return it
       
 protected:
    // Postable Handler ////////////////////////////////////////////////////////////
@@ -79,7 +79,6 @@ protected:
    virtual void onProvisional(resip::ClientInviteSessionHandle, const resip::SipMessage& msg);
    virtual void onConnected(resip::ClientInviteSessionHandle h, const resip::SipMessage& msg);
    virtual void onConnected(resip::InviteSessionHandle, const resip::SipMessage& msg);
-   virtual void onConnectedConfirmed(InviteSessionHandle, const SipMessage &msg);
    virtual void onStaleCallTimeout(resip::ClientInviteSessionHandle);
    virtual void onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg);
    virtual void onRedirected(resip::ClientInviteSessionHandle, const resip::SipMessage& msg);
@@ -141,7 +140,7 @@ protected:
    void onNotifyTimeout(unsigned int timerId);
    void sendNotify();
    friend class CallTimer;
-   void onCallTimeout(BasicClientCall* call);
+   // void onCallTimeout(BasicClientCall* call);
 
    std::shared_ptr<MasterProfile> mProfile;
    // Using pointers for the following classes so that we can control object destruction order
@@ -160,11 +159,11 @@ protected:
    unsigned int mRegistrationRetryDelayTime;
    unsigned int mCurrentNotifyTimerId;
 
-   friend class BasicClientCall;
-   std::set<BasicClientCall*> mCallList;
-   void registerCall(BasicClientCall* call);
-   void unregisterCall(BasicClientCall* call);
-   bool isValidCall(BasicClientCall* call);
+   // friend class BasicClientCall;
+   // std::set<BasicClientCall*> mCallList;
+   // void registerCall(BasicClientCall* call);
+   // void unregisterCall(BasicClientCall* call);
+   // bool isValidCall(BasicClientCall* call);
 };
  
 }
