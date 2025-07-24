@@ -65,17 +65,17 @@ install(
 	ARCHIVE DESTINATION lib
 )
 
-install(
-	DIRECTORY MANSCDP
-	DESTINATION "include"
-	FILES_MATCHING PATTERN "*.h"
-)
+#install(
+#	DIRECTORY MANSCDP
+#	DESTINATION "include"
+#	FILES_MATCHING PATTERN "*.h"
+#)
 
-install(
-	DIRECTORY MANSRTSP
-	DESTINATION "include"
-	FILES_MATCHING PATTERN "*.h"
-)
+#install(
+#	DIRECTORY MANSRTSP
+#	DESTINATION "include"
+#	FILES_MATCHING PATTERN "*.h"
+#)
 
 install(
 	FILES UA.h

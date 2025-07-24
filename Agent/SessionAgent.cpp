@@ -123,8 +123,9 @@ RtpPayload::Type Media::getRtpPaylodaType() const
     return m_rtpPayloadType;
 }
 
-Session::Session(SessionAgent *agent)
+Session::Session(SessionAgent *agent, const Attr& attr)
     : m_agent(agent)
+    , m_attr(attr)
     , m_bStarted(false)
     , m_buffer(nullptr)
     , m_size(0)
@@ -139,15 +140,15 @@ std::shared_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr)
 {
     if (attr.name == "Play")
     {
-        return std::make_shared<SessionPlay>(agent);
+        return std::make_shared<SessionPlay>(agent, attr);
     }
     else if (attr.name == "Playback")
     {
-        return std::make_shared<SessionPlayback>(agent);
+        return std::make_shared<SessionPlayback>(agent, attr);
     }
     else if (attr.name == "Download")
     {
-        return std::make_shared<SessionDownload>(agent);
+        return std::make_shared<SessionDownload>(agent, attr);
     }
     else
     {
@@ -171,7 +172,7 @@ void Session::proc()
 
         if (isFileEnd())
         {
-            m_agent->notifyFileEnd(getName());
+            m_agent->notifyFileEnd(getName(), m_attr.uriId);
         }
 
         usleep(10000);
@@ -251,8 +252,8 @@ bool Session::getSdp(SipUserMessage& sdp)
     return true;
 }
 
-SessionPlay::SessionPlay(SessionAgent *agent)
-    : Session(agent)
+SessionPlay::SessionPlay(SessionAgent *agent, const Attr& attr)
+    : Session(agent, attr)
 {
     m_devPlay = std::make_shared<DevPlay>();
 }
@@ -321,8 +322,8 @@ int32_t SessionPlay::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t
     return m_devPlay->getVideo(ch, data, size);
 }
 
-SessionPlayback::SessionPlayback(SessionAgent *agent)
-    : Session(agent)
+SessionPlayback::SessionPlayback(SessionAgent *agent, const Attr& attr)
+    : Session(agent, attr)
 {
     m_devPlayback = std::make_shared<DevPlayback>();
 }
@@ -443,8 +444,8 @@ bool SessionPlayback::isFileEnd()
     return false;
 }
 
-SessionDownload::SessionDownload(SessionAgent *agent)
-    : Session(agent)
+SessionDownload::SessionDownload(SessionAgent *agent, const Attr& attr)
+    : Session(agent, attr)
 {
     m_devDownload = std::make_shared<DevDownload>();
 }
@@ -553,7 +554,8 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
         .version = req.getSdpSessionVersion(),
         .owner = req.getSdpSessionOwner(),
         .name = req.getSdpSessionName(),
-        .uri = req.getSdpSessionUri(),
+        .uriId = req.getSdpSessionUriId(),
+        .uriParam = req.getSdpSessionUriParam(),
         .startTime = req.getSdpTimeStart(),
         .endTime = req.getSdpTimeEnd()
     };
@@ -562,7 +564,8 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
                 << "version=" << attr.version << " "
                 << "owner=" << attr.owner.c_str() << " "
                 << "name=" << attr.name.c_str() << " "
-                << "uri=" << attr.uri.c_str() << " "
+                << "uriId=" << attr.uriId.c_str() << " "
+                << "uriParam=" << attr.uriParam << " "
                 << "start=" << attr.startTime << " "
                 << "end=" << attr.endTime
                 << std::endl;
@@ -611,7 +614,7 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
 bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req)
 {
     std::string name = req.getSdpSessionName();
-    auto sip = m_ua->getSip();
+    auto sip = m_ua->m_sip;
 
     /* 附录G 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
     if (isSessionExist(name))
@@ -747,7 +750,7 @@ bool SessionAgent::isSessionExist(const std::string& name) const
     return false;
 }
 
-bool SessionAgent::notifyFileEnd(const std::string& name) const
+bool SessionAgent::notifyFileEnd(const std::string& name, const std::string& uriId) const
 {
     for (auto& session : m_session)
     {
@@ -755,7 +758,7 @@ bool SessionAgent::notifyFileEnd(const std::string& name) const
         {
             const std::shared_ptr<MANSCDPAgent>& cdpAgent = m_ua->m_cdpAgent;
             MediaStatusNotify notify(cdpAgent.get(), session.first);
-            return notify.handle("64010000041310000345", "121");
+            return notify.handle(uriId, "121");
         }
     }
     return false;

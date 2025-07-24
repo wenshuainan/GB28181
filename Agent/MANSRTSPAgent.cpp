@@ -55,13 +55,5 @@ bool MANSRTSPAgent::agent(const SessionAgent& sessionAgent, const MANSRTSP::Mess
 
 bool MANSRTSPAgent::sendResponse(const SessionIdentifier& id, const MANSRTSP::Message& message)
 {
-    auto sip = m_ua->getSip();
-    if (sip != nullptr)
-    {
-        return sip->sendMANSRTSPResponse(id, message);
-    }
-    else
-    {
-        return false;
-    }
+    return m_ua->m_sip->sendMANSRTSPResponse(id, message);
 }

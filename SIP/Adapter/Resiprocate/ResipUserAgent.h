@@ -1,6 +1,8 @@
 #ifndef RESIPROCATE_ADAPTER_H
 #define RESIPROCATE_ADAPTER_H
 
+#include <memory>
+#include <thread>
 #include "SipAdapter.h"
 #include "basicClientUserAgent.hxx"
 
@@ -12,10 +14,10 @@ struct SipAdapterMessage
 class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
 private:
-    bool mbInit;
     resip::Uri mServerUri;
     resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
     resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
+    std::shared_ptr<std::thread> mThread;
     
 public:
     ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
@@ -25,7 +27,6 @@ private:
     void threadProc();
 
 public:
-    virtual bool init();
     virtual const char* getUserId();
     virtual bool makeRegistrationRequest(SipUserMessage& req);
     virtual bool sendRegistration(const SipUserMessage& req);

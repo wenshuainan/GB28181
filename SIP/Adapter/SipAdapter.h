@@ -4,13 +4,17 @@
 #include <string>
 #include <memory>
 #include "tinyxml2.h"
-#include "MANSRTSP/B.1Message.h"
 
 using namespace tinyxml2;
 
 struct SipAdapterMessage;
 
 class UA;
+
+namespace MANSRTSP
+{
+    class Message;
+}
 
 typedef uint64_t SessionIdentifier;
 
@@ -36,7 +40,8 @@ public:
     const char* getSdpSessionOwner() const;
     const char* getSdpSessionName() const;
     const char* getSdpSessionIpv4() const;
-    const char* getSdpSessionUri() const;
+    const char* getSdpSessionUriId() const;
+    int32_t getSdpSessionUriParam() const;
     time_t getSdpTimeStart() const;
     time_t getSdpTimeEnd() const;
     int32_t getSdpMediaNum() const;
@@ -98,7 +103,6 @@ public:
     virtual ~SipUserAgent() {}
 
 public:
-    virtual bool init() = 0;
     virtual const char* getUserId() = 0;
     virtual bool makeRegistrationRequest(SipUserMessage& req) = 0;
     virtual bool sendRegistration(const SipUserMessage& req) = 0;
@@ -118,7 +122,6 @@ protected:
 
 public:
     static std::shared_ptr<SipUserAgent> create(UA *user, const ClientInfo& client, const ServerInfo& server);
-    bool destroy();
 };
 
 #endif

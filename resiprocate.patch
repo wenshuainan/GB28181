@@ -1,7 +1,7 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 old mode 100644
 new mode 100755
-index 4e55b5c3e..9ecbb2f7b
+index 4e55b5c3e..31c69a4a9
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -10,6 +10,17 @@ index 4e55b5c3e..9ecbb2f7b
  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build/cmake_modules")
  
  # For Visual Studio Solution Generation
+@@ -48,8 +48,8 @@ add_definitions(-DHAVE_VERSION_H)
+ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.cmake
+                ${CMAKE_CURRENT_BINARY_DIR}/version.h)
+ include_directories(${CMAKE_CURRENT_BINARY_DIR})
+-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
+-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/resip/)
++#install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h
++#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/resip/)
+ 
+ option(ENABLE_LOG_REPOSITORY_DETAILS "Log repository revision and branch" TRUE)
+ if(ENABLE_LOG_REPOSITORY_DETAILS)
 @@ -149,10 +149,10 @@ if(WIN32)
     set(REGENERATE_MEDIA_SAMPLES_DEFAULT OFF)
     set(BUILD_DSO_PLUGINS_DEFAULT OFF)
@@ -33,6 +44,21 @@ index 4e55b5c3e..9ecbb2f7b
     set(USE_CONTRIB_DEFAULT OFF)
     set(USE_NUGET_DEFAULT OFF)
  endif()
+diff --git a/resip/dum/CMakeLists.txt b/resip/dum/CMakeLists.txt
+old mode 100644
+new mode 100755
+index c4d5e3ff9..19ef22d2a
+--- a/resip/dum/CMakeLists.txt
++++ b/resip/dum/CMakeLists.txt
+@@ -204,7 +204,7 @@ version_libname(dum)
+ set_target_properties(dum PROPERTIES FOLDER dum)
+ 
+ install(TARGETS dum DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/resip/dum ${INCLUDES})
++#install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/resip/dum ${INCLUDES})
+ 
+ if(BUILD_TESTING)
+     add_subdirectory(test)
 diff --git a/resip/dum/DialogSetId.cxx b/resip/dum/DialogSetId.cxx
 old mode 100644
 new mode 100755
@@ -51,10 +77,10 @@ index 266a2bf95..33e067971
 diff --git a/resip/dum/DialogUsageManager.cxx b/resip/dum/DialogUsageManager.cxx
 old mode 100644
 new mode 100755
-index e905fc28e..99aad1163
+index e905fc28e..54df1e50b
 --- a/resip/dum/DialogUsageManager.cxx
 +++ b/resip/dum/DialogUsageManager.cxx
-@@ -1676,10 +1676,29 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
+@@ -1676,10 +1676,45 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
              }
              if (sipMsg->header(h_From).exists(p_tag))
              {
@@ -84,12 +110,43 @@ index e905fc28e..99aad1163
 +               if (it != mDialogSetMap.end())
 +               {
 +                  sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
++               }
++            }
++            if (sipMsg->header(h_RequestLine).method() == INFO
++               && !sipMsg->header(h_To).exists(p_tag))
++            {
++               auto it = mDialogSetMap.begin();
++               for (; it != mDialogSetMap.end(); it++)
++               {
++                  if (it->first.getCallId() == sipMsg->header(h_CallId).value())
++                  {
++                     break;
++                  }
++               }
++               if (it != mDialogSetMap.end())
++               {
++                  sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
                 }
              }
              processRequest(*sipMsg);
 diff --git a/resip/dum/test/basicMessage.cxx b/resip/dum/test/basicMessage.cxx
 old mode 100644
 new mode 100755
+diff --git a/resip/stack/CMakeLists.txt b/resip/stack/CMakeLists.txt
+old mode 100644
+new mode 100755
+index d7c2f4c46..b0eeabedb
+--- a/resip/stack/CMakeLists.txt
++++ b/resip/stack/CMakeLists.txt
+@@ -410,7 +410,7 @@ version_libname(resip)
+ set_target_properties(resip PROPERTIES FOLDER resip)
+ 
+ install(TARGETS resip DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/resip/stack ${INCLUDES})
++#install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/resip/stack ${INCLUDES})
+ 
+ if(BUILD_TESTING)
+     add_subdirectory(test)
 diff --git a/resip/stack/SdpContents.cxx b/resip/stack/SdpContents.cxx
 old mode 100644
 new mode 100755
@@ -167,3 +224,33 @@ index acf793f5a..3cd219b94
                    friend class Session;
              };
  
+diff --git a/rutil/CMakeLists.txt b/rutil/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 5144cc3de..49b9a89e3
+--- a/rutil/CMakeLists.txt
++++ b/rutil/CMakeLists.txt
+@@ -260,7 +260,7 @@ set_target_properties(rutil PROPERTIES FOLDER rutil)
+ version_libname(rutil)
+ 
+ install(TARGETS rutil DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/rutil ${INCLUDES})
++#install_and_preserve_hierarchy(${CMAKE_INSTALL_INCLUDEDIR}/rutil ${INCLUDES})
+ 
+ if(NOT WITH_C_ARES)
+    add_subdirectory(dns/ares)
+diff --git a/rutil/dns/ares/CMakeLists.txt b/rutil/dns/ares/CMakeLists.txt
+old mode 100644
+new mode 100755
+index 021b8cf28..8cb0002c1
+--- a/rutil/dns/ares/CMakeLists.txt
++++ b/rutil/dns/ares/CMakeLists.txt
+@@ -57,7 +57,7 @@ version_libname(resipares)
+ set_target_properties(resipares PROPERTIES FOLDER rutil/ares)
+ 
+ install(TARGETS resipares DESTINATION ${CMAKE_INSTALL_LIBDIR})
+-install(FILES ${INCLUDES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rutil/dns/ares)
++#install(FILES ${INCLUDES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rutil/dns/ares)
+ 
+ add_executable(ahost EXCLUDE_FROM_ALL ahost.c)
+ add_executable(adig EXCLUDE_FROM_ALL adig.c)

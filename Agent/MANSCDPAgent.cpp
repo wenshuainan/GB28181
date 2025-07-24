@@ -94,18 +94,15 @@ int32_t MANSCDPAgent::getChNum(const std::string& deviceId) const
 
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
 {
-    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendMANSCDPResponse(xmldocRes);
+    return m_ua->m_sip->sendMANSCDPResponse(xmldocRes);
 }
 
 bool MANSCDPAgent::sendKeepaliveNotify(const XMLDocument& notify) const
 {
-    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendKeepaliveNotify(notify);
+    return m_ua->m_sip->sendKeepaliveNotify(notify);
 }
 
 bool MANSCDPAgent::sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const
 {
-    const std::shared_ptr<SipUserAgent>& sip = m_ua->getSip();
-    return sip->sendSessionNotify(id, notify);
+    return m_ua->m_sip->sendSessionNotify(id, notify);
 }

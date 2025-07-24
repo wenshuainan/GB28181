@@ -33,7 +33,6 @@ private:
     bool m_bStarted;
     bool m_bOnline;
     std::shared_ptr<SipUserAgent> m_sip;
-    std::vector<std::shared_ptr<Agent>> m_agents;
     std::shared_ptr<RegistrationAgent> m_registAgent;
     std::shared_ptr<MANSCDPAgent> m_cdpAgent;
     std::vector<std::shared_ptr<SessionAgent>> m_sessionAgent;
@@ -55,7 +54,6 @@ private:
     bool dispatchMANSCDPRequest(const XMLDocument &req);
     bool dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchMANSRTSPRequest(const SipUserMessage& req);
-    const std::shared_ptr<SipUserAgent>& getSip() const { return m_sip; }
     void setStatus(bool online);
     int32_t getChNum(const std::string& id) const;
 
@@ -68,7 +66,7 @@ public:
     bool stop();
     bool getOnline() const;
 
-    // 设备主动向服务器发送
+    /* 设备主动向服务器发送 */
     bool updateStatus(); // 9.6.1 立即发送状态信息
 };
 

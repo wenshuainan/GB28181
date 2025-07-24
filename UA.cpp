@@ -146,6 +146,7 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     {
         return false;
     }
+    /* 将目录Id与通道号关联并创建每个通道的INVITE会话代理 */
     int i;
     for (i = 0; (std::size_t)i < size; i++)
     {
@@ -156,42 +157,25 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     
     /* 创建注册协议代理 */
     m_registAgent = std::make_shared<RegistrationAgent>(this);
-    m_agents.push_back(m_registAgent);
     /* 创建MANSCDP协议代理 */
     m_cdpAgent = std::make_shared<MANSCDPAgent>(this);
-    m_agents.push_back(m_cdpAgent);
-    /* 创建INVITE会话代理 */
-    // m_sessionAgent = std::make_shared<SessionAgent>(this);
-    // m_agents.push_back(m_sessionAgent);
     /* 创建MANSRTSP协议代理 */
     m_rtspAgent = std::make_shared<MANSRTSPAgent>(this);
-    m_agents.push_back(m_rtspAgent);
 
     /* 创建sip用户代理 */
     m_sip = SipUserAgent::create(this, client, server);
     if (m_sip == nullptr)
     {
-        m_agents.clear();
         return m_bStarted = false;
     }
 
     m_kaInfo = keepalive;
-
-    /* 初始化sip用户代理 */
-    if (m_sip->init() == false)
-    {
-        m_sip->destroy();
-        m_agents.clear();
-        return m_bStarted = false;
-    }
 
     /* 创建状态维护线程 */
     m_bStarted = true;
     m_thread = std::make_shared<std::thread>(&UA::proc, this);
     if (m_thread == nullptr)
     {
-        m_sip->destroy();
-        m_agents.clear();
         return m_bStarted = false;
     }
     else
@@ -210,8 +194,6 @@ bool UA::stop()
     m_bStarted = false;
     m_thread->join();
 
-    m_agents.clear();
-    m_sip->destroy();
     m_bOnline = false;
 
     return true;

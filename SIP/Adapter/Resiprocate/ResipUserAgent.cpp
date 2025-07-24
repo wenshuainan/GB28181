@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 #include "ResipUserAgent.h"
 #include "UA.h"
 #include "MANSCDPContents.h"
@@ -46,11 +45,6 @@ std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *user, const ClientInfo& c
     return sip;
 }
 
-bool SipUserAgent::destroy()
-{
-    return false;
-}
-
 ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
     : BasicClientUserAgent(client)
 {
@@ -59,31 +53,28 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const Sip
     mServerUri.user() = server.id;
     mServerUri.host() = server.ipv4;
     mServerUri.port() = server.port;
-}
 
-ResipUserAgent::~ResipUserAgent()
-{}
-
-void ResipUserAgent::threadProc()
-{
-    while (mbInit)
-    {
-        process(1000);
-    }
-}
-
-bool ResipUserAgent::init()
-{
     mKeepaliveHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
     mMANSCDPResponseHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
 
     startup();
 
-    mbInit = true;
-    std::thread t(&ResipUserAgent::threadProc, this);
-    t.detach();
+    mThread = std::make_shared<std::thread>(&ResipUserAgent::threadProc, this);
+}
 
-    return true;
+ResipUserAgent::~ResipUserAgent()
+{
+    shutdown();
+    if (mThread != nullptr)
+    {
+        mThread->join();
+    }
+}
+
+void ResipUserAgent::threadProc()
+{
+    while (process(1000))
+    {}
 }
 
 const char* ResipUserAgent::getUserId()

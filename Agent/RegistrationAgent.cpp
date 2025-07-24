@@ -40,7 +40,7 @@ bool RegistrationAgent::start()
     }
 
     SipUserMessage message;
-    auto sip = m_ua->getSip();
+    auto sip = m_ua->m_sip;
     sip->makeRegistrationRequest(message);
 
     /* 添加GB版本号扩展头域（附录I） */
@@ -61,7 +61,7 @@ bool RegistrationAgent::stop()
     }
 
     SipUserMessage message;
-    auto sip = m_ua->getSip();
+    auto sip = m_ua->m_sip;
     sip->makeRegistrationRequest(message);
 
     message.setExpires(0);

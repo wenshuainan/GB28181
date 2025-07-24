@@ -63,7 +63,8 @@ public:
         int32_t version;
         std::string owner;
         std::string name;
-        std::string uri;
+        std::string uriId;
+        int32_t uriParam;
         time_t startTime;
         time_t endTime;
     };
@@ -71,6 +72,7 @@ public:
 protected:
     SessionAgent *m_agent;
     std::vector<std::shared_ptr<Media>> m_media;
+    Attr m_attr;
 
 private:
     std::shared_ptr<std::thread> m_thread;
@@ -79,7 +81,7 @@ private:
     int32_t m_size;
 
 public:
-    Session(SessionAgent *agent);
+    Session(SessionAgent *agent, const Attr& attr);
     virtual ~Session();
     static std::shared_ptr<Session> create(SessionAgent *agent, const Attr& attr);
 
@@ -105,7 +107,7 @@ private:
     std::shared_ptr<Play> m_devPlay;
 
 public:
-    SessionPlay(SessionAgent *m_agent);
+    SessionPlay(SessionAgent *m_agent, const Attr& attr);
     virtual ~SessionPlay();
 
 public:
@@ -120,11 +122,9 @@ class SessionPlayback : public Session
 {
 private:
     std::shared_ptr<Playback> m_devPlayback;
-    time_t m_startTime;
-    time_t m_endTime;
 
 public:
-    SessionPlayback(SessionAgent *m_agent);
+    SessionPlayback(SessionAgent *m_agent, const Attr& attr);
     virtual ~SessionPlayback();
 
 public:
@@ -146,11 +146,9 @@ class SessionDownload : public Session
 {
 private:
     std::shared_ptr<Download> m_devDownload;
-    time_t m_startTime;
-    time_t m_endTime;
 
 public:
-    SessionDownload(SessionAgent *m_agent);
+    SessionDownload(SessionAgent *m_agent, const Attr& attr);
     virtual ~SessionDownload();
 
 public:
@@ -186,7 +184,7 @@ public:
     bool agent(const SipUserMessage& message);
     bool agent(const SessionIdentifier& id, const SipUserMessage& message);
     const std::pair<const SessionIdentifier, std::shared_ptr<SessionPlayback>> getMANSRTSPSession() const;
-    bool notifyFileEnd(const std::string& name) const;
+    bool notifyFileEnd(const std::string& name, const std::string& uriId) const;
 };
 
 #endif

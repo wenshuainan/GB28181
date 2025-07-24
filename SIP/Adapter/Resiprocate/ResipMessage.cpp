@@ -198,7 +198,7 @@ const char* SipUserMessage::getSdpSessionIpv4() const
     }
 }
 
-const char* SipUserMessage::getSdpSessionUri() const
+const char* SipUserMessage::getSdpSessionUriId() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)
     {
@@ -218,8 +218,32 @@ const char* SipUserMessage::getSdpSessionUri() const
         return "";
     }
     
-    // const resip::SdpContents::Session &session = sdp->session();
-    return "";
+    const resip::SdpContents::Session &session = sdp->session();
+    return session.uri().scheme().c_str();
+}
+
+int32_t SipUserMessage::getSdpSessionUriParam() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return 0;
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return 0;
+    }
+    
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return 0;
+    }
+    
+    const resip::SdpContents::Session &session = sdp->session();
+    return session.uri().host().convertInt();
 }
 
 time_t SipUserMessage::getSdpTimeStart() const

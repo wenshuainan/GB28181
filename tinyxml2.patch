@@ -1,7 +1,7 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 old mode 100644
 new mode 100755
-index b7bdf86..4c900b3
+index b7bdf86..93ae372
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,4 +1,4 @@
@@ -10,6 +10,15 @@ index b7bdf86..4c900b3
  project(tinyxml2 VERSION 11.0.0)
  
  include(CTest)
+@@ -64,7 +64,7 @@ include(GNUInstallDirs)
+ include(CMakePackageConfigHelpers)
+ 
+ ## Custom settings
+-option(tinyxml2_INSTALL_PKGCONFIG "Create and install pkgconfig files" ON)
++option(tinyxml2_INSTALL_PKGCONFIG "Create and install pkgconfig files" OFF)
+ 
+ set(tinyxml2_INSTALL_PKGCONFIGDIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+     CACHE PATH "Directory for pkgconfig files")
 @@ -78,9 +78,10 @@ install(
      TARGETS tinyxml2 EXPORT tinyxml2-targets
      RUNTIME COMPONENT tinyxml2_runtime
@@ -22,7 +31,47 @@ index b7bdf86..4c900b3
  )
  
  # Type-specific targets
-@@ -117,18 +118,19 @@ install(
+@@ -91,13 +92,13 @@ else ()
+     set(type static)
+ endif ()
+ 
+-install(
+-    EXPORT tinyxml2-targets
+-    DESTINATION "${tinyxml2_INSTALL_CMAKEDIR}"
+-    NAMESPACE tinyxml2::
+-    FILE tinyxml2-${type}-targets.cmake
+-    COMPONENT tinyxml2_development
+-)
++#install(
++#    EXPORT tinyxml2-targets
++#    DESTINATION "${tinyxml2_INSTALL_CMAKEDIR}"
++#    NAMESPACE tinyxml2::
++#    FILE tinyxml2-${type}-targets.cmake
++#    COMPONENT tinyxml2_development
++#)
+ 
+ # Auto-generated version compatibility file
+ write_basic_package_version_file(
+@@ -105,20 +106,21 @@ write_basic_package_version_file(
+     COMPATIBILITY SameMajorVersion
+ )
+ 
+-install(
+-    FILES
+-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tinyxml2-config.cmake"
+-    "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2-config-version.cmake"
+-    DESTINATION "${tinyxml2_INSTALL_CMAKEDIR}"
+-    COMPONENT tinyxml2_development
+-)
++#install(
++#    FILES
++#    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tinyxml2-config.cmake"
++#    "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2-config-version.cmake"
++#    DESTINATION "${tinyxml2_INSTALL_CMAKEDIR}"
++#    COMPONENT tinyxml2_development
++#)
+ 
+ ## Headers
  
  install(
      FILES tinyxml2.h
@@ -33,20 +82,6 @@ index b7bdf86..4c900b3
  )
  
  ## pkg-config
- 
- if (tinyxml2_INSTALL_PKGCONFIG)
--    configure_file(cmake/tinyxml2.pc.in tinyxml2.pc.gen @ONLY)
--    file(GENERATE OUTPUT tinyxml2.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc.gen")
--    install(
--        FILES "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc"
--        DESTINATION "${tinyxml2_INSTALL_PKGCONFIGDIR}"
--        COMPONENT tinyxml2_development
--    )
-+    #configure_file(cmake/tinyxml2.pc.in tinyxml2.pc.gen @ONLY)
-+    #file(GENERATE OUTPUT tinyxml2.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc.gen")
-+    #install(
-+    #    FILES "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2.pc"
-+    #    DESTINATION "${tinyxml2_INSTALL_PKGCONFIGDIR}"
-+    #    COMPONENT tinyxml2_development
-+    #)
- endif ()
+diff --git a/tinyxml2.cpp b/tinyxml2.cpp
+old mode 100644
+new mode 100755
