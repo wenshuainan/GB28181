@@ -58,7 +58,6 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const Sip
     mMANSCDPResponseHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
 
     startup();
-
     mThread = std::make_shared<std::thread>(&ResipUserAgent::threadProc, this);
 }
 

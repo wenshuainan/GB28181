@@ -83,8 +83,8 @@ const char* MANSCDPAgent::getMainDeviceId() const
 
 bool MANSCDPAgent::makeKeepaliveNotify()
 {
-    KeepaliveNotify notify(this, m_devStatus.get());
-    return notify.handle();
+    KeepaliveNotify keepalive(this, m_devStatus.get());
+    return keepalive.notify();
 }
 
 int32_t MANSCDPAgent::getChNum(const std::string& deviceId) const

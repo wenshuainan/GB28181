@@ -1,6 +1,7 @@
 #include "A.2.3Control.h"
 #include "Agent/MANSCDPAgent.h"
 #include "A.2.6Response.h"
+#include "A.3FrontDeviceControl.h"
 
 ControlReuest::ControlReuest(MANSCDPAgent *agent, Control *control)
 {
@@ -41,6 +42,10 @@ bool ControlReuest::dispatch(const XMLElement *xmlReq)
 DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent, Control *control)
 {
     spec.push_back(std::make_shared<PTZCmdControl>(agent, control));
+    spec.push_back(std::make_shared<TeleBootControl>(agent, control));
+    spec.push_back(std::make_shared<RecordControl>(agent, control));
+    spec.push_back(std::make_shared<GuardControl>(agent, control));
+    spec.push_back(std::make_shared<AlarmControl>(agent, control));
 }
 
 DeviceControlRequest::~DeviceControlRequest()
@@ -111,6 +116,10 @@ bool PTZCmdControl::parse(const XMLElement *xmlReq, Request& req)
     if (xmlPTZCmd)
     {
         req.PTZCmd = xmlPTZCmd->GetText();
+        if (!req.PTZCmd.isValid())
+        {
+            return false;
+        }
     }
 
     const XMLElement *xmlPTZCmdParams = xmlReq->FirstChildElement("PTZCmdParams");
@@ -152,7 +161,15 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    return m_control->handle(ch, req);
+    std::shared_ptr<CommandFormat> cmd = CommandFormat::create(req.PTZCmd.getValue());
+    if (cmd)
+    {
+        if (cmd->parse())
+        {
+            return cmd->handle(ch, m_control);
+        }
+    }
+    return false;
 }
 
 TeleBootControl::TeleBootControl(MANSCDPAgent *agent, Control *control)
@@ -173,6 +190,10 @@ bool TeleBootControl::parse(const XMLElement *xmlReq, Request& req)
     if (xmlTeleBoot)
     {
         req.TeleBoot = xmlTeleBoot->GetText();
+        if (req.TeleBoot.getStr() != "Boot")
+        {
+            return false;
+        }
     }
 
     return true;
@@ -191,13 +212,7 @@ bool TeleBootControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
-    if (ch < 0)
-    {
-        return false;
-    }
-
-    return m_control->handle(ch, req);
+    return m_control->reboot();
 }
 
 RecordControl::RecordControl(MANSCDPAgent *agent, Control *control)
@@ -218,6 +233,10 @@ bool RecordControl::parse(const XMLElement *xmlReq, Request& req)
     if (xmlRecordCmd)
     {
         req.RecordCmd = xmlRecordCmd->GetText();
+        if (!req.RecordCmd.isValid())
+        {
+            return false;
+        }
     }
 
     const XMLElement *xmlStreamNumber = xmlReq->FirstChildElement("StreamNumber");
@@ -249,8 +268,162 @@ bool RecordControl::handle(const XMLElement *xmlReq)
     }
 
     DeviceControlResponse res(req);
-    res.Result = m_control->handle(ch, req);
+    recordType::ERecord rec = req.RecordCmd.getValue();
+    if (rec == recordType::Record)
+    {
+        res.Result = m_control->startRecord(ch);
+    }
+    else if (rec == recordType::StopRecord)
+    {
+        res.Result = m_control->stopRecord(ch);
+    }
+    else
+    {
+        res.Result = resultType::ERROR;
+    }
     
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
+    return false;
+}
+
+GuardControl::GuardControl(MANSCDPAgent *agent, Control *control)
+    : CmdTypeSpecRequest(agent, control)
+{}
+
+GuardControl::~GuardControl()
+{}
+
+bool GuardControl::parse(const XMLElement *xmlReq, Request& req)
+{
+    if (!DeviceControlRequest::parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    const XMLElement *xmlGuardCmd = xmlReq->FirstChildElement("GuardCmd");
+    if (xmlGuardCmd)
+    {
+        req.GuardCmd = xmlGuardCmd->GetText();
+        if (!req.GuardCmd.isValid())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool GuardControl::match(const XMLElement *xmlReq)
+{
+    return xmlReq->FirstChildElement("GuardCmd") != nullptr;
+}
+
+bool GuardControl::handle(const XMLElement *xmlReq)
+{
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    DeviceControlResponse res(req);
+    guardType::EGuard guard = req.GuardCmd.getValue();
+    if (guard == guardType::SetGuard)
+    {
+        res.Result = m_control->setGuard(ch);
+    }
+    else if (guard == guardType::ResetGuard)
+    {
+        res.Result = m_control->resetGuard(ch);
+    }
+    else
+    {
+        res.Result = resultType::ERROR;
+    }
+
+    XMLDocument xmldocRes;
+    if (res.encode(&xmldocRes))
+    {
+        return m_agent->sendResponseCmd(xmldocRes);
+    }
+    return false;
+}
+
+AlarmControl::AlarmControl(MANSCDPAgent *agent, Control *control)
+    : CmdTypeSpecRequest(agent, control)
+{}
+
+AlarmControl::~AlarmControl()
+{}
+
+bool AlarmControl::parse(const XMLElement *xmlReq, Request& req)
+{
+    if (!DeviceControlRequest::parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    const XMLElement *xmlAlarmCmd = xmlReq->FirstChildElement("AlarmCmd");
+    if (xmlAlarmCmd)
+    {
+        req.AlarmCmd = xmlAlarmCmd->GetText();
+        if (req.AlarmCmd.getStr() != "ResetAlarm")
+        {
+            return false;
+        }
+    }
+
+    const XMLElement *xmlInfo = xmlReq->FirstChildElement("Info");
+    if (xmlInfo)
+    {
+        const XMLElement *xmlAlarmMethod = xmlInfo->FirstChildElement("AlarmMethod");
+        if (xmlAlarmMethod)
+        {
+            req.Info.AlarmMethod = xmlAlarmMethod->GetText();
+        }
+
+        const XMLElement *xmlAlarmType = xmlInfo->FirstChildElement("AlarmType");
+        if (xmlAlarmType)
+        {
+            req.Info.AlarmType = xmlAlarmType->GetText();
+        }
+    }
+
+    return true;
+}
+
+bool AlarmControl::match(const XMLElement *xmlReq)
+{
+    return xmlReq->FirstChildElement("AlarmCmd") != nullptr;
+}
+
+bool AlarmControl::handle(const XMLElement *xmlReq)
+{
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        return false;
+    }
+
+    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    if (ch < 0)
+    {
+        return false;
+    }
+
+    DeviceControlResponse res(req);
+    res.Result = m_control->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
+
     XMLDocument xmldocRes;
     if (res.encode(&xmldocRes))
     {
@@ -274,6 +447,5 @@ bool DeviceConfigRequest::match(const std::string& CmdType)
 
 bool DeviceConfigRequest::dispatch(const XMLElement *xmlReq)
 {
-    (void) xmlReq;
     return false;
 }

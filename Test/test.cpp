@@ -138,7 +138,7 @@ int main()
     SipUserAgent::ClientInfo client;
     client.id = "34020000001110000001";
     client.port = 5060;
-    client.passwd = "1234567";
+    client.passwd = "12345678";
     client.transport = SipUserAgent::TRANSPORT_UDP;
     client.expire = 86400;
     client.interval = 60;

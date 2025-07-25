@@ -95,6 +95,11 @@ public:
         return value;
     }
 
+    int32_t getInt() const
+    {
+        return std::stoi(value);
+    }
+
     const std::string& getStr() const
     {
         return value;
@@ -259,12 +264,16 @@ public:
 class resultType : public stringType
 {
 public:
-    enum
+    enum ERestult
     {
         OK,
         ERROR
     };
 
+private:
+    ERestult m_result;
+
+public:
     resultType& operator=(const resultType& other)
     {
         value = other.value;
@@ -276,6 +285,18 @@ public:
     {
         value = str;
         bValid = true;
+        if (value == "OK")
+        {
+            m_result = OK;
+        }
+        else if (value == "ERROR")
+        {
+            m_result = ERROR;
+        }
+        else
+        {
+            bValid = false;
+        }
         return *this;
     }
 
@@ -382,9 +403,10 @@ public:
 /* A.2.1.6 控制码类型 */
 class PTZCmdType : public stringType
 {
-public:
-    const int32_t length = 8;
+private:
+    uint8_t m_cmd[8];
 
+public:
     PTZCmdType& operator=(const PTZCmdType& other)
     {
         value = other.value;
@@ -396,9 +418,20 @@ public:
     PTZCmdType& operator=(const std::string& str)
     {
         value = str;
-        bValid = true;
+
+        int ret = sscanf(str.c_str(), "%02x%02x%02x%02x%02x%02x%02x%02x",
+                    (uint32_t*)&m_cmd[0], (uint32_t*)&m_cmd[1],
+                    (uint32_t*)&m_cmd[2], (uint32_t*)&m_cmd[3],
+                    (uint32_t*)&m_cmd[4], (uint32_t*)&m_cmd[5],
+                    (uint32_t*)&m_cmd[6], (uint32_t*)&m_cmd[7]);
+        bValid = (ret == sizeof(m_cmd));
 
         return *this;
+    }
+
+    const uint8_t* getValue() const
+    {
+        return m_cmd;
     }
 };
 
@@ -406,11 +439,14 @@ public:
 class recordType : public stringType
 {
 public:
-    enum
+    enum ERecord
     {
         Record,
         StopRecord
     };
+
+private:
+    ERecord m_rec;
 
 public:
     recordType& operator=(const recordType& other)
@@ -426,26 +462,25 @@ public:
         value = str;
         bValid = true;
 
+        if (value == "Record")
+        {
+            m_rec = Record;
+        }
+        else if (value == "StopRecord")
+        {
+            m_rec = StopRecord;
+        }
+        else
+        {
+            bValid = false;
+        }
+
         return *this;
     }
 
-    recordType& operator=(const int32_t& num)
+    ERecord getValue() const
     {
-        switch (num)
-        {
-        case Record:
-            value = "Record";
-            break;
-        case StopRecord:
-            value = "StopRecord";
-            break;
-        
-        default:
-            break;
-        }
-        bValid = true;
-
-        return *this;
+        return m_rec;
     }
 };
 
@@ -453,12 +488,16 @@ public:
 class guardType : public stringType
 {
 public:
-    enum
+    enum EGuard
     {
         SetGuard,
         ResetGuard
     };
 
+private:
+    EGuard m_guard;
+
+public:
     guardType& operator=(const guardType& other)
     {
         value = other.value;
@@ -471,27 +510,26 @@ public:
     {
         value = str;
         bValid = true;
+        
+        if (value == "SetGuard")
+        {
+            m_guard = SetGuard;
+        }
+        else if (value == "ResetGuard")
+        {
+            m_guard = ResetGuard;
+        }
+        else
+        {
+            bValid = false;
+        }
 
         return *this;
     }
 
-    guardType& operator=(const int32_t& num)
+    EGuard getValue() const
     {
-        switch (num)
-        {
-        case SetGuard:
-            value = "SetGuard";
-            break;
-        case ResetGuard:
-            value = "ResetGuard";
-            break;
-        
-        default:
-            break;
-        }
-        bValid = true;
-
-        return *this;
+        return m_guard;
     }
 };
 

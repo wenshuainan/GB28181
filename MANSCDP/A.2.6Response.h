@@ -33,6 +33,18 @@ public:
 };
 
 /*  A.2.6.3 报警通知应答 */
+class AlarmNotifyResponse : public CmdTypeResponse
+{
+public:
+    /* 〈! -- 命令类型:报警通知(必选)--〉 */
+    stringType CmdType;
+    /* 〈!-- 命令序列号(必选)--〉 */
+    SNType SN;
+    /* 〈! -- 目标设备/区域/系统编码(必选)--〉 */
+    deviceIDType DeviceID;
+    /* 〈! -- 执行结果标志(必选)--〉 */
+    resultType Result;
+};
 
 /*  A.2.6.4 设备目录信息查询应答 */
 class CatalogQueryResponse : public CmdTypeResponse

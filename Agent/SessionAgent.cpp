@@ -757,8 +757,8 @@ bool SessionAgent::notifyFileEnd(const std::string& name, const std::string& uri
         if (strCaseCmp(session.second->getName(), name))
         {
             const std::shared_ptr<MANSCDPAgent>& cdpAgent = m_ua->m_cdpAgent;
-            MediaStatusNotify notify(cdpAgent.get(), session.first);
-            return notify.handle(uriId, "121");
+            MediaStatusNotify status(cdpAgent.get(), session.first);
+            return status.notify(uriId, "121");
         }
     }
     return false;

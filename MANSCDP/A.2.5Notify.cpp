@@ -1,9 +1,8 @@
 #include "A.2.5Notify.h"
 #include "Agent/MANSCDPAgent.h"
 
-bool NotifyRequest::encode(const Notify& notify, XMLDocument *xmldocNotify)
+bool NotifyRequest::encode(XMLDocument *xmldocNotify)
 {
-    (void) notify;
     XMLDeclaration *dec = xmldocNotify->NewDeclaration("xml version=\"1.0\"");
     if (dec != nullptr)
     {
@@ -21,16 +20,16 @@ bool NotifyRequest::encode(const Notify& notify, XMLDocument *xmldocNotify)
     }
 }
 
-KeepaliveNotify::KeepaliveNotify(MANSCDPAgent *agent, Status *status)
+KeepaliveNotify::KeepaliveNotify(MANSCDPAgent *agent, class Status *status)
     : m_agent(agent), m_devStatus(status)
 {}
 
 KeepaliveNotify::~KeepaliveNotify()
 {}
 
-bool KeepaliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
+bool KeepaliveNotify::encode(XMLDocument *xmldocNotify)
 {
-    if (!NotifyRequest::encode(notify, xmldocNotify))
+    if (!NotifyRequest::encode(xmldocNotify))
     {
         return false;
     }
@@ -46,50 +45,49 @@ bool KeepaliveNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocNotify->NewElement("SN");
-    xmlSN->SetText(notify.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
-    xmlDeviceID->SetText(notify.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlStatus = xmldocNotify->NewElement("Status");
-    xmlStatus->SetText(notify.Status.getStr().c_str());
+    xmlStatus->SetText(Status.getStr().c_str());
     rootElement->InsertEndChild(xmlStatus);
 
     XMLElement *xmlInfo = xmldocNotify->NewElement("Info");
     rootElement->InsertEndChild(xmlInfo);
 
-    auto size = notify.Info.DeviceID.size();
+    auto size = Info.DeviceID.size();
     for (int i = 0; (std::size_t)i < size; i++)
     {
         XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
-        xmlDeviceID->SetText(notify.Info.DeviceID[i].getStr().c_str());
+        xmlDeviceID->SetText(Info.DeviceID[i].getStr().c_str());
         xmlInfo->InsertEndChild(xmlDeviceID);
     }
 
     return true;
 }
 
-bool KeepaliveNotify::handle()
+bool KeepaliveNotify::notify()
 {
-    Notify notify;
-    notify.CmdType = "Keepalive";
-    notify.SN = "22";
-    notify.DeviceID = m_agent->getMainDeviceId();
-    notify.Status = "OK";
+    CmdType = "Keepalive";
+    SN = "22";
+    DeviceID = m_agent->getMainDeviceId();
+    Status = "OK";
 
     const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();
     for (auto i : channels)
     {
         if (!m_devStatus->getStatus(i.second))
         {
-            notify.Info.DeviceID.push_back(i.first);
+            Info.DeviceID.push_back(i.first);
         }
     }
 
     XMLDocument xmldocNotify;
-    if (encode(notify, &xmldocNotify))
+    if (encode(&xmldocNotify))
     {
         if (m_agent->sendKeepaliveNotify(xmldocNotify))
         {
@@ -107,9 +105,9 @@ MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, const SessionIdentifie
 MediaStatusNotify::~MediaStatusNotify()
 {}
 
-bool MediaStatusNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
+bool MediaStatusNotify::encode(XMLDocument *xmldocNotify)
 {
-    if (!NotifyRequest::encode(notify, xmldocNotify))
+    if (!NotifyRequest::encode(xmldocNotify))
     {
         return false;
     }
@@ -125,30 +123,29 @@ bool MediaStatusNotify::encode(const Notify& notify, XMLDocument *xmldocNotify)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocNotify->NewElement("SN");
-    xmlSN->SetText(notify.SN.getValue());
+    xmlSN->SetText(SN.getValue());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
-    xmlDeviceID->SetText(notify.DeviceID.getStr().c_str());
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlNotifyType = xmldocNotify->NewElement("NotifyType");
-    xmlNotifyType->SetText(notify.NotifyType.getStr().c_str());
+    xmlNotifyType->SetText(NotifyType.getStr().c_str());
     rootElement->InsertEndChild(xmlNotifyType);
 
     return true;
 }
 
-bool MediaStatusNotify::handle(const std::string& deviceId, const std::string& notifyType)
+bool MediaStatusNotify::notify(const std::string& deviceId, const std::string& notifyType)
 {
-    Notify notify;
-    notify.CmdType = "MediaStatus";
-    notify.SN = "22";
-    notify.DeviceID = deviceId;
-    notify.NotifyType = notifyType;
+    CmdType = "MediaStatus";
+    SN = "22";
+    DeviceID = deviceId;
+    NotifyType = notifyType;
 
     XMLDocument xmldocNotify;
-    if (encode(notify, &xmldocNotify))
+    if (encode(&xmldocNotify))
     {
         return m_agent->sendMediaStatusNotify(m_sessionId, xmldocNotify);
     }
