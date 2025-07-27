@@ -146,7 +146,7 @@ int main()
     SipUserAgent::ServerInfo server;
     server.id = "34020000002000000001";
     server.domain = "3402000000";
-    server.ipv4 = "192.168.137.1";
+    server.ipv4 = "192.168.216.1";
     server.port = 5060;
 
     UA::KeepaliveInfo keepalive;
@@ -156,15 +156,21 @@ int main()
     std::vector<std::string> catalogIds;
     catalogIds.push_back("34020000001310000001");
 
-    int i = 2;
+    // int i = 2;
     // while (i-- > 0)
-    {
-        ua.start(client, server, keepalive, catalogIds);
-        getchar();
-        ua.stop();
-        getchar();
-    }
-    return 1;
+    // {
+        // ua.start(client, server, keepalive, catalogIds);
+        // getchar();
+        // ua.stop();
+        // getchar();
+    // }
+    // return 1;
+
+    ua.start(client, server, keepalive, catalogIds);
+    getchar();
+    ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
+    getchar();
+    ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
 #elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \

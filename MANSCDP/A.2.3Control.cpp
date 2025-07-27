@@ -422,7 +422,14 @@ bool AlarmControl::handle(const XMLElement *xmlReq)
     }
 
     DeviceControlResponse res(req);
-    res.Result = m_control->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
+    if (req.Info.AlarmType.isValid())
+    {
+        res.Result = m_control->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
+    }
+    else
+    {
+        res.Result = resultType::ERROR;
+    }
 
     XMLDocument xmldocRes;
     if (res.encode(&xmldocRes))

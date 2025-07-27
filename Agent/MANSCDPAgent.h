@@ -5,17 +5,21 @@
 #include "UA.h"
 #include "Agent.h"
 #include "Interface/9.3Control.h"
+#include "Interface/9.4Alarm.h"
 #include "Interface/9.5Query.h"
 #include "Interface/9.6Status.h"
 #include "Interface/9.7RecordQuery.h"
 
 class MANSCDPAgent : public Agent
 {
+    friend UA;
+    
 private:
     std::shared_ptr<Control> m_devControl;
     std::shared_ptr<Query> m_devQuery;
     std::shared_ptr<Status> m_devStatus;
     std::shared_ptr<RecordQuery> m_devRecordQuery;
+    std::shared_ptr<Alarm> m_devAlarm;
 
 private:
     /* 
@@ -37,6 +41,7 @@ public:
     bool recvedKeepaliveResponse(int32_t code) const;
     const std::unordered_map<std::string, int32_t>& getChannels() const;
     const char* getMainDeviceId() const;
+    const char* getDeviceId(int32_t ch) const;
     bool makeKeepaliveNotify();
     int32_t getChNum(const std::string& deviceId) const;
 
@@ -44,6 +49,7 @@ public:
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
     bool sendKeepaliveNotify(const XMLDocument& notify) const;
     bool sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const;
+    bool sendAlarmNotify(const XMLDocument& notify) const;
 };
 
 #endif

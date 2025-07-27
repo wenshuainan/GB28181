@@ -6,6 +6,7 @@
 #include <thread>
 #include <unordered_map>
 #include "SipAdapter.h"
+#include "Interface/9.4Alarm.h"
 
 class RegistrationAgent;
 class MANSCDPAgent;
@@ -64,6 +65,8 @@ public:
 
     /* 设备主动向服务器发送 */
     bool sendStatusNotify(); // 9.6.1 立即发送状态信息
+
+    Alarm* getAlarm();
 };
 
 #endif

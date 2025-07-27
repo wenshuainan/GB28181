@@ -211,3 +211,8 @@ bool UA::sendStatusNotify()
 {
     return m_cdpAgent->makeKeepaliveNotify();
 }
+
+Alarm* UA::getAlarm()
+{
+    return m_cdpAgent->m_devAlarm.get();
+}

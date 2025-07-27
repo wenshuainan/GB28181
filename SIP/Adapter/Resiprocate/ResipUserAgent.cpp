@@ -56,6 +56,7 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const Sip
 
     mKeepaliveHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
     mMANSCDPResponseHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
+    mAlarmNotifyHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
 
     startup();
     mThread = std::make_shared<std::thread>(&ResipUserAgent::threadProc, this);
@@ -222,6 +223,18 @@ bool ResipUserAgent::sendMANSRTSPResponse(const SessionIdentifier& id, const MAN
     MANSRTSPContents contents(res);
     resip::InviteSession *session = (resip::InviteSession *)id;
     session->acceptNIT(200, &contents);
+    return true;
+}
+
+bool ResipUserAgent::sendAlarmNotify(const XMLDocument& notify)
+{
+    if (!mAlarmNotifyHandle.isValid())
+    {
+        return false;
+    }
+
+    std::unique_ptr<resip::Contents> contents(new MANSCDPContents(notify));
+    mAlarmNotifyHandle.get()->page(std::move(contents));
     return true;
 }
 

@@ -8,6 +8,7 @@
 #include "DevQuery.h"
 #include "DevStatus.h"
 #include "DevRecordQuery.h"
+#include "DevAlarm.h"
 #include "MANSCDP/A.2.5Notify.h"
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
@@ -16,6 +17,7 @@ MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
     m_devQuery = std::make_shared<DevQuery>();
     m_devStatus = std::make_shared<DevStatus>();
     m_devRecordQuery = std::make_shared<DevRecordQuery>();
+    m_devAlarm = std::make_shared<DevAlarm>(this);
 
     m_cmdRequests.push_back(std::make_shared<ControlReuest>(this, m_devControl.get()));
     m_cmdRequests.push_back(std::make_shared<QueryRequest>(this, m_devQuery.get(), m_devRecordQuery.get()));
@@ -81,6 +83,18 @@ const char* MANSCDPAgent::getMainDeviceId() const
     return m_ua->m_sip->getSipUser();
 }
 
+const char* MANSCDPAgent::getDeviceId(int32_t ch) const
+{
+    for (auto& c : m_ua->m_channels)
+    {
+        if (ch == c.second)
+        {
+            return c.first.c_str();
+        }
+    }
+    return "";
+}
+
 bool MANSCDPAgent::makeKeepaliveNotify()
 {
     KeepaliveNotify keepalive(this, m_devStatus.get());
@@ -105,4 +119,9 @@ bool MANSCDPAgent::sendKeepaliveNotify(const XMLDocument& notify) const
 bool MANSCDPAgent::sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const
 {
     return m_ua->m_sip->sendSessionNotify(id, notify);
+}
+
+bool MANSCDPAgent::sendAlarmNotify(const XMLDocument& notify) const
+{
+    return m_ua->m_sip->sendAlarmNotify(notify);
 }

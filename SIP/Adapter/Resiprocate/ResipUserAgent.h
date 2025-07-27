@@ -17,6 +17,7 @@ private:
     resip::Uri mServerUri;
     resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
     resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
+    resip::ClientPagerMessageHandle mAlarmNotifyHandle; // 向服务器发送ALARM notify命令
     std::shared_ptr<std::thread> mThread;
     
 public:
@@ -36,6 +37,7 @@ public:
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res);
     virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify);
     virtual bool sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res);
+    virtual bool sendAlarmNotify(const XMLDocument& notify);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////

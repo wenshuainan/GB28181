@@ -112,6 +112,7 @@ public:
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res) = 0;
     virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify) = 0;
     virtual bool sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res) = 0;
+    virtual bool sendAlarmNotify(const XMLDocument& notify) = 0;
 
 protected:
     bool postRegistrationResponse(const SipUserMessage& res);

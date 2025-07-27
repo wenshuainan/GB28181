@@ -104,7 +104,7 @@ private:
     bool encode(XMLDocument *xmldocNotify);
 
 public:
-    virtual bool notify();
+    virtual bool notify(int32_t ch, int32_t method, int32_t type, time_t alarmTime);
 };
 
 /* A.2.5.4 媒体通知 */

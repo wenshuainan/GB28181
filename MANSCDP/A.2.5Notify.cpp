@@ -41,7 +41,7 @@ bool KeepaliveNotify::encode(XMLDocument *xmldocNotify)
     }
 
     XMLElement *xmlCmdType = xmldocNotify->NewElement("CmdType");
-    xmlCmdType->SetText("Keepalive");
+    xmlCmdType->SetText(CmdType.getStr().c_str());
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocNotify->NewElement("SN");
@@ -98,6 +98,78 @@ bool KeepaliveNotify::notify()
     return false;
 }
 
+AlarmNotify::AlarmNotify(MANSCDPAgent *agent)
+    : m_agent(agent)
+{}
+
+AlarmNotify::~AlarmNotify()
+{}
+
+bool AlarmNotify::encode(XMLDocument *xmldocNotify)
+{
+    if (!NotifyRequest::encode(xmldocNotify))
+    {
+        return false;
+    }
+
+    XMLElement *rootElement = xmldocNotify->LastChildElement();
+    if (rootElement == nullptr)
+    {
+        return false;
+    }
+
+    XMLElement *xmlCmdType = xmldocNotify->NewElement("CmdType");
+    xmlCmdType->SetText(CmdType.getStr().c_str());
+    rootElement->InsertEndChild(xmlCmdType);
+
+    XMLElement *xmlSN = xmldocNotify->NewElement("SN");
+    xmlSN->SetText(SN.getValue());
+    rootElement->InsertEndChild(xmlSN);
+
+    XMLElement *xmlDeviceID = xmldocNotify->NewElement("DeviceID");
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
+    rootElement->InsertEndChild(xmlDeviceID);
+
+    XMLElement *xmlAlarmPriority = xmldocNotify->NewElement("AlarmPriority");
+    xmlAlarmPriority->SetText(AlarmPriority.getStr().c_str());
+    rootElement->InsertEndChild(xmlAlarmPriority);
+
+    XMLElement *xmlAlarmMethod = xmldocNotify->NewElement("AlarmMethod");
+    xmlAlarmMethod->SetText(AlarmMethod.getStr().c_str());
+    rootElement->InsertEndChild(xmlAlarmMethod);
+
+    XMLElement *xmlAlarmTime = xmldocNotify->NewElement("AlarmTime");
+    xmlAlarmTime->SetText(AlarmTime.getStr().c_str());
+    rootElement->InsertEndChild(xmlAlarmTime);
+
+    XMLElement *xmlInfo = xmldocNotify->NewElement("Info");
+    rootElement->InsertEndChild(xmlInfo);
+
+    XMLElement *xmlAlarmType = xmldocNotify->NewElement("AlarmType");
+    xmlAlarmType->SetText(Info.AlarmType.getStr().c_str());
+    xmlInfo->InsertEndChild(xmlAlarmType);
+
+    return true;
+}
+
+bool AlarmNotify::notify(int32_t ch, int32_t method, int32_t type, time_t alarmTime)
+{
+    CmdType = "Alarm";
+    SN = "22";
+    DeviceID = m_agent->getDeviceId(ch);
+    AlarmPriority = 4;
+    AlarmMethod = method;
+    AlarmTime = alarmTime;
+    Info.AlarmType = type;
+
+    XMLDocument xmldocNotify;
+    if (encode(&xmldocNotify))
+    {
+        return m_agent->sendAlarmNotify(xmldocNotify);
+    }
+    return false;
+}
+
 MediaStatusNotify::MediaStatusNotify(MANSCDPAgent *agent, const SessionIdentifier& sessionId)
     : m_agent(agent), m_sessionId(sessionId)
 {}
@@ -119,7 +191,7 @@ bool MediaStatusNotify::encode(XMLDocument *xmldocNotify)
     }
 
     XMLElement *xmlCmdType = xmldocNotify->NewElement("CmdType");
-    xmlCmdType->SetText("MediaStatus");
+    xmlCmdType->SetText(CmdType.getStr().c_str());
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocNotify->NewElement("SN");
