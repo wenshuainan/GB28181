@@ -26,6 +26,7 @@ CPPFLAGS := $(CFLAGS)
 
 LDFLAGS := -L$(LIB_ROOT)/lib
 LDFLAGS += -Wl,--start-group -lGB28181 -lrtp -lmpeg2 -lsipadapter -ldum -lresip -lrutil -lresipares -ltinyxml2 -pthread -Wl,--end-group
+LDFLAGS += -Wl,--gc-sections
 
 #不同的硬件平台
 ifeq ($(CROSS_PLATFORM), GK7201V200)

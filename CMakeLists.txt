@@ -30,6 +30,8 @@ set(SRC_GB28181 ${SRC_MANSCDP} ${SRC_MANSRTSP} ${SRC_INTERFACE} ${SRC_AGENT} ${S
 add_compile_options(
 	-g
 	-Wall
+	-ffunction-sections
+	-fdata-sections
 	#-Wclobbered
 	#-Wdeprecated
 	#-Wdouble-promotion
