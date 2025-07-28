@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include "SipAdapter.h"
 #include "resip/stack/SipMessage.hxx"
-#include "resip/stack/OctetContents.hxx"
 #include "resip/stack/SdpContents.hxx"
-#include "resip/stack/PlainContents.hxx"
 #include "ResipUserAgent.h"
 #include "MANSCDPContents.h"
 #include "MANSRTSPContents.h"
