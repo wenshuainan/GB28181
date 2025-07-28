@@ -168,8 +168,8 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mProfile->addSupportedMethod(MESSAGE);
    // mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
-   mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
-   mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
+   // mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
+   // mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
 
    // Support Languages
    // mProfile->clearSupportedLanguages();
@@ -203,11 +203,11 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mProfile->clearSupportedOptionTags();
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::Replaces));      
    mProfile->addSupportedOptionTag(Token(Symbols::Timer));     // Enable Session Timers
-   if(mOutboundEnabled)
-   {
-      mProfile->addSupportedOptionTag(Token(Symbols::Outbound));  // RFC 5626 - outbound
-      mProfile->addSupportedOptionTag(Token(Symbols::Path));      // RFC 3327 - path
-   }
+   // if(mOutboundEnabled)
+   // {
+   //    mProfile->addSupportedOptionTag(Token(Symbols::Outbound));  // RFC 5626 - outbound
+   //    mProfile->addSupportedOptionTag(Token(Symbols::Path));      // RFC 3327 - path
+   // }
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::NoReferSub));
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::TargetDialog));
 
@@ -229,13 +229,13 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    //mProfile->addAdvertisedCapability(Headers::AcceptEncoding);  // This can be misleading - it might specify what is expected in response
    // mProfile->addAdvertisedCapability(Headers::AcceptLanguage);  
    // mProfile->addAdvertisedCapability(Headers::Supported);  
-   mProfile->setMethodsParamEnabled(true);
+   // mProfile->setMethodsParamEnabled(true);
 
    // Install Sdp Message Decorator
    mProfile->setOutboundDecorator(std::make_shared<SdpMessageDecorator>());
 
    // Other Profile Settings
-   mProfile->setUserAgent("GB28181/3.0");
+   // mProfile->setUserAgent("GB28181/3.0");
    mProfile->setDefaultRegistrationTime(mRegisterDuration);
    mProfile->setDefaultRegistrationRetryTime(120);
    if(!mContact.host().empty())
@@ -339,32 +339,31 @@ BasicClientUserAgent::startup()
 {
    mStack->run();
    mStackThread->run(); 
-#if 0
-   if (mRegisterDuration)
-   {
-      InfoLog (<< "register for " << mAor);
-      mDum->send(mDum->makeRegistration(NameAddr(mAor)));
-   }
-   else
-   {
-      // If not registering then form subscription and/or call here.  If registering then we will start these
-      // after the registration is successful.
 
-      // Check if we should try to form a test subscription
-      if(!mSubscribeTarget.host().empty())
-      {
-         auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
-         mDum->send(sub);
-      }
+   // if (mRegisterDuration)
+   // {
+   //    InfoLog (<< "register for " << mAor);
+   //    mDum->send(mDum->makeRegistration(NameAddr(mAor)));
+   // }
+   // else
+   // {
+   //    // If not registering then form subscription and/or call here.  If registering then we will start these
+   //    // after the registration is successful.
 
-      // Check if we should try to form a test call
-      if(!mCallTarget.host().empty())
-      {
-         BasicClientCall* newCall = new BasicClientCall(*this);
-         newCall->initiateCall(mCallTarget, mProfile);
-      }
-   }
-#endif
+   //    // Check if we should try to form a test subscription
+   //    if(!mSubscribeTarget.host().empty())
+   //    {
+   //       auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
+   //       mDum->send(sub);
+   //    }
+
+   //    // Check if we should try to form a test call
+   //    if(!mCallTarget.host().empty())
+   //    {
+   //       BasicClientCall* newCall = new BasicClientCall(*this);
+   //       newCall->initiateCall(mCallTarget, mProfile);
+   //    }
+   // }
 }
 
 void

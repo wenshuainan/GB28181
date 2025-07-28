@@ -156,7 +156,7 @@ index 934bef438..e81f8fadf
 diff --git a/resip/dum/CMakeLists.txt b/resip/dum/CMakeLists.txt
 old mode 100644
 new mode 100755
-index c4d5e3ff9..de90ca602
+index c4d5e3ff9..0c135ca26
 --- a/resip/dum/CMakeLists.txt
 +++ b/resip/dum/CMakeLists.txt
 @@ -9,15 +9,15 @@ set(INCLUDES
@@ -168,7 +168,8 @@ index c4d5e3ff9..de90ca602
 +   #ClientInviteSession.hxx
 +   #ClientOutOfDialogReq.hxx
     ClientPagerMessage.hxx
-    ClientPublication.hxx
+-   ClientPublication.hxx
++   #ClientPublication.hxx
     ClientRegistration.hxx
 -   ClientSubscriptionFunctor.hxx
 -   ClientSubscription.hxx
@@ -224,10 +225,12 @@ index c4d5e3ff9..de90ca602
     PagerMessageHandler.hxx
     Postable.hxx
     Profile.hxx
-    PublicationCreator.hxx
-    PublicationHandler.hxx
+-   PublicationCreator.hxx
+-   PublicationHandler.hxx
 -   PublicationPersistenceManager.hxx
 -   RADIUSServerAuthManager.hxx
++   #PublicationCreator.hxx
++   #PublicationHandler.hxx
 +   #PublicationPersistenceManager.hxx
 +   #RADIUSServerAuthManager.hxx
     RedirectHandler.hxx
@@ -275,7 +278,8 @@ index c4d5e3ff9..de90ca602
 +   #ClientInviteSession.cxx
 +   #ClientOutOfDialogReq.cxx
     ClientPagerMessage.cxx
-    ClientPublication.cxx
+-   ClientPublication.cxx
++   #ClientPublication.cxx
     ClientRegistration.cxx
 -   ClientSubscription.cxx
 -   ContactInstanceRecord.cxx
@@ -324,8 +328,9 @@ index c4d5e3ff9..de90ca602
     OutgoingEvent.cxx
     PagerMessageCreator.cxx
     Profile.cxx
-    PublicationCreator.cxx
+-   PublicationCreator.cxx
 -   RADIUSServerAuthManager.cxx
++   #PublicationCreator.cxx
 +   #RADIUSServerAuthManager.cxx
     RedirectManager.cxx
     RegistrationCreator.cxx
@@ -1239,7 +1244,7 @@ index 3c63eb323..d2a8d8c0f
 diff --git a/resip/dum/DialogSet.cxx b/resip/dum/DialogSet.cxx
 old mode 100644
 new mode 100755
-index e6e920d96..8f80b1c24
+index e6e920d96..9f95172a3
 --- a/resip/dum/DialogSet.cxx
 +++ b/resip/dum/DialogSet.cxx
 @@ -42,10 +42,10 @@ DialogSet::DialogSet(BaseCreator* creator, DialogUsageManager& dum) :
@@ -1247,10 +1252,11 @@ index e6e920d96..8f80b1c24
     mState(Initial),
     mClientRegistration(0),
 -   mServerRegistration(0),
-+   // mServerRegistration(0),
-    mClientPublication(0),
+-   mClientPublication(0),
 -   mClientOutOfDialogRequests(),
 -   mServerOutOfDialogRequest(0),
++   // mServerRegistration(0),
++   // mClientPublication(0),
 +   // mClientOutOfDialogRequests(),
 +   // mServerOutOfDialogRequest(0),
     mClientPagerMessage(0),
@@ -1261,10 +1267,11 @@ index e6e920d96..8f80b1c24
     mState(Established),
     mClientRegistration(0),
 -   mServerRegistration(0),
-+   // mServerRegistration(0),
-    mClientPublication(0),
+-   mClientPublication(0),
 -   mClientOutOfDialogRequests(),
 -   mServerOutOfDialogRequest(0),
++   // mServerRegistration(0),
++   // mClientPublication(0),
 +   // mClientOutOfDialogRequests(),
 +   // mServerOutOfDialogRequest(0),
     mClientPagerMessage(0),
@@ -1275,9 +1282,10 @@ index e6e920d96..8f80b1c24
  
     delete mClientRegistration;
 -   delete mServerRegistration;
-+   // delete mServerRegistration;
-    delete mClientPublication;
+-   delete mClientPublication;
 -   delete mServerOutOfDialogRequest;
++   // delete mServerRegistration;
++   // delete mClientPublication;
 +   // delete mServerOutOfDialogRequest;
     delete mClientPagerMessage;
     delete mServerPagerMessage;
@@ -1298,9 +1306,10 @@ index e6e920d96..8f80b1c24
        //       we don't want the dialogset to die, since the UAC usage is not complete.     
        (getCreator() == 0 || (mState != Initial && mState != ReceivedProvisional)) &&
 -      mClientOutOfDialogRequests.empty() &&
-+      // mClientOutOfDialogRequests.empty() &&
-       !(mClientPublication ||
+-      !(mClientPublication ||
 -        mServerOutOfDialogRequest ||
++      // mClientOutOfDialogRequests.empty() &&
++      !(/* mClientPublication || */
 +      //   mServerOutOfDialogRequest ||
          mClientPagerMessage ||
          mServerPagerMessage ||
@@ -1311,7 +1320,7 @@ index e6e920d96..8f80b1c24
     {
        mState = Destroying;
        mDum.destroy(this);
-@@ -325,62 +325,62 @@ DialogSet::dispatch(const SipMessage& msg)
+@@ -325,84 +325,84 @@ DialogSet::dispatch(const SipMessage& msg)
           switch(method)
           {
              case INVITE:
@@ -1424,8 +1433,49 @@ index e6e920d96..8f80b1c24
 +               // }
                 break;
              case PUBLISH:
-                if (code / 100 == 1)
-@@ -554,38 +554,38 @@ DialogSet::dispatch(const SipMessage& msg)
+-               if (code / 100 == 1)
+-               {
+-                  // do nothing - wait for final response
+-               }
+-               else if ((code / 100 == 2) && getCreator())
+-               {
+-                  Dialog dialog(mDum, msg, *this);
+-
+-                  auto unpublish = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
+-                  dialog.makeRequest(*unpublish, PUBLISH);
+-                  unpublish->header(h_Expires).value() = 0;
+-                  dialog.send(unpublish);
++               // if (code / 100 == 1)
++               // {
++               //    // do nothing - wait for final response
++               // }
++               // else if ((code / 100 == 2) && getCreator())
++               // {
++               //    Dialog dialog(mDum, msg, *this);
++
++               //    auto unpublish = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
++               //    dialog.makeRequest(*unpublish, PUBLISH);
++               //    unpublish->header(h_Expires).value() = 0;
++               //    dialog.send(unpublish);
+                   
+-                  // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
+-               }
+-               else
+-               {
+-                  mState = Destroying;
+-                  mDum.destroy(this);
+-               }
++               //    // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
++               // }
++               // else
++               // {
++               //    mState = Destroying;
++               //    mDum.destroy(this);
++               // }
+                break;
+                // ?slg? shouldn't we handle register, ood and refer here too?
+             default:
+@@ -554,62 +554,62 @@ DialogSet::dispatch(const SipMessage& msg)
              break;
              
           case REFER:
@@ -1496,19 +1546,51 @@ index e6e920d96..8f80b1c24
              break;
  
           case NOTIFY:
-@@ -605,9 +605,9 @@ DialogSet::dispatch(const SipMessage& msg)
-             {
-                // unsolicited - not allowed but commonly implemented
-                // by large companies with a bridge as their logo
+-            if (dialog)
+-            {
+-               break; //dialog creating/handled by dialog
+-            }
+-            else if (request.header(h_To).exists(p_tag))
+-            {
+-                // We have a To tag, but don't have an existing dialog, we shouldn't be creating a new one, reject
+-                auto response = std::make_shared<SipMessage>();
+-                mDum.makeResponse(*response, msg, 481);
+-                mDum.send(response);
+-                return;
+-            }
+-            else // no to tag - unsolicited notify
+-            {
+-               // unsolicited - not allowed but commonly implemented
+-               // by large companies with a bridge as their logo
 -               resip_assert(mServerOutOfDialogRequest == 0);
 -               mServerOutOfDialogRequest = makeServerOutOfDialog(request);
 -               mServerOutOfDialogRequest->dispatch(request);
-+               // resip_assert(mServerOutOfDialogRequest == 0);
-+               // mServerOutOfDialogRequest = makeServerOutOfDialog(request);
-+               // mServerOutOfDialogRequest->dispatch(request);
-                return;
-             }
+-               return;
+-            }
++            // if (dialog)
++            // {
++            //    break; //dialog creating/handled by dialog
++            // }
++            // else if (request.header(h_To).exists(p_tag))
++            // {
++            //     // We have a To tag, but don't have an existing dialog, we shouldn't be creating a new one, reject
++            //     auto response = std::make_shared<SipMessage>();
++            //     mDum.makeResponse(*response, msg, 481);
++            //     mDum.send(response);
++            //     return;
++            // }
++            // else // no to tag - unsolicited notify
++            // {
++            //    // unsolicited - not allowed but commonly implemented
++            //    // by large companies with a bridge as their logo
++            //    resip_assert(mServerOutOfDialogRequest == 0);
++            //    mServerOutOfDialogRequest = makeServerOutOfDialog(request);
++            //    mServerOutOfDialogRequest->dispatch(request);
++            //    return;
++            // }
              break;
+ 
+          case PUBLISH:
 @@ -618,11 +618,11 @@ DialogSet::dispatch(const SipMessage& msg)
              
           case REGISTER:
@@ -1539,6 +1621,29 @@ index e6e920d96..8f80b1c24
              return;
        }
     }
+@@ -739,14 +739,14 @@ DialogSet::dispatch(const SipMessage& msg)
+             break; 
+ 
+          case PUBLISH:
+-            if (mClientPublication == 0 && getCreator())
+-            {
+-               mClientPublication = makeClientPublication(response);
+-            }
+-            if (mClientPublication)
+-            {
+-               mClientPublication->dispatch(response);
+-            }
++            // if (mClientPublication == 0 && getCreator())
++            // {
++            //    mClientPublication = makeClientPublication(response);
++            // }
++            // if (mClientPublication)
++            // {
++            //    mClientPublication->dispatch(response);
++            // }
+             return;
+ 
+          case REGISTER:
 @@ -795,19 +795,19 @@ DialogSet::dispatch(const SipMessage& msg)
              
           default:
@@ -1605,7 +1710,7 @@ index e6e920d96..8f80b1c24
  
  Dialog*
  DialogSet::findDialog(const DialogId id)
-@@ -1110,18 +1110,18 @@ DialogSet::getClientRegistration()
+@@ -1110,31 +1110,31 @@ DialogSet::getClientRegistration()
     }
  }
  
@@ -1621,6 +1726,19 @@ index e6e920d96..8f80b1c24
 -      return ServerRegistrationHandle::NotValid();
 -   }
 -}
+-
+-ClientPublicationHandle
+-DialogSet::getClientPublication()
+-{
+-   if (mClientPublication)
+-   {
+-      return mClientPublication->getHandle();
+-   }
+-   else
+-   {
+-      return ClientPublicationHandle::NotValid();
+-   }
+-}
 +// ServerRegistrationHandle
 +// DialogSet::getServerRegistration()
 +// {
@@ -1633,13 +1751,34 @@ index e6e920d96..8f80b1c24
 +//       return ServerRegistrationHandle::NotValid();
 +//    }
 +// }
++
++// ClientPublicationHandle
++// DialogSet::getClientPublication()
++// {
++//    if (mClientPublication)
++//    {
++//       return mClientPublication->getHandle();
++//    }
++//    else
++//    {
++//       return ClientPublicationHandle::NotValid();
++//    }
++// }
  
- ClientPublicationHandle
- DialogSet::getClientPublication()
-@@ -1152,25 +1152,25 @@ DialogSet::makeClientPublication(const SipMessage& response)
-    return new ClientPublication(mDum, *this, creator->getLastRequest());
+ ClientRegistration*
+ DialogSet::makeClientRegistration(const SipMessage& response)
+@@ -1144,33 +1144,33 @@ DialogSet::makeClientRegistration(const SipMessage& response)
+    return new ClientRegistration(mDum, *this, creator->getLastRequest());
  }
  
+-ClientPublication*
+-DialogSet::makeClientPublication(const SipMessage& response)
+-{
+-   BaseCreator* creator = getCreator();
+-   resip_assert(creator);
+-   return new ClientPublication(mDum, *this, creator->getLastRequest());
+-}
+-
 -ClientOutOfDialogReq*
 -DialogSet::makeClientOutOfDialogReq(const SipMessage& response)
 -{
@@ -1659,6 +1798,14 @@ index e6e920d96..8f80b1c24
 -{
 -   return new ServerOutOfDialogReq(mDum, *this, request);
 -}
++// ClientPublication*
++// DialogSet::makeClientPublication(const SipMessage& response)
++// {
++//    BaseCreator* creator = getCreator();
++//    resip_assert(creator);
++//    return new ClientPublication(mDum, *this, creator->getLastRequest());
++// }
++
 +// ClientOutOfDialogReq*
 +// DialogSet::makeClientOutOfDialogReq(const SipMessage& response)
 +// {
@@ -1715,7 +1862,7 @@ index e6e920d96..8f80b1c24
 diff --git a/resip/dum/DialogSet.hxx b/resip/dum/DialogSet.hxx
 old mode 100644
 new mode 100755
-index 71fbcd4cb..81b885d7e
+index 71fbcd4cb..18ee07aa9
 --- a/resip/dum/DialogSet.hxx
 +++ b/resip/dum/DialogSet.hxx
 @@ -43,10 +43,10 @@ class DialogSet
@@ -1723,10 +1870,11 @@ index 71fbcd4cb..81b885d7e
        
        ClientRegistrationHandle getClientRegistration();
 -      ServerRegistrationHandle getServerRegistration();
-+      // ServerRegistrationHandle getServerRegistration();
-       ClientPublicationHandle getClientPublication();
+-      ClientPublicationHandle getClientPublication();
 -      ClientOutOfDialogReqHandle getClientOutOfDialog();
 -      ServerOutOfDialogReqHandle getServerOutOfDialog();
++      // ServerRegistrationHandle getServerRegistration();
++      // ClientPublicationHandle getClientPublication();
 +      // ClientOutOfDialogReqHandle getClientOutOfDialog();
 +      // ServerOutOfDialogReqHandle getServerOutOfDialog();
  
@@ -1740,8 +1888,9 @@ index 71fbcd4cb..81b885d7e
 +      // ClientOutOfDialogReq* findMatchingClientOutOfDialogReq(const SipMessage& msg);
  
        ClientRegistration* makeClientRegistration(const SipMessage& msg);
-       ClientPublication* makeClientPublication( const SipMessage& msg);
+-      ClientPublication* makeClientPublication( const SipMessage& msg);
 -      ClientOutOfDialogReq* makeClientOutOfDialogReq(const SipMessage& msg);
++      // ClientPublication* makeClientPublication( const SipMessage& msg);
 +      // ClientOutOfDialogReq* makeClientOutOfDialogReq(const SipMessage& msg);
  
 -      ServerRegistration* makeServerRegistration(const SipMessage& msg);
@@ -1756,10 +1905,11 @@ index 71fbcd4cb..81b885d7e
        State mState;
        ClientRegistration* mClientRegistration;
 -      ServerRegistration* mServerRegistration;
-+      // ServerRegistration* mServerRegistration;
-       ClientPublication* mClientPublication;
+-      ClientPublication* mClientPublication;
 -      std::list<ClientOutOfDialogReq*> mClientOutOfDialogRequests;
 -      ServerOutOfDialogReq* mServerOutOfDialogRequest;
++      // ServerRegistration* mServerRegistration;
++      // ClientPublication* mClientPublication;
 +      // std::list<ClientOutOfDialogReq*> mClientOutOfDialogRequests;
 +      // ServerOutOfDialogReq* mServerOutOfDialogRequest;
  
@@ -1783,7 +1933,7 @@ index 266a2bf95..33e067971
 diff --git a/resip/dum/DialogUsageManager.cxx b/resip/dum/DialogUsageManager.cxx
 old mode 100644
 new mode 100755
-index e905fc28e..284bbd0d7
+index e905fc28e..47e5503dc
 --- a/resip/dum/DialogUsageManager.cxx
 +++ b/resip/dum/DialogUsageManager.cxx
 @@ -5,24 +5,24 @@
@@ -1806,9 +1956,10 @@ index e905fc28e..284bbd0d7
  #include "resip/dum/ClientAuthManager.hxx"
 -#include "resip/dum/ClientInviteSession.hxx"
 -#include "resip/dum/ClientOutOfDialogReq.hxx"
+-#include "resip/dum/ClientPublication.hxx"
 +// #include "resip/dum/ClientInviteSession.hxx"
 +// #include "resip/dum/ClientOutOfDialogReq.hxx"
- #include "resip/dum/ClientPublication.hxx"
++// #include "resip/dum/ClientPublication.hxx"
  #include "resip/dum/ClientRegistration.hxx"
 -#include "resip/dum/ClientSubscription.hxx"
 -#include "resip/dum/DefaultServerReferHandler.hxx"
@@ -1817,9 +1968,12 @@ index e905fc28e..284bbd0d7
  #include "resip/dum/DestroyUsage.hxx"
  #include "resip/dum/Dialog.hxx"
  #include "resip/dum/DialogEventStateManager.hxx"
-@@ -36,19 +36,19 @@
+@@ -34,23 +34,23 @@
+ #include "resip/dum/DumFeatureMessage.hxx"
+ #include "resip/dum/ExternalMessageBase.hxx"
  #include "resip/dum/ExternalMessageHandler.hxx"
- #include "resip/dum/InviteSessionCreator.hxx"
+-#include "resip/dum/InviteSessionCreator.hxx"
++// #include "resip/dum/InviteSessionCreator.hxx"
  #include "resip/dum/InviteSessionHandler.hxx"
 -#include "resip/dum/KeepAliveManager.hxx"
 -#include "resip/dum/KeepAliveTimeout.hxx"
@@ -1829,7 +1983,8 @@ index e905fc28e..284bbd0d7
 -#include "resip/dum/OutOfDialogReqCreator.hxx"
 +// #include "resip/dum/OutOfDialogReqCreator.hxx"
  #include "resip/dum/PagerMessageCreator.hxx"
- #include "resip/dum/PublicationCreator.hxx"
+-#include "resip/dum/PublicationCreator.hxx"
++// #include "resip/dum/PublicationCreator.hxx"
  #include "resip/dum/RedirectManager.hxx"
  #include "resip/dum/RegistrationCreator.hxx"
  #include "resip/dum/RemoteCertStore.hxx"
@@ -1840,8 +1995,20 @@ index e905fc28e..284bbd0d7
 -#include "resip/dum/ServerPublication.hxx"
 +// #include "resip/dum/ServerPublication.hxx"
  #include "resip/dum/ServerSubscription.hxx"
- #include "resip/dum/SubscriptionCreator.hxx"
+-#include "resip/dum/SubscriptionCreator.hxx"
++// #include "resip/dum/SubscriptionCreator.hxx"
  #include "resip/dum/SubscriptionHandler.hxx"
+ #include "resip/dum/UserAuthInfo.hxx"
+ #include "resip/dum/DumFeature.hxx"
+@@ -60,7 +60,7 @@
+ #include "resip/dum/OutgoingEvent.hxx"
+ #include "resip/dum/DumHelper.hxx"
+ #include "resip/dum/MergedRequestRemovalCommand.hxx"
+-#include "resip/dum/InMemorySyncPubDb.hxx"
++// #include "resip/dum/InMemorySyncPubDb.hxx"
+ #include "rutil/ResipAssert.h"
+ #include "rutil/Inserter.hxx"
+ #include "rutil/Logger.hxx"
 @@ -102,12 +102,12 @@ DialogUsageManager::DialogUsageManager(SipStack& stack, bool createDefaultFeatur
     mRedirectManager(new RedirectManager()),
     mInviteSessionHandler(0),
@@ -1988,9 +2155,24 @@ index e905fc28e..284bbd0d7
  
  void
  DialogUsageManager::addServerSubscriptionHandler(const Data& eventType, ServerSubscriptionHandler* handler)
-@@ -458,21 +458,21 @@ DialogUsageManager::addClientPublicationHandler(const Data& eventType, ClientPub
-    mClientPublicationHandlers[eventType] = handler;
+@@ -450,29 +450,29 @@ DialogUsageManager::addServerSubscriptionHandler(const Data& eventType, ServerSu
+    mServerSubscriptionHandlers[eventType] = handler;
  }
+ 
+-void
+-DialogUsageManager::addClientPublicationHandler(const Data& eventType, ClientPublicationHandler* handler)
+-{
+-   resip_assert(handler);
+-   resip_assert(mClientPublicationHandlers.find(eventType) == mClientPublicationHandlers.end());
+-   mClientPublicationHandlers[eventType] = handler;
+-}
++// void
++// DialogUsageManager::addClientPublicationHandler(const Data& eventType, ClientPublicationHandler* handler)
++// {
++//    resip_assert(handler);
++//    resip_assert(mClientPublicationHandlers.find(eventType) == mClientPublicationHandlers.end());
++//    mClientPublicationHandlers[eventType] = handler;
++// }
  
 -void
 -DialogUsageManager::addServerPublicationHandler(const Data& eventType, ServerPublicationHandler* handler)
@@ -2581,9 +2763,49 @@ index e905fc28e..284bbd0d7
  
  std::shared_ptr<SipMessage>
  DialogUsageManager::makeRegistration(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, AppDialogSet* appDs)
-@@ -866,17 +866,17 @@ DialogUsageManager::makePublication(const NameAddr& targetDocument,
-    return makeNewSession(new PublicationCreator(*this, targetDocument, getMasterUserProfile(), body, eventType, expiresSeconds), appDs);
+@@ -845,38 +845,38 @@ DialogUsageManager::makeRegistration(const NameAddr& target, uint32_t registrati
+    return makeNewSession(new RegistrationCreator(*this, target, getMasterUserProfile(), registrationTime), appDs);
  }
+ 
+-std::shared_ptr<SipMessage>
+-DialogUsageManager::makePublication(const NameAddr& targetDocument,
+-                                    const std::shared_ptr<UserProfile>& userProfile,
+-                                    const Contents& body,
+-                                    const Data& eventType,
+-                                    uint32_t expiresSeconds,
+-                                    AppDialogSet* appDs)
+-{
+-   return makeNewSession(new PublicationCreator(*this, targetDocument, userProfile, body, eventType, expiresSeconds), appDs);
+-}
++// std::shared_ptr<SipMessage>
++// DialogUsageManager::makePublication(const NameAddr& targetDocument,
++//                                     const std::shared_ptr<UserProfile>& userProfile,
++//                                     const Contents& body,
++//                                     const Data& eventType,
++//                                     uint32_t expiresSeconds,
++//                                     AppDialogSet* appDs)
++// {
++//    return makeNewSession(new PublicationCreator(*this, targetDocument, userProfile, body, eventType, expiresSeconds), appDs);
++// }
+ 
+-std::shared_ptr<SipMessage>
+-DialogUsageManager::makePublication(const NameAddr& targetDocument,
+-                                    const Contents& body,
+-                                    const Data& eventType,
+-                                    uint32_t expiresSeconds,
+-                                    AppDialogSet* appDs)
+-{
+-   return makeNewSession(new PublicationCreator(*this, targetDocument, getMasterUserProfile(), body, eventType, expiresSeconds), appDs);
+-}
++// std::shared_ptr<SipMessage>
++// DialogUsageManager::makePublication(const NameAddr& targetDocument,
++//                                     const Contents& body,
++//                                     const Data& eventType,
++//                                     uint32_t expiresSeconds,
++//                                     AppDialogSet* appDs)
++// {
++//    return makeNewSession(new PublicationCreator(*this, targetDocument, getMasterUserProfile(), body, eventType, expiresSeconds), appDs);
++// }
  
 -std::shared_ptr<SipMessage>
 -DialogUsageManager::makeOutOfDialogRequest(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, const MethodTypes meth, AppDialogSet* appDs)
@@ -2986,9 +3208,36 @@ index e905fc28e..284bbd0d7
  
  ServerSubscriptionHandler*
  DialogUsageManager::getServerSubscriptionHandler(const Data& eventType)
-@@ -2461,33 +2496,33 @@ DialogUsageManager::getClientPublicationHandler(const Data& eventType)
+@@ -2447,47 +2482,47 @@ DialogUsageManager::getServerSubscriptionHandler(const Data& eventType)
     }
  }
+ 
+-ClientPublicationHandler*
+-DialogUsageManager::getClientPublicationHandler(const Data& eventType)
+-{
+-   map<Data, ClientPublicationHandler*>::iterator res = mClientPublicationHandlers.find(eventType);
+-   if (res != mClientPublicationHandlers.end())
+-   {
+-      return res->second;
+-   }
+-   else
+-   {
+-      return 0;
+-   }
+-}
++// ClientPublicationHandler*
++// DialogUsageManager::getClientPublicationHandler(const Data& eventType)
++// {
++//    map<Data, ClientPublicationHandler*>::iterator res = mClientPublicationHandlers.find(eventType);
++//    if (res != mClientPublicationHandlers.end())
++//    {
++//       return res->second;
++//    }
++//    else
++//    {
++//       return 0;
++//    }
++// }
  
 -ServerPublicationHandler*
 -DialogUsageManager::getServerPublicationHandler(const Data& eventType)
@@ -3119,7 +3368,7 @@ index e905fc28e..284bbd0d7
 diff --git a/resip/dum/DialogUsageManager.hxx b/resip/dum/DialogUsageManager.hxx
 old mode 100644
 new mode 100755
-index d6ea6207e..3539448ad
+index d6ea6207e..d4edae889
 --- a/resip/dum/DialogUsageManager.hxx
 +++ b/resip/dum/DialogUsageManager.hxx
 @@ -14,8 +14,8 @@
@@ -3158,8 +3407,9 @@ index d6ea6207e..3539448ad
 -class ClientSubscriptionHandler;
 +// class ClientSubscriptionHandler;
  class ServerSubscriptionHandler;
- class ClientPublicationHandler;
+-class ClientPublicationHandler;
 -class ServerPublicationHandler;
++// class ClientPublicationHandler;
 +// class ServerPublicationHandler;
  class ClientPagerMessageHandler;
  class ServerPagerMessageHandler;
@@ -3198,7 +3448,8 @@ index d6ea6207e..3539448ad
 +      // void addClientSubscriptionHandler(const Data& eventType, ClientSubscriptionHandler*);
  
        /// If there is no such handler, calling makePublication will throw
-       void addClientPublicationHandler(const Data& eventType, ClientPublicationHandler*);
+-      void addClientPublicationHandler(const Data& eventType, ClientPublicationHandler*);
++      // void addClientPublicationHandler(const Data& eventType, ClientPublicationHandler*);
        
        void addServerSubscriptionHandler(const Data& eventType, ServerSubscriptionHandler*);
 -      void addServerPublicationHandler(const Data& eventType, ServerPublicationHandler*);
@@ -3209,7 +3460,7 @@ index d6ea6207e..3539448ad
  
        void setRequestValidationHandler(RequestValidationHandler*);
  
-@@ -183,54 +183,54 @@ class DialogUsageManager : public HandleManager, public TransactionUser
+@@ -183,74 +183,74 @@ class DialogUsageManager : public HandleManager, public TransactionUser
  
        /// Add/Remove External Message Handler
        /// do following op when processing thread in not running
@@ -3293,12 +3544,35 @@ index d6ea6207e..3539448ad
        //unsolicited refer
 -      std::shared_ptr<SipMessage> makeRefer(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, const H_ReferTo::Type& referTo, AppDialogSet* = nullptr);
 -      std::shared_ptr<SipMessage> makeRefer(const NameAddr& target, const H_ReferTo::Type& referTo, AppDialogSet* = nullptr);
+-
+-      std::shared_ptr<SipMessage> makePublication(const NameAddr& target,
+-                                            const std::shared_ptr<UserProfile>& userProfile,
+-                                            const Contents& body, 
+-                                            const Data& eventType, 
+-                                            uint32_t expiresSeconds, 
+-                                            AppDialogSet* = nullptr);
+-      std::shared_ptr<SipMessage> makePublication(const NameAddr& target,
+-                                            const Contents& body, 
+-                                            const Data& eventType, 
+-                                            uint32_t expiresSeconds, 
+-                                            AppDialogSet* = nullptr);
 +      // std::shared_ptr<SipMessage> makeRefer(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, const H_ReferTo::Type& referTo, AppDialogSet* = nullptr);
 +      // std::shared_ptr<SipMessage> makeRefer(const NameAddr& target, const H_ReferTo::Type& referTo, AppDialogSet* = nullptr);
++
++      // std::shared_ptr<SipMessage> makePublication(const NameAddr& target,
++      //                                       const std::shared_ptr<UserProfile>& userProfile,
++      //                                       const Contents& body, 
++      //                                       const Data& eventType, 
++      //                                       uint32_t expiresSeconds, 
++      //                                       AppDialogSet* = nullptr);
++      // std::shared_ptr<SipMessage> makePublication(const NameAddr& target,
++      //                                       const Contents& body, 
++      //                                       const Data& eventType, 
++      //                                       uint32_t expiresSeconds, 
++      //                                       AppDialogSet* = nullptr);
  
-       std::shared_ptr<SipMessage> makePublication(const NameAddr& target,
-                                             const std::shared_ptr<UserProfile>& userProfile,
-@@ -249,8 +249,8 @@ class DialogUsageManager : public HandleManager, public TransactionUser
+       std::shared_ptr<SipMessage> makeRegistration(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, AppDialogSet* = nullptr);
+       std::shared_ptr<SipMessage> makeRegistration(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, uint32_t registrationTime, AppDialogSet* = nullptr);
        std::shared_ptr<SipMessage> makeRegistration(const NameAddr& target, AppDialogSet* = nullptr);
        std::shared_ptr<SipMessage> makeRegistration(const NameAddr& target, uint32_t registrationTime, AppDialogSet* = nullptr);
  
@@ -3309,11 +3583,13 @@ index d6ea6207e..3539448ad
  
        ClientPagerMessageHandle makePagerMessage(const NameAddr& target, const std::shared_ptr<UserProfile>& userProfile, AppDialogSet* = nullptr);
        ClientPagerMessageHandle makePagerMessage(const NameAddr& target, AppDialogSet* = nullptr);
-@@ -306,9 +306,9 @@ class DialogUsageManager : public HandleManager, public TransactionUser
+@@ -305,10 +305,10 @@ class DialogUsageManager : public HandleManager, public TransactionUser
+       //if the handle is inValid, int represents the errorcode
        std::pair<InviteSessionHandle, int> findInviteSession(const CallId& replaces);
  
-       ClientPublicationHandler* getClientPublicationHandler(const Data& eventType);
+-      ClientPublicationHandler* getClientPublicationHandler(const Data& eventType);
 -      ServerPublicationHandler* getServerPublicationHandler(const Data& eventType);
++      // ClientPublicationHandler* getClientPublicationHandler(const Data& eventType);
 +      // ServerPublicationHandler* getServerPublicationHandler(const Data& eventType);
  
 -      ClientSubscriptionHandler* getClientSubscriptionHandler(const Data& eventType);
@@ -3374,10 +3650,11 @@ index d6ea6207e..3539448ad
 -      std::map<Data, ClientSubscriptionHandler*> mClientSubscriptionHandlers;
 +      // std::map<Data, ClientSubscriptionHandler*> mClientSubscriptionHandlers;
        std::map<Data, ServerSubscriptionHandler*> mServerSubscriptionHandlers;
-       std::map<Data, ClientPublicationHandler*> mClientPublicationHandlers;
+-      std::map<Data, ClientPublicationHandler*> mClientPublicationHandlers;
 -      std::map<Data, ServerPublicationHandler*> mServerPublicationHandlers;
 -      std::map<MethodTypes, OutOfDialogHandler*> mOutOfDialogHandlers;
 -      std::unique_ptr<KeepAliveManager> mKeepAliveManager;
++      // std::map<Data, ClientPublicationHandler*> mClientPublicationHandlers;
 +      // std::map<Data, ServerPublicationHandler*> mServerPublicationHandlers;
 +      // std::map<MethodTypes, OutOfDialogHandler*> mOutOfDialogHandlers;
 +      // std::unique_ptr<KeepAliveManager> mKeepAliveManager;
@@ -3401,6 +3678,18 @@ index d6ea6207e..3539448ad
        typedef std::map<Data, SipMessage*> RequiresCerts;
        RequiresCerts mRequiresCerts;      
        // from Event-Type+document-aor -> ServerSubscription
+diff --git a/resip/dum/Handled.cxx b/resip/dum/Handled.cxx
+index 5a3bae006..fcbd195a1 100644
+--- a/resip/dum/Handled.cxx
++++ b/resip/dum/Handled.cxx
+@@ -1,6 +1,6 @@
+ #include "resip/dum/HandleManager.hxx"
+ #include "resip/dum/Handled.hxx"
+-#include "rutil/Log.hxx"
++// #include "rutil/Log.hxx"
+ #include "rutil/Logger.hxx"
+ 
+ #define RESIPROCATE_SUBSYSTEM Subsystem::DUM
 diff --git a/resip/dum/InviteSession.cxx b/resip/dum/InviteSession.cxx
 old mode 100644
 new mode 100755
@@ -5570,7 +5859,7 @@ index ce9e6fb64..ed9259156
 diff --git a/resip/stack/CMakeLists.txt b/resip/stack/CMakeLists.txt
 old mode 100644
 new mode 100755
-index d7c2f4c46..9cf4df615
+index d7c2f4c46..062a5be9d
 --- a/resip/stack/CMakeLists.txt
 +++ b/resip/stack/CMakeLists.txt
 @@ -22,19 +22,19 @@ set(INCLUDES
@@ -5584,8 +5873,9 @@ index d7c2f4c46..9cf4df615
     DateCategory.hxx
     DeprecatedDialog.hxx
 -   DialogInfoContents.hxx
+-   Dispatcher.hxx
 +   #DialogInfoContents.hxx
-    Dispatcher.hxx
++   #Dispatcher.hxx
     DnsInterface.hxx
     DnsResult.hxx
     DnsResultMessage.hxx
@@ -5596,7 +5886,7 @@ index d7c2f4c46..9cf4df615
     Embedded.hxx
     EnableFlowTimer.hxx
     EventStackThread.hxx
-@@ -44,10 +44,10 @@ set(INCLUDES
+@@ -44,12 +44,12 @@ set(INCLUDES
     ExtendedDomainMatcher.hxx
     ExtensionHeader.hxx
     ExtensionParameter.hxx
@@ -5608,8 +5898,11 @@ index d7c2f4c46..9cf4df615
 +   #GenericContents.hxx
 +   #GenericPidfContents.hxx
     GenericUri.hxx
-    HEPSipMessageLoggingHandler.hxx
+-   HEPSipMessageLoggingHandler.hxx
++   #HEPSipMessageLoggingHandler.hxx
     HeaderFieldValue.hxx
+    HeaderFieldValueList.hxx
+    HeaderHash.hxx
 @@ -61,25 +61,25 @@ set(INCLUDES
     InternalTransport.hxx
     InteropHelper.hxx
@@ -5727,7 +6020,7 @@ index d7c2f4c46..9cf4df615
     ExpiresCategory.cxx
     GenericUri.cxx
     IntegerCategory.cxx
-@@ -222,10 +222,10 @@ add_library(resip
+@@ -222,11 +222,11 @@ add_library(resip
     ConnectionManager.cxx
     Contents.cxx
     ContentsFactoryBase.cxx
@@ -5736,11 +6029,13 @@ index d7c2f4c46..9cf4df615
     DataParameter.cxx
     DeprecatedDialog.cxx
 -   DialogInfoContents.cxx
+-   Dispatcher.cxx
 +   #DialogInfoContents.cxx
-    Dispatcher.cxx
++   #Dispatcher.cxx
     DnsInterface.cxx
     DnsResult.cxx
-@@ -235,12 +235,12 @@ add_library(resip
+    DtlsMessage.cxx
+@@ -235,13 +235,13 @@ add_library(resip
     ExtensionHeader.cxx
     ExistsOrDataParameter.cxx
     ExistsParameter.cxx
@@ -5751,11 +6046,13 @@ index d7c2f4c46..9cf4df615
     QValueParameter.cxx
 -   GenericContents.cxx
 -   GenericPidfContents.cxx
+-   HEPSipMessageLoggingHandler.cxx
 +   #GenericContents.cxx
 +   #GenericPidfContents.cxx
-    HEPSipMessageLoggingHandler.cxx
++   #HEPSipMessageLoggingHandler.cxx
     HeaderFieldValue.cxx
     HeaderFieldValueList.cxx
+    gen/HeaderHash.cxx
 @@ -252,17 +252,17 @@ add_library(resip
     UInt32Parameter.cxx
     InternalTransport.cxx
@@ -7040,6 +7337,27 @@ index acf793f5a..dbe53f104
  
           private:
              int mVersion;
+diff --git a/resip/stack/SipMessage.cxx b/resip/stack/SipMessage.cxx
+index 0991d1f03..ef3079335 100644
+--- a/resip/stack/SipMessage.cxx
++++ b/resip/stack/SipMessage.cxx
+@@ -8,13 +8,13 @@
+ #include "resip/stack/HeaderFieldValueList.hxx"
+ #include "resip/stack/SipMessage.hxx"
+ #include "resip/stack/ExtensionHeader.hxx"
+-#include "rutil/Coders.hxx"
+-#include "rutil/CountStream.hxx"
++// #include "rutil/Coders.hxx"
++// #include "rutil/CountStream.hxx"
+ #include "rutil/Logger.hxx"
+ #include "rutil/MD5Stream.hxx"
+ #include "rutil/compat.hxx"
+ #include "rutil/vmd5.hxx"
+-#include "rutil/Coders.hxx"
++// #include "rutil/Coders.hxx"
+ #include "rutil/Random.hxx"
+ #include "rutil/ParseBuffer.hxx"
+ #include "resip/stack/MsgHeaderScanner.hxx"
 diff --git a/resip/stack/SipStack.cxx b/resip/stack/SipStack.cxx
 old mode 100644
 new mode 100755
@@ -7118,10 +7436,155 @@ index 56f83e49e..c368d0a18
 diff --git a/rutil/CMakeLists.txt b/rutil/CMakeLists.txt
 old mode 100644
 new mode 100755
-index 7ed566263..da74fd473
+index 5144cc3de..00f55d2ce
 --- a/rutil/CMakeLists.txt
 +++ b/rutil/CMakeLists.txt
-@@ -262,7 +262,7 @@ set_target_properties(rutil PROPERTIES FOLDER rutil)
+@@ -1,17 +1,17 @@
+ set(INCLUDES
+    compat.hxx
+    ResipAssert.h
+-   FileSystem.hxx
++   #FileSystem.hxx
+    HashMap.hxx
+    wince/WceCompat.hxx
+-   SysLogStream.hxx
++   #SysLogStream.hxx
+    AsyncID.hxx
+    AsyncBool.hxx
+-   ConfigParse.hxx
++   #ConfigParse.hxx
+    CongestionManager.hxx
+    GeneralCongestionManager.hxx
+    HeapInstanceCounter.hxx
+-   KeyValueStore.hxx
++   #KeyValueStore.hxx
+    FdSetIOObserver.hxx
+    Fifo.hxx
+    CircularBuffer.hxx
+@@ -23,7 +23,7 @@ set(INCLUDES
+    Random.hxx
+    AsyncProcessHandler.hxx
+    RADIUSDigestAuthenticator.hxx
+-   RWMutex.hxx
++   #RWMutex.hxx
+    Subsystem.hxx
+    Logger.hxx
+    MediaConstants.hxx
+@@ -32,8 +32,8 @@ set(INCLUDES
+    Timer.hxx
+    DigestStream.hxx
+    TransportType.hxx
+-   resipfaststreams.hxx
+-   Coders.hxx
++   #resipfaststreams.hxx
++   #Coders.hxx
+    Sha1.hxx
+    SelectInterruptor.hxx
+    Socket.hxx
+@@ -59,7 +59,7 @@ set(INCLUDES
+    Condition.hxx
+    WinCompat.hxx
+    vthread.hxx
+-   ServerProcess.hxx
++   #ServerProcess.hxx
+    Data.hxx
+    Lock.hxx
+    TimeLimitFifo.hxx
+@@ -70,8 +70,8 @@ set(INCLUDES
+    ssl/SHA1Stream.hxx
+    ssl/OpenSSLDeleter.hxx
+    ssl/OpenSSLInit.hxx
+-   CountStream.hxx
+-   Crc32.hxx
++   #CountStream.hxx
++   #Crc32.hxx
+    vmd5.hxx
+    XMLCursor.hxx
+    PoolBase.hxx
+@@ -85,53 +85,53 @@ set(INCLUDES
+    DataStream.hxx
+    GenericIPAddress.hxx
+    AbstractFifo.hxx
+-   AndroidLogger.hxx
++   #AndroidLogger.hxx
+    ParseException.hxx
+    BaseException.hxx
+    DataException.hxx
+-   Poll.hxx
++   #Poll.hxx
+    StlPoolAllocator.hxx
+    ProducerFifoBuffer.hxx
+    DinkyPool.hxx
+    ConsumerFifoBuffer.hxx
+    ProtonThreadBase.hxx
+-   PyExtensionBase.hxx
+-   PyThreadSupport.hxx
+-   hep/HepAgent.hxx
+-   hep/ResipHep.hxx
+-   rtcp/re_rtp.h
++   #PyExtensionBase.hxx
++   #PyThreadSupport.hxx
++   #hep/HepAgent.hxx
++   #hep/ResipHep.hxx
++   #rtcp/re_rtp.h
+ )
+ 
+ add_library(rutil
+    AbstractFifo.cxx
+-   AndroidLogger.cxx
++   #AndroidLogger.cxx
+    BaseException.cxx
+-   Coders.cxx
+-   ConfigParse.cxx
+-   CountStream.cxx
+-   Crc32.cxx
+-   ServerProcess.cxx
++   #Coders.cxx
++   #ConfigParse.cxx
++   #CountStream.cxx
++   #Crc32.cxx
++   #ServerProcess.cxx
+    Data.cxx
+    DataStream.cxx
+    DnsUtil.cxx
+-   FileSystem.cxx
++   #FileSystem.cxx
+    GeneralCongestionManager.cxx
+    GenericIPAddress.cxx
+    HeapInstanceCounter.cxx
+-   KeyValueStore.cxx
++   #KeyValueStore.cxx
+    Lock.cxx
+    Log.cxx
+    MD5Stream.cxx
+    NetNs.cxx
+    ParseBuffer.cxx
+    ParseException.cxx
+-   Poll.cxx
++   #Poll.cxx
+    PoolBase.cxx
+    FdPoll.cxx
+    RADIUSDigestAuthenticator.cxx
+-   RWMutex.cxx
++   #RWMutex.cxx
+    Random.cxx
+-   resipfaststreams.cxx
++   #resipfaststreams.cxx
+    SelectInterruptor.cxx
+    Sha1.cxx
+    Socket.cxx
+@@ -165,8 +165,8 @@ add_library(rutil
+    stun/Stun.cxx
+    stun/Udp.cxx
+ 
+-   hep/HepAgent.cxx
+-   hep/ResipHep.cxx
++   #hep/HepAgent.cxx
++   #hep/ResipHep.cxx
+ 
+    ${INCLUDES}
+ )
+@@ -260,7 +260,7 @@ set_target_properties(rutil PROPERTIES FOLDER rutil)
  version_libname(rutil)
  
  install(TARGETS rutil DESTINATION ${CMAKE_INSTALL_LIBDIR})
