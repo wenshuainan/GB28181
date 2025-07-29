@@ -13,14 +13,14 @@
 #include <resip/stack/Helper.hxx>
 #include <resip/dum/AppDialogSetFactory.hxx>
 #include <resip/dum/ClientAuthManager.hxx>
-// #include <resip/dum/KeepAliveManager.hxx>
-// #include <resip/dum/ClientInviteSession.hxx>
+#include <resip/dum/KeepAliveManager.hxx>
+#include <resip/dum/ClientInviteSession.hxx>
 #include <resip/dum/ServerInviteSession.hxx>
-// #include <resip/dum/ClientSubscription.hxx>
+#include <resip/dum/ClientSubscription.hxx>
 #include <resip/dum/ServerSubscription.hxx>
 #include <resip/dum/ClientRegistration.hxx>
-// #include <resip/dum/ServerRegistration.hxx>
-// #include <resip/dum/ServerOutOfDialogReq.hxx>
+#include <resip/dum/ServerRegistration.hxx>
+#include <resip/dum/ServerOutOfDialogReq.hxx>
 #include <rutil/dns/AresDns.hxx>
 
 #if defined (USE_SSL)
@@ -44,8 +44,8 @@ using namespace std;
 static unsigned int MaxRegistrationRetryTime = 1800;              // RFC5626 section 4.5 default
 static unsigned int BaseRegistrationRetryTimeAllFlowsFailed = 30; // RFC5626 section 4.5 default
 //static unsigned int BaseRegistrationRetryTime = 90;               // RFC5626 section 4.5 default
-// static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
-// static unsigned int FailedSubscriptionRetryTime = 60; 
+static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
+static unsigned int FailedSubscriptionRetryTime = 60; 
 
 //#define TEST_PASSING_A1_HASH_FOR_PASSWORD
 
@@ -133,7 +133,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mRegistrationRetryDelayTime(0),
    mCurrentNotifyTimerId(0)
 {
-   Log::initialize(mLogType, mLogLevel, "GB28181");
+   // Log::initialize(mLogType, mLogLevel, "GB28181");
 
    if(mHostFileLookupOnlyDnsMode)
    {
@@ -168,8 +168,8 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mProfile->addSupportedMethod(MESSAGE);
    // mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
-   // mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
-   // mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
+   mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
+   mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
 
    // Support Languages
    // mProfile->clearSupportedLanguages();
@@ -203,11 +203,11 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mProfile->clearSupportedOptionTags();
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::Replaces));      
    mProfile->addSupportedOptionTag(Token(Symbols::Timer));     // Enable Session Timers
-   // if(mOutboundEnabled)
-   // {
-   //    mProfile->addSupportedOptionTag(Token(Symbols::Outbound));  // RFC 5626 - outbound
-   //    mProfile->addSupportedOptionTag(Token(Symbols::Path));      // RFC 3327 - path
-   // }
+   if(mOutboundEnabled)
+   {
+      mProfile->addSupportedOptionTag(Token(Symbols::Outbound));  // RFC 5626 - outbound
+      mProfile->addSupportedOptionTag(Token(Symbols::Path));      // RFC 3327 - path
+   }
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::NoReferSub));
    //mMasterProfile->addSupportedOptionTag(Token(Symbols::TargetDialog));
 
@@ -229,13 +229,13 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    //mProfile->addAdvertisedCapability(Headers::AcceptEncoding);  // This can be misleading - it might specify what is expected in response
    // mProfile->addAdvertisedCapability(Headers::AcceptLanguage);  
    // mProfile->addAdvertisedCapability(Headers::Supported);  
-   // mProfile->setMethodsParamEnabled(true);
+   mProfile->setMethodsParamEnabled(true);
 
    // Install Sdp Message Decorator
    mProfile->setOutboundDecorator(std::make_shared<SdpMessageDecorator>());
 
    // Other Profile Settings
-   // mProfile->setUserAgent("GB28181/3.0");
+   mProfile->setUserAgent("GB28181/3.0");
    mProfile->setDefaultRegistrationTime(mRegisterDuration);
    mProfile->setDefaultRegistrationRetryTime(120);
    if(!mContact.host().empty())
@@ -382,10 +382,10 @@ BasicClientUserAgent::process(int timeoutMs)
       if(mDumShutdownRequested)
       {
          // unregister
-         if(mRegHandle.isValid())
-         {
-            mRegHandle->end();
-         }
+         // if(mRegHandle.isValid())
+         // {
+         //    mRegHandle->end();
+         // }
 
          // end any subscriptions
          // if(mServerSubscriptionHandle.isValid())
@@ -550,23 +550,23 @@ BasicClientUserAgent::onSuccess(ClientRegistrationHandle h, const SipMessage& ms
        h->end();
        return;
    }
-   if(mRegHandle.getId() == 0)  // Note: reg handle id will only be 0 on first successful registration
-   {
-      // Check if we should try to form a test subscription
-      if(!mSubscribeTarget.host().empty())
-      {
-         // auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
-         // mDum->send(sub);
-      }
+   // if(mRegHandle.getId() == 0)  // Note: reg handle id will only be 0 on first successful registration
+   // {
+   //    // Check if we should try to form a test subscription
+   //    // if(!mSubscribeTarget.host().empty())
+   //    // {
+   //    //    auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
+   //    //    mDum->send(sub);
+   //    // }
 
-      // Check if we should try to form a test call
-      // if(!mCallTarget.host().empty())
-      // {
-      //    BasicClientCall* newCall = new BasicClientCall(*this);
-      //    newCall->initiateCall(mCallTarget, mProfile);
-      // }
-   }
-   mRegHandle = h;
+   //    // Check if we should try to form a test call
+   //    // if(!mCallTarget.host().empty())
+   //    // {
+   //    //    BasicClientCall* newCall = new BasicClientCall(*this);
+   //    //    newCall->initiateCall(mCallTarget, mProfile);
+   //    // }
+   // }
+   // mRegHandle = h;
    mRegistrationRetryDelayTime = 0;  // reset
 }
 
@@ -574,7 +574,7 @@ void
 BasicClientUserAgent::onFailure(ClientRegistrationHandle h, const SipMessage& msg)
 {
    InfoLog(<< "onFailure(ClientRegistrationHandle): msg=" << msg.brief());
-   mRegHandle = h;
+   // mRegHandle = h;
    if(mShuttingdown)
    {
        h->end();
@@ -585,13 +585,13 @@ void
 BasicClientUserAgent::onRemoved(ClientRegistrationHandle h, const SipMessage&msg)
 {
    InfoLog(<< "onRemoved(ClientRegistrationHandle): msg=" << msg.brief());
-   mRegHandle = h;
+   // mRegHandle = h;
 }
 
 int 
 BasicClientUserAgent::onRequestRetry(ClientRegistrationHandle h, int retryMinimum, const SipMessage& msg)
 {
-   mRegHandle = h;
+   // mRegHandle = h;
    mStack->logDnsCache();
    if(mShuttingdown)
    {
@@ -836,7 +836,7 @@ BasicClientUserAgent::onNonDialogCreatingProvisional(AppDialogSetHandle h, const
 //    //    return;
 //    // }
 //    InfoLog(<< "onUpdatePending(ClientSubscriptionHandle): " << msg.brief());
-//    h->acceptUpdate();
+//    // h->acceptUpdate();
 // }
 
 // void
@@ -849,7 +849,7 @@ BasicClientUserAgent::onNonDialogCreatingProvisional(AppDialogSetHandle h, const
 //    //    return;
 //    // }
 //    InfoLog(<< "onUpdateActive(ClientSubscriptionHandle): " << msg.brief());
-//    h->acceptUpdate();
+//    // h->acceptUpdate();
 // }
 
 // void
@@ -862,7 +862,7 @@ BasicClientUserAgent::onNonDialogCreatingProvisional(AppDialogSetHandle h, const
 //    //    return;
 //    // }
 //    InfoLog(<< "onUpdateExtension(ClientSubscriptionHandle): " << msg.brief());
-//    h->acceptUpdate();
+//    // h->acceptUpdate();
 // }
 
 // void 

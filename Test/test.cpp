@@ -146,7 +146,7 @@ int main()
     SipUserAgent::ServerInfo server;
     server.id = "34020000002000000001";
     server.domain = "3402000000";
-    server.ipv4 = "192.168.216.1";
+    server.ipv4 = "192.168.137.1";
     server.port = 5060;
 
     UA::KeepaliveInfo keepalive;

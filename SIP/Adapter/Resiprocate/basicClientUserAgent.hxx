@@ -1,7 +1,7 @@
 #if !defined(basicClientUserAgent_hxx)
 #define basicClientUserAgent_hxx
 
-// #include <set>
+#include <set>
 #include "basicClientCmdLineParser.hxx"
 
 #include "resip/stack/EventStackThread.hxx"
@@ -11,7 +11,7 @@
 #include "resip/dum/RedirectHandler.hxx"
 #include "resip/dum/DialogSetHandler.hxx"
 #include "resip/dum/DumShutdownHandler.hxx"
-// #include "resip/dum/OutOfDialogHandler.hxx"
+#include "resip/dum/OutOfDialogHandler.hxx"
 #include "resip/dum/InviteSessionHandler.hxx"
 #include "resip/dum/DialogUsageManager.hxx"
 #include "resip/dum/Postable.hxx"
@@ -136,10 +136,10 @@ protected:
 
 protected:
    void addTransport(TransportType type, int port);
-   friend class NotifyTimer;
+   // friend class NotifyTimer;
    // void onNotifyTimeout(unsigned int timerId);
    // void sendNotify();
-   friend class CallTimer;
+   // friend class CallTimer;
    // void onCallTimeout(BasicClientCall* call);
 
    std::shared_ptr<MasterProfile> mProfile;
@@ -153,7 +153,7 @@ protected:
    volatile bool mDumShutdownRequested;
    bool mShuttingdown;
    bool mDumShutdown;
-   ClientRegistrationHandle mRegHandle;
+   // ClientRegistrationHandle mRegHandle;
    // ClientSubscriptionHandle mClientSubscriptionHandle;
    // ServerSubscriptionHandle mServerSubscriptionHandle;
    unsigned int mRegistrationRetryDelayTime;

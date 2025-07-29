@@ -3,3 +3,8 @@ Test/stream.ps
 .vscode
 Build/*
 Test/rtp_over_udp.rtp
+*-
+*--
+Test/*.d
+Test/*.o
+Test/GB28181Demo
