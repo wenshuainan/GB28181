@@ -60,13 +60,17 @@ bool RegistrationAgent::stop()
         m_bStarted = false;
     }
 
-    SipUserMessage message;
-    auto sip = m_ua->m_sip;
-    sip->makeRegistrationRequest(message);
+    if (m_devRegistration->getState() == Registration::REGISTERED)
+    {
+        SipUserMessage message;
+        auto sip = m_ua->m_sip;
+        sip->makeRegistrationRequest(message);
 
-    message.setExpires(0);
+        message.setExpires(0);
 
-    return sip->sendRegistration(message);
+        return sip->sendRegistration(message);
+    }
+    return true;
 }
 
 void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
@@ -77,8 +81,6 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
     switch (code)
     {
     case 200:
-        m_ua->setOnline(true); //注册成功，设置在线状态
-
         if (oldState == Registration::REGISTERED)
         {
             newState = Registration::UNREGISTERED;
@@ -86,6 +88,7 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
         else
         {
             newState = Registration::REGISTERED;
+            m_ua->setOnline(true); //注册成功，设置在线状态
         }
         break;
     case 403:
@@ -97,5 +100,13 @@ void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase
         break;
     }
 
+    m_devRegistration->m_state = newState;
     m_devRegistration->onState(newState, reasonPhrase);
+}
+
+void RegistrationAgent::reset()
+{
+    m_devRegistration->m_state = Registration::UNREGISTERED;
+    m_devRegistration->onState(Registration::UNREGISTERED, "reset");
+    m_bStarted = false;
 }

@@ -3,8 +3,12 @@
 
 #include "MANSCDP/A.2.1GlobalTypes.h"
 
+class RegistrationAgent;
+
 class Registration
 {
+    friend RegistrationAgent;
+    
 public:
     enum State
     {

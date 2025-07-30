@@ -825,7 +825,7 @@ index 3c63eb323..fc987d6bb
 diff --git a/resip/dum/DialogSet.cxx b/resip/dum/DialogSet.cxx
 old mode 100644
 new mode 100755
-index e6e920d96..7106523da
+index e6e920d96..31546d326
 --- a/resip/dum/DialogSet.cxx
 +++ b/resip/dum/DialogSet.cxx
 @@ -42,10 +42,10 @@ DialogSet::DialogSet(BaseCreator* creator, DialogUsageManager& dum) :
@@ -901,6 +901,166 @@ index e6e920d96..7106523da
     {
        mState = Destroying;
        mDum.destroy(this);
+@@ -321,88 +321,88 @@ DialogSet::dispatch(const SipMessage& msg)
+          {
+             method = msg.method();
+          }
+-         int code = msg.header(h_StatusLine).statusCode();
++         // int code = msg.header(h_StatusLine).statusCode();
+          switch(method)
+          {
+             case INVITE:
+-               if (code / 100 == 1)
+-               {
+-                  mState = ReceivedProvisional;
+-                  end();
+-               }
+-               else if (code / 100 == 2)
+-               {
+-                  Dialog dialog(mDum, msg, *this);
+-
+-                  auto ack = std::make_shared<SipMessage>();
+-                  dialog.makeRequest(*ack, ACK);
+-                  ack->header(h_CSeq).sequence() = msg.header(h_CSeq).sequence();
+-                  dialog.send(ack);
++               // if (code / 100 == 1)
++               // {
++               //    mState = ReceivedProvisional;
++               //    end();
++               // }
++               // else if (code / 100 == 2)
++               // {
++               //    Dialog dialog(mDum, msg, *this);
++
++               //    auto ack = std::make_shared<SipMessage>();
++               //    dialog.makeRequest(*ack, ACK);
++               //    ack->header(h_CSeq).sequence() = msg.header(h_CSeq).sequence();
++               //    dialog.send(ack);
+                   
+-                  auto bye = std::make_shared<SipMessage>();
+-                  dialog.makeRequest(*bye, BYE);
+-                  addEndReasonToMessage(*bye);
+-                  dialog.send(bye);
++               //    auto bye = std::make_shared<SipMessage>();
++               //    dialog.makeRequest(*bye, BYE);
++               //    addEndReasonToMessage(*bye);
++               //    dialog.send(bye);
+                   
+-                  if (mDum.mDialogEventStateManager)
+-                  {
+-                     mDum.mDialogEventStateManager->onTerminated(dialog, *bye, InviteSessionHandler::LocalBye);
+-                  }
+-                  // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
+-               }
+-               else
+-               {
+-                  if (mDum.mDialogEventStateManager)
+-                  {
+-                     mDum.mDialogEventStateManager->onTerminated(*this, msg, InviteSessionHandler::Rejected);
+-                  }           
+-                  mState = Destroying;
+-                  mDum.destroy(this);
+-               }
++               //    if (mDum.mDialogEventStateManager)
++               //    {
++               //       mDum.mDialogEventStateManager->onTerminated(dialog, *bye, InviteSessionHandler::LocalBye);
++               //    }
++               //    // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
++               // }
++               // else
++               // {
++               //    if (mDum.mDialogEventStateManager)
++               //    {
++               //       mDum.mDialogEventStateManager->onTerminated(*this, msg, InviteSessionHandler::Rejected);
++               //    }           
++               //    mState = Destroying;
++               //    mDum.destroy(this);
++               // }
+                break;
+             case SUBSCRIBE:
+-               if (code / 100 == 1)
+-               {
+-                  // do nothing - wait for final response
+-               }
+-               else if ((code / 100 == 2) && getCreator())
+-               {
+-                  Dialog dialog(mDum, msg, *this);
+-
+-                  auto unsubscribe = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
+-                  dialog.makeRequest(*unsubscribe, SUBSCRIBE);
+-                  unsubscribe->header(h_Expires).value() = 0;
+-                  dialog.send(unsubscribe);
++               // if (code / 100 == 1)
++               // {
++               //    // do nothing - wait for final response
++               // }
++               // else if ((code / 100 == 2) && getCreator())
++               // {
++               //    Dialog dialog(mDum, msg, *this);
++
++               //    auto unsubscribe = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
++               //    dialog.makeRequest(*unsubscribe, SUBSCRIBE);
++               //    unsubscribe->header(h_Expires).value() = 0;
++               //    dialog.send(unsubscribe);
+                   
+-                  // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
+-               }
+-               else
+-               {
+-                  mState = Destroying;
+-                  mDum.destroy(this);
+-               }
++               //    // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
++               // }
++               // else
++               // {
++               //    mState = Destroying;
++               //    mDum.destroy(this);
++               // }
+                break;
+             case PUBLISH:
+-               if (code / 100 == 1)
+-               {
+-                  // do nothing - wait for final response
+-               }
+-               else if ((code / 100 == 2) && getCreator())
+-               {
+-                  Dialog dialog(mDum, msg, *this);
+-
+-                  auto unpublish = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
+-                  dialog.makeRequest(*unpublish, PUBLISH);
+-                  unpublish->header(h_Expires).value() = 0;
+-                  dialog.send(unpublish);
++               // if (code / 100 == 1)
++               // {
++               //    // do nothing - wait for final response
++               // }
++               // else if ((code / 100 == 2) && getCreator())
++               // {
++               //    Dialog dialog(mDum, msg, *this);
++
++               //    auto unpublish = std::make_shared<SipMessage>(*getCreator()->getLastRequest());  // create message from initial request so we get proper headers
++               //    dialog.makeRequest(*unpublish, PUBLISH);
++               //    unpublish->header(h_Expires).value() = 0;
++               //    dialog.send(unpublish);
+                   
+-                  // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
+-               }
+-               else
+-               {
+-                  mState = Destroying;
+-                  mDum.destroy(this);
+-               }
++               //    // Note:  Destruction of this dialog object will cause DialogSet::possiblyDie to be called thus invoking mDum.destroy
++               // }
++               // else
++               // {
++               //    mState = Destroying;
++               //    mDum.destroy(this);
++               // }
+                break;
+                // ?slg? shouldn't we handle register, ood and refer here too?
+             default:
 @@ -554,62 +554,62 @@ DialogSet::dispatch(const SipMessage& msg)
              break;
              
@@ -1314,21 +1474,6 @@ index 71fbcd4cb..3f4c67d78
  
        ClientPagerMessage* mClientPagerMessage;
        ServerPagerMessage* mServerPagerMessage;
-diff --git a/resip/dum/DialogSetId.cxx b/resip/dum/DialogSetId.cxx
-old mode 100644
-new mode 100755
-index 266a2bf95..33e067971
---- a/resip/dum/DialogSetId.cxx
-+++ b/resip/dum/DialogSetId.cxx
-@@ -31,7 +31,7 @@ DialogSetId::DialogSetId(const SipMessage& msg) :
-          }
-          else
-          {
--            //DebugLog ( <<  "********** Generated Local Tag *********** " );            
-+            DebugLog ( <<  "********** Generated Local Tag *********** " );
-             mTag = Helper::computeTag(Helper::tagSize);
-          }
-       }
 diff --git a/resip/dum/DialogUsageManager.cxx b/resip/dum/DialogUsageManager.cxx
 old mode 100644
 new mode 100755
@@ -2964,7 +3109,7 @@ index 0a0175411..ada3079bf
 diff --git a/rutil/Logger.hxx b/rutil/Logger.hxx
 old mode 100644
 new mode 100755
-index cab079977..c8566071e
+index cab079977..2ba217d3d
 --- a/rutil/Logger.hxx
 +++ b/rutil/Logger.hxx
 @@ -115,7 +115,7 @@
@@ -2983,25 +3128,25 @@ index cab079977..c8566071e
 +#else
 +
 +#define CerrLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP CERR  | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define StackLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP STACK | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define DebugLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP DEBUG | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define InfoLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP INFO  | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define WarningLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP WARN  | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define ErrLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP ERR   | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#define CritLog(args_) \
-+   std::cout << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
++   std::cout << "SIP CRIT  | " << __FILE__ << ":" << __LINE__ << " | " args_ << std::endl
 +
 +#endif
 +
@@ -3108,6 +3253,21 @@ index 16d9324b2..557a99407
        
        const Data& getSubsystem() const;
        Log::Level getLevel() const { return mLevel; }
+diff --git a/rutil/dns/DnsStub.cxx b/rutil/dns/DnsStub.cxx
+old mode 100644
+new mode 100755
+index 2945a3a31..fab1fafef
+--- a/rutil/dns/DnsStub.cxx
++++ b/rutil/dns/DnsStub.cxx
+@@ -743,7 +743,7 @@ DnsStub::Query::followCname(const unsigned char* aptr, const unsigned char*abuf,
+          {
+             ++mReQuery;
+             int status = 0;
+-            bool cached = false;
++            // bool cached = false;
+ 
+             do
+             {
 diff --git a/rutil/dns/ares/CMakeLists.txt b/rutil/dns/ares/CMakeLists.txt
 old mode 100644
 new mode 100755

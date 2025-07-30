@@ -44,8 +44,8 @@ using namespace std;
 static unsigned int MaxRegistrationRetryTime = 1800;              // RFC5626 section 4.5 default
 static unsigned int BaseRegistrationRetryTimeAllFlowsFailed = 30; // RFC5626 section 4.5 default
 //static unsigned int BaseRegistrationRetryTime = 90;               // RFC5626 section 4.5 default
-static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
-static unsigned int FailedSubscriptionRetryTime = 60; 
+// static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
+// static unsigned int FailedSubscriptionRetryTime = 60; 
 
 //#define TEST_PASSING_A1_HASH_FOR_PASSWORD
 
@@ -382,10 +382,10 @@ BasicClientUserAgent::process(int timeoutMs)
       if(mDumShutdownRequested)
       {
          // unregister
-         // if(mRegHandle.isValid())
-         // {
-         //    mRegHandle->end();
-         // }
+         if(mRegHandle.isValid())
+         {
+            mRegHandle->end();
+         }
 
          // end any subscriptions
          // if(mServerSubscriptionHandle.isValid())
@@ -566,7 +566,7 @@ BasicClientUserAgent::onSuccess(ClientRegistrationHandle h, const SipMessage& ms
    //    //    newCall->initiateCall(mCallTarget, mProfile);
    //    // }
    // }
-   // mRegHandle = h;
+   mRegHandle = h;
    mRegistrationRetryDelayTime = 0;  // reset
 }
 
@@ -574,7 +574,7 @@ void
 BasicClientUserAgent::onFailure(ClientRegistrationHandle h, const SipMessage& msg)
 {
    InfoLog(<< "onFailure(ClientRegistrationHandle): msg=" << msg.brief());
-   // mRegHandle = h;
+   mRegHandle = h;
    if(mShuttingdown)
    {
        h->end();
@@ -585,13 +585,13 @@ void
 BasicClientUserAgent::onRemoved(ClientRegistrationHandle h, const SipMessage&msg)
 {
    InfoLog(<< "onRemoved(ClientRegistrationHandle): msg=" << msg.brief());
-   // mRegHandle = h;
+   mRegHandle = h;
 }
 
 int 
 BasicClientUserAgent::onRequestRetry(ClientRegistrationHandle h, int retryMinimum, const SipMessage& msg)
 {
-   // mRegHandle = h;
+   mRegHandle = h;
    mStack->logDnsCache();
    if(mShuttingdown)
    {

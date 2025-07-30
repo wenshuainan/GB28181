@@ -35,6 +35,11 @@ public:
         return m_timeoutCount;
     }
 
+    void clearTimeoutCount()
+    {
+        m_timeoutCount = 0;
+    }
+
 public:
     virtual bool getStatus(int32_t ch) = 0; //定时获取当前状态
     virtual void onKeepaliveSuccess() = 0;

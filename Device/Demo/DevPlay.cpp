@@ -1,10 +1,18 @@
 #include <stdio.h>
+#include <iostream>
 #include "DevPlay.h"
 
 DevPlay::DevPlay()
 {
-    m_testVideo = fopen("./assets/128x128.h264", "rb");
-    // m_testVideo = fopen("./assets/nature.h264", "rb");
+    const char *name = "./assets/128x128.h264";
+    // const char *name = "./assets/nature.h264";
+
+    m_testVideo = fopen(name, "rb");
+    if (m_testVideo == nullptr)
+    {
+        std::cout << "failed open video " << name << std::endl;
+        return;
+    }
 }
 
 DevPlay::~DevPlay()

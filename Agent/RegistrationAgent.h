@@ -7,6 +7,8 @@
 
 class RegistrationAgent : public Agent
 {
+    friend UA;
+
 private:
     std::shared_ptr<Registration> m_devRegistration;
     std::string m_GBVerName;
@@ -23,6 +25,7 @@ public:
 
 private:
     void changeDevState(int code, const std::string& reasonPhrase);
+    void reset();
 
 public:
     bool start();

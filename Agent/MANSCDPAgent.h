@@ -39,6 +39,7 @@ public:
     bool agent(const XMLDocument &xmldocReq) const;
     int32_t getKeepaliveTimeoutCount() const;
     bool recvedKeepaliveResponse(int32_t code) const;
+    void clearKeepaliveTimeoutCount() const;
     const std::unordered_map<std::string, int32_t>& getChannels() const;
     const char* getMainDeviceId() const;
     const char* getDeviceId(int32_t ch) const;

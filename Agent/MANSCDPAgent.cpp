@@ -73,6 +73,11 @@ bool MANSCDPAgent::recvedKeepaliveResponse(int32_t code) const
     }
 }
 
+void MANSCDPAgent::clearKeepaliveTimeoutCount() const
+{
+    m_devStatus->clearTimeoutCount();
+}
+
 const std::unordered_map<std::string, int32_t>& MANSCDPAgent::getChannels() const
 {
     return m_ua->m_channels;

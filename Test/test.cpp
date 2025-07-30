@@ -158,19 +158,19 @@ int main()
 
     // int i = 2;
     // while (i-- > 0)
-    // {
-        // ua.start(client, server, keepalive, catalogIds);
-        // getchar();
-        // ua.stop();
-        // getchar();
-    // }
-    // return 1;
+    {
+        ua.start(client, server, keepalive, catalogIds);
+        getchar();
+        ua.stop();
+        getchar();
+    }
+    return 1;
 
-    ua.start(client, server, keepalive, catalogIds);
-    getchar();
-    ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
-    getchar();
-    ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
+    // ua.start(client, server, keepalive, catalogIds);
+    // getchar();
+    // ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
+    // getchar();
+    // ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
 #elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \

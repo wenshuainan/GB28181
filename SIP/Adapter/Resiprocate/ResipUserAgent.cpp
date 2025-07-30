@@ -7,6 +7,9 @@
 #include "resip/dum/ServerPagerMessage.hxx"
 #include "resip/dum/ServerInviteSession.hxx"
 #include "resip/dum/Handle.hxx"
+#include "resip/dum/Handles.hxx"
+#include "resip/dum/AppDialogSet.hxx"
+#include "resip/dum/ClientRegistration.hxx"
 
 bool SipUserAgent::postRegistrationResponse(const SipUserMessage& res)
 {
@@ -48,11 +51,11 @@ std::shared_ptr<SipUserAgent> SipUserAgent::create(UA *user, const ClientInfo& c
 ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const SipUserAgent::ServerInfo& server)
     : BasicClientUserAgent(client)
 {
-    mRegistrationRetryDelayTime = client.interval;
-
     mServerUri.user() = server.id;
     mServerUri.host() = server.ipv4;
     mServerUri.port() = server.port;
+
+    mRegistrationRetryDelayTime = client.interval;
 
     mKeepaliveHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
     mMANSCDPResponseHandle = mDum->makePagerMessage(resip::NameAddr(mServerUri));
@@ -64,8 +67,8 @@ ResipUserAgent::ResipUserAgent(const SipUserAgent::ClientInfo& client, const Sip
 
 ResipUserAgent::~ResipUserAgent()
 {
-    // shutdown();
     mDum->forceShutdown(this);
+
     if (mThread != nullptr)
     {
         mThread->join();
@@ -87,6 +90,14 @@ const char* ResipUserAgent::getSipUser()
 
 bool ResipUserAgent::makeRegistrationRequest(SipUserMessage& req)
 {
+    /* 释放之前的注册资源 */
+    if (mRegHandle.isValid())
+    {
+        AppDialogSetHandle handle = mRegHandle->getAppDialogSet();
+        handle->end();
+        mRegHandle->stopRegistering();
+    }
+
     std::shared_ptr<resip::SipMessage> reg = mDum->makeRegistration(resip::NameAddr(mAor));
     if (reg == nullptr)
     {
@@ -241,7 +252,7 @@ bool ResipUserAgent::sendAlarmNotify(const XMLDocument& notify)
 // Registration Handler ////////////////////////////////////////////////////////
 void ResipUserAgent::onSuccess(resip::ClientRegistrationHandle h, const resip::SipMessage& response)
 {
-    (void) h;
+    mRegHandle = h;
     SipAdapterMessage adapter = {
         .instance = std::make_shared<resip::SipMessage>(response)
     };

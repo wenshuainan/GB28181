@@ -21,32 +21,33 @@ UA::~UA()
 
 void UA::threadProc()
 {
-    int32_t katick = 0x0FFFFFFF;
-    int32_t tickinterval = 1000000;
+    int32_t kaTick = 0x0FFFFFFF; //保活计数器，判断保活间隔
+                                 //使用最大值初始化，上线后立即发送
+    int32_t tickInterval = 1000000; //单位：微秒
 
     while (m_bStarted)
     {
         if (m_bOnline)
         {
             auto timeoutCount = m_cdpAgent->getKeepaliveTimeoutCount();
-            if (timeoutCount > m_kaInfo.timeoutCount)
+            if (timeoutCount >= m_kaInfo.timeoutCount)
             {
                 m_bOnline = false;
-                m_registAgent->stop();
+                m_registAgent->reset();
                 continue;
             }
 
-            if (katick + 3 > m_kaInfo.interval)
+            if (kaTick + 3 > m_kaInfo.interval)
             {
-                katick = 0;
+                kaTick = 0;
                 m_cdpAgent->makeKeepaliveNotify();
             }
 
-            katick++;
+            kaTick++;
         }
         else
         {
-            katick = 0x0FFFFFFF;
+            kaTick = 0x0FFFFFFF;
 
             /* 注册 */
             if (m_registAgent != nullptr)
@@ -55,7 +56,7 @@ void UA::threadProc()
             }
         }
 
-        usleep(tickinterval);
+        usleep(tickInterval);
     }
 
     /* 注销 */
@@ -113,6 +114,10 @@ bool UA::dispatchMANSRTSPRequest(const SipUserMessage& req)
 void UA::setOnline(bool online)
 {
     m_bOnline = online;
+    if (m_bOnline)
+    {
+        m_cdpAgent->clearKeepaliveTimeoutCount();
+    }
 }
 
 int32_t UA::getChNum(const std::string& id) const
@@ -138,6 +143,8 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     {
         return false;
     }
+
+    m_kaInfo = keepalive;
 
     auto size = catalogIds.size();
     if (size == 0)
@@ -166,8 +173,6 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
     {
         return m_bStarted = false;
     }
-
-    m_kaInfo = keepalive;
 
     /* 创建状态维护线程 */
     m_bStarted = true;

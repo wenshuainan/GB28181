@@ -24,8 +24,8 @@ class UA
 public:
     struct KeepaliveInfo
     {
-        int32_t interval;
-        int32_t timeoutCount;
+        int32_t interval;       //保活间隔，以秒为单位
+        int32_t timeoutCount;   //保活超时次数，超出认为离线
     };
     
 private:

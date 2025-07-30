@@ -153,7 +153,7 @@ protected:
    volatile bool mDumShutdownRequested;
    bool mShuttingdown;
    bool mDumShutdown;
-   // ClientRegistrationHandle mRegHandle;
+   ClientRegistrationHandle mRegHandle;
    // ClientSubscriptionHandle mClientSubscriptionHandle;
    // ServerSubscriptionHandle mServerSubscriptionHandle;
    unsigned int mRegistrationRetryDelayTime;
