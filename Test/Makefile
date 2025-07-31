@@ -1,7 +1,7 @@
 #Usage: make CROSS_PLATFORM=XXX
-#其中XXX代表不同的硬件平台，不带CROSS_PLATFORM参数默认使用GK7201V200
+#其中XXX代表不同的硬件平台，不带CROSS_PLATFORM参数默认使用X86GCC7.5
 
-CROSS_PLATFORM ?= GK7201V200
+CROSS_PLATFORM ?= X86GCC7.5
 
 CC  = gcc
 CPP = g++
@@ -29,15 +29,15 @@ LDFLAGS += -Wl,--start-group -lGB28181 -lrtp -lmpeg2 -lsipadapter -ldum -lresip 
 LDFLAGS += -Wl,--gc-sections
 
 #不同的硬件平台
-ifeq ($(CROSS_PLATFORM), GK7201V200)
-	CC  := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-gcc
-	CPP := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-g++
-else ifeq ($(CROSS_PLATFORM), X86GCC7.5)
+ifeq ($(CROSS_PLATFORM), X86GCC7.5)
 	CC  := /usr/bin/gcc
 	CPP := /usr/bin/g++
 	CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	CPPFLAGS += -fsanitize=address -fno-omit-frame-pointer
 	LDFLAGS += -fsanitize=address
+else ifeq ($(CROSS_PLATFORM), GK7201V200)
+	CC  := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-gcc
+	CPP := /opt/goke/arm-gcc7.3-linux-uclibceabi/bin/arm-gcc7.3-linux-uclibceabi-g++
 endif
 
 .PHONY: all clean
