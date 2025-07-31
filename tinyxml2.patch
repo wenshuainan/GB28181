@@ -1,13 +1,12 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-old mode 100644
-new mode 100755
-index b7bdf86..3780e47
+index b7bdf86..02fafdb 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -1,8 +1,8 @@
 -cmake_minimum_required(VERSION 3.15)
-+cmake_minimum_required(VERSION 3.10)
- project(tinyxml2 VERSION 11.0.0)
+-project(tinyxml2 VERSION 11.0.0)
++#cmake_minimum_required(VERSION 3.10)
++#project(tinyxml2 VERSION 11.0.0)
  
  include(CTest)
 -option(tinyxml2_BUILD_TESTING "Build tests for tinyxml2" "${BUILD_TESTING}")
@@ -15,6 +14,17 @@ index b7bdf86..3780e47
  
  ##
  ## Honor tinyxml2_SHARED_LIBS to match install interface
+@@ -16,8 +16,8 @@ endif ()
+ ## Main library build
+ ##
+ 
+-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+-set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
++#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
++#set(CMAKE_VISIBILITY_INLINES_HIDDEN YES)
+ 
+ add_library(tinyxml2 tinyxml2.cpp tinyxml2.h)
+ add_library(tinyxml2::tinyxml2 ALIAS tinyxml2)
 @@ -64,7 +64,7 @@ include(GNUInstallDirs)
  include(CMakePackageConfigHelpers)
  
@@ -29,14 +39,14 @@ index b7bdf86..3780e47
      RUNTIME COMPONENT tinyxml2_runtime
      LIBRARY COMPONENT tinyxml2_runtime
 -    NAMELINK_COMPONENT tinyxml2_development
-+    #NAMELINK_COMPONENT tinyxml2_development
++#   NAMELINK_COMPONENT tinyxml2_development
      ARCHIVE COMPONENT tinyxml2_development
      INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 +	ARCHIVE DESTINATION lib
  )
  
  # Type-specific targets
-@@ -91,13 +92,13 @@ else ()
+@@ -91,34 +92,35 @@ else ()
      set(type static)
  endif ()
  
@@ -56,11 +66,11 @@ index b7bdf86..3780e47
 +#)
  
  # Auto-generated version compatibility file
- write_basic_package_version_file(
-@@ -105,20 +106,21 @@ write_basic_package_version_file(
-     COMPATIBILITY SameMajorVersion
- )
- 
+-write_basic_package_version_file(
+-    tinyxml2-config-version.cmake
+-    COMPATIBILITY SameMajorVersion
+-)
+-
 -install(
 -    FILES
 -    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tinyxml2-config.cmake"
@@ -68,6 +78,11 @@ index b7bdf86..3780e47
 -    DESTINATION "${tinyxml2_INSTALL_CMAKEDIR}"
 -    COMPONENT tinyxml2_development
 -)
++#write_basic_package_version_file(
++#    tinyxml2-config-version.cmake
++#    COMPATIBILITY SameMajorVersion
++#)
++
 +#install(
 +#    FILES
 +#    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tinyxml2-config.cmake"
@@ -87,6 +102,3 @@ index b7bdf86..3780e47
  )
  
  ## pkg-config
-diff --git a/tinyxml2.cpp b/tinyxml2.cpp
-old mode 100644
-new mode 100755

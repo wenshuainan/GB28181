@@ -8,7 +8,7 @@
 #include <rutil/MD5Stream.hxx>
 #include <rutil/FdPoll.hxx>
 #include <resip/stack/SdpContents.hxx>
-// #include <resip/stack/PlainContents.hxx>
+#include <resip/stack/PlainContents.hxx>
 #include <resip/stack/ConnectionTerminated.hxx>
 #include <resip/stack/Helper.hxx>
 #include <resip/dum/AppDialogSetFactory.hxx>
@@ -44,8 +44,8 @@ using namespace std;
 static unsigned int MaxRegistrationRetryTime = 1800;              // RFC5626 section 4.5 default
 static unsigned int BaseRegistrationRetryTimeAllFlowsFailed = 30; // RFC5626 section 4.5 default
 //static unsigned int BaseRegistrationRetryTime = 90;               // RFC5626 section 4.5 default
-// static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
-// static unsigned int FailedSubscriptionRetryTime = 60; 
+static unsigned int NotifySendTime = 30;  // If someone subscribes to our test event package, then send notifies every 30 seconds
+static unsigned int FailedSubscriptionRetryTime = 60; 
 
 //#define TEST_PASSING_A1_HASH_FOR_PASSWORD
 
@@ -95,23 +95,23 @@ public:
    virtual MessageDecorator* clone() const { return new SdpMessageDecorator; }
 };
 
-// class NotifyTimer : public resip::DumCommand
-// {
-//    public:
-//       NotifyTimer(BasicClientUserAgent& userAgent, unsigned int timerId) : mUserAgent(userAgent), mTimerId(timerId) {}
-//       NotifyTimer(const NotifyTimer& rhs) : mUserAgent(rhs.mUserAgent), mTimerId(rhs.mTimerId) {}
-//       ~NotifyTimer() {}
+class NotifyTimer : public resip::DumCommand
+{
+   public:
+      NotifyTimer(BasicClientUserAgent& userAgent, unsigned int timerId) : mUserAgent(userAgent), mTimerId(timerId) {}
+      NotifyTimer(const NotifyTimer& rhs) : mUserAgent(rhs.mUserAgent), mTimerId(rhs.mTimerId) {}
+      ~NotifyTimer() {}
 
-//       void executeCommand() { mUserAgent.onNotifyTimeout(mTimerId); }
+      void executeCommand() { mUserAgent.onNotifyTimeout(mTimerId); }
 
-//       resip::Message* clone() const { return new NotifyTimer(*this); }
-//       EncodeStream& encode(EncodeStream& strm) const { strm << "NotifyTimer: id=" << mTimerId; return strm; }
-//       EncodeStream& encodeBrief(EncodeStream& strm) const { return encode(strm); }
+      resip::Message* clone() const { return new NotifyTimer(*this); }
+      EncodeStream& encode(EncodeStream& strm) const { strm << "NotifyTimer: id=" << mTimerId; return strm; }
+      EncodeStream& encodeBrief(EncodeStream& strm) const { return encode(strm); }
 
-//    private:
-//       BasicClientUserAgent& mUserAgent;
-//       unsigned int mTimerId;
-// };
+   private:
+      BasicClientUserAgent& mUserAgent;
+      unsigned int mTimerId;
+};
 } // end namespace
 
 BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info) : 
@@ -133,7 +133,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    mRegistrationRetryDelayTime(0),
    mCurrentNotifyTimerId(0)
 {
-   // Log::initialize(mLogType, mLogLevel, "GB28181");
+   Log::initialize(mLogType, mLogLevel, "GB28181");
 
    if(mHostFileLookupOnlyDnsMode)
    {
@@ -166,7 +166,7 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    //mProfile->addSupportedMethod(UPDATE);
    mProfile->addSupportedMethod(INFO);
    mProfile->addSupportedMethod(MESSAGE);
-   // mProfile->addSupportedMethod(PRACK);
+   mProfile->addSupportedMethod(PRACK);
    //mProfile->addSupportedOptionTag(Token(Symbols::C100rel));  // Automatically added when using setUacReliableProvisionalMode
    mProfile->setUacReliableProvisionalMode(MasterProfile::Supported);
    mProfile->setUasReliableProvisionalMode(MasterProfile::SupportedEssential);  
@@ -267,24 +267,22 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    // here is only as unique as the hostname of this machine.  If someone runs two 
    // instances of this application on the same host for the same Aor, then things will 
    // break.  See RFC5626 section 4.1
-#if 0
-   Data hostname = DnsUtil::getLocalHostName();
-   Data instanceHash = hostname.md5().uppercase();
-   assert(instanceHash.size() == 32);
-   Data instanceId(48, Data::Preallocate);
-   instanceId += "<urn:uuid:";
-   instanceId += instanceHash.substr(0, 8);
-   instanceId += "-";
-   instanceId += instanceHash.substr(8, 4);
-   instanceId += "-";
-   instanceId += instanceHash.substr(12, 4);
-   instanceId += "-";
-   instanceId += instanceHash.substr(16, 4);
-   instanceId += "-";
-   instanceId += instanceHash.substr(20, 12);
-   instanceId += ">";
-   mProfile->setInstanceId(instanceId);  
-#endif
+   // Data hostname = DnsUtil::getLocalHostName();
+   // Data instanceHash = hostname.md5().uppercase();
+   // assert(instanceHash.size() == 32);
+   // Data instanceId(48, Data::Preallocate);
+   // instanceId += "<urn:uuid:";
+   // instanceId += instanceHash.substr(0, 8);
+   // instanceId += "-";
+   // instanceId += instanceHash.substr(8, 4);
+   // instanceId += "-";
+   // instanceId += instanceHash.substr(12, 4);
+   // instanceId += "-";
+   // instanceId += instanceHash.substr(16, 4);
+   // instanceId += "-";
+   // instanceId += instanceHash.substr(20, 12);
+   // instanceId += ">";
+   // mProfile->setInstanceId(instanceId);  
    if(mOutboundEnabled)
    {
       mProfile->setRegId(1);
@@ -302,11 +300,11 @@ BasicClientUserAgent::BasicClientUserAgent(const SipUserAgent::ClientInfo& info)
    // Install Handlers
    mDum->setInviteSessionHandler(this);
    mDum->setDialogSetHandler(this);
-   // mDum->addOutOfDialogHandler(OPTIONS, this);
+   mDum->addOutOfDialogHandler(OPTIONS, this);
    //mDum->addOutOfDialogHandler(REFER, this);
    mDum->setRedirectHandler(this);
    mDum->setClientRegistrationHandler(this);   
-   // mDum->addClientSubscriptionHandler("basicClientTest", this);   // fabricated test event package
+   mDum->addClientSubscriptionHandler("basicClientTest", this);   // fabricated test event package
    mDum->addServerSubscriptionHandler("basicClientTest", this);
    mDum->setClientPagerMessageHandler(this);
    mDum->setServerPagerMessageHandler(this);
@@ -388,14 +386,14 @@ BasicClientUserAgent::process(int timeoutMs)
          }
 
          // end any subscriptions
-         // if(mServerSubscriptionHandle.isValid())
-         // {
-         //    mServerSubscriptionHandle->end();
-         // }
-         // if(mClientSubscriptionHandle.isValid())
-         // {
-         //    mClientSubscriptionHandle->end();
-         // }
+         if(mServerSubscriptionHandle.isValid())
+         {
+            mServerSubscriptionHandle->end();
+         }
+         if(mClientSubscriptionHandle.isValid())
+         {
+            mClientSubscriptionHandle->end();
+         }
 
          // End all calls - copy list in case delete/unregister of call is immediate
          // std::set<BasicClientCall*> tempCallList = mCallList;
@@ -463,28 +461,28 @@ BasicClientUserAgent::post(Message* msg)
    assert(false);
 }
 
-// void 
-// BasicClientUserAgent::onNotifyTimeout(unsigned int timerId)
-// {
-//    if(timerId == mCurrentNotifyTimerId)
-//    {
-//       sendNotify();
-//    }
-// }
+void 
+BasicClientUserAgent::onNotifyTimeout(unsigned int timerId)
+{
+   if(timerId == mCurrentNotifyTimerId)
+   {
+      sendNotify();
+   }
+}
 
-// void
-// BasicClientUserAgent::sendNotify()
-// {
-//    if(mServerSubscriptionHandle.isValid())
-//    {
-//       PlainContents plain("test notify");
-//       mServerSubscriptionHandle->send(mServerSubscriptionHandle->update(&plain));
+void
+BasicClientUserAgent::sendNotify()
+{
+   if(mServerSubscriptionHandle.isValid())
+   {
+      PlainContents plain("test notify");
+      mServerSubscriptionHandle->send(mServerSubscriptionHandle->update(&plain));
 
-//       // start timer for next one
-//       std::unique_ptr<ApplicationMessage> timer(new NotifyTimer(*this, ++mCurrentNotifyTimerId));
-//       mStack->post(std::move(timer), NotifySendTime, mDum);
-//    }
-// }
+      // start timer for next one
+      std::unique_ptr<ApplicationMessage> timer(new NotifyTimer(*this, ++mCurrentNotifyTimerId));
+      mStack->post(std::move(timer), NotifySendTime, mDum);
+   }
+}
 
 // void 
 // BasicClientUserAgent::onCallTimeout(BasicClientCall* call)
@@ -550,22 +548,22 @@ BasicClientUserAgent::onSuccess(ClientRegistrationHandle h, const SipMessage& ms
        h->end();
        return;
    }
-   // if(mRegHandle.getId() == 0)  // Note: reg handle id will only be 0 on first successful registration
-   // {
-   //    // Check if we should try to form a test subscription
-   //    // if(!mSubscribeTarget.host().empty())
-   //    // {
-   //    //    auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
-   //    //    mDum->send(sub);
-   //    // }
+   if(mRegHandle.getId() == 0)  // Note: reg handle id will only be 0 on first successful registration
+   {
+      // Check if we should try to form a test subscription
+      if(!mSubscribeTarget.host().empty())
+      {
+         auto sub = mDum->makeSubscription(NameAddr(mSubscribeTarget), mProfile, "basicClientTest");
+         mDum->send(sub);
+      }
 
-   //    // Check if we should try to form a test call
-   //    // if(!mCallTarget.host().empty())
-   //    // {
-   //    //    BasicClientCall* newCall = new BasicClientCall(*this);
-   //    //    newCall->initiateCall(mCallTarget, mProfile);
-   //    // }
-   // }
+      // Check if we should try to form a test call
+      // if(!mCallTarget.host().empty())
+      // {
+      //    BasicClientCall* newCall = new BasicClientCall(*this);
+      //    newCall->initiateCall(mCallTarget, mProfile);
+      // }
+   }
    mRegHandle = h;
    mRegistrationRetryDelayTime = 0;  // reset
 }
@@ -617,11 +615,11 @@ BasicClientUserAgent::onRequestRetry(ClientRegistrationHandle h, int retryMinimu
 ////////////////////////////////////////////////////////////////////////////////
 // InviteSessionHandler ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-// void
-// BasicClientUserAgent::onNewSession(ClientInviteSessionHandle h, InviteSession::OfferAnswerType oat, const SipMessage& msg)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onNewSession(h, oat, msg);
-// }
+void
+BasicClientUserAgent::onNewSession(ClientInviteSessionHandle h, InviteSession::OfferAnswerType oat, const SipMessage& msg)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onNewSession(h, oat, msg);
+}
 
 void
 BasicClientUserAgent::onNewSession(ServerInviteSessionHandle h, InviteSession::OfferAnswerType oat, const SipMessage& msg)
@@ -629,29 +627,29 @@ BasicClientUserAgent::onNewSession(ServerInviteSessionHandle h, InviteSession::O
    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onNewSession(h, oat, msg);
 }
 
-// void
-// BasicClientUserAgent::onFailure(ClientInviteSessionHandle h, const SipMessage& msg)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onFailure(h, msg);
-// }
+void
+BasicClientUserAgent::onFailure(ClientInviteSessionHandle h, const SipMessage& msg)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onFailure(h, msg);
+}
 
-// void
-// BasicClientUserAgent::onEarlyMedia(ClientInviteSessionHandle h, const SipMessage& msg, const SdpContents& sdp)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onEarlyMedia(h, msg, sdp);
-// }
+void
+BasicClientUserAgent::onEarlyMedia(ClientInviteSessionHandle h, const SipMessage& msg, const SdpContents& sdp)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onEarlyMedia(h, msg, sdp);
+}
 
-// void
-// BasicClientUserAgent::onProvisional(ClientInviteSessionHandle h, const SipMessage& msg)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onProvisional(h, msg);
-// }
+void
+BasicClientUserAgent::onProvisional(ClientInviteSessionHandle h, const SipMessage& msg)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onProvisional(h, msg);
+}
 
-// void
-// BasicClientUserAgent::onConnected(ClientInviteSessionHandle h, const SipMessage& msg)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onConnected(h, msg);
-// }
+void
+BasicClientUserAgent::onConnected(ClientInviteSessionHandle h, const SipMessage& msg)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onConnected(h, msg);
+}
 
 void
 BasicClientUserAgent::onConnected(InviteSessionHandle h, const SipMessage& msg)
@@ -659,11 +657,11 @@ BasicClientUserAgent::onConnected(InviteSessionHandle h, const SipMessage& msg)
    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onConnected(h, msg);
 }
 
-// void
-// BasicClientUserAgent::onStaleCallTimeout(ClientInviteSessionHandle h)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onStaleCallTimeout(h);
-// }
+void
+BasicClientUserAgent::onStaleCallTimeout(ClientInviteSessionHandle h)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onStaleCallTimeout(h);
+}
 
 void
 BasicClientUserAgent::onTerminated(InviteSessionHandle h, InviteSessionHandler::TerminatedReason reason, const SipMessage* msg)
@@ -671,11 +669,11 @@ BasicClientUserAgent::onTerminated(InviteSessionHandle h, InviteSessionHandler::
    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onTerminated(h, reason, msg);
 }
 
-// void
-// BasicClientUserAgent::onRedirected(ClientInviteSessionHandle h, const SipMessage& msg)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onRedirected(h, msg);
-// }
+void
+BasicClientUserAgent::onRedirected(ClientInviteSessionHandle h, const SipMessage& msg)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onRedirected(h, msg);
+}
 
 void
 BasicClientUserAgent::onAnswer(InviteSessionHandle h, const SipMessage& msg, const SdpContents& sdp)
@@ -773,11 +771,11 @@ BasicClientUserAgent::onMessageFailure(InviteSessionHandle h, const SipMessage& 
    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onMessageFailure(h, msg);
 }
 
-// void
-// BasicClientUserAgent::onForkDestroyed(ClientInviteSessionHandle h)
-// {
-//    // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onForkDestroyed(h);
-// }
+void
+BasicClientUserAgent::onForkDestroyed(ClientInviteSessionHandle h)
+{
+   // dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get())->onForkDestroyed(h);
+}
 
 void 
 BasicClientUserAgent::onReadyToSend(InviteSessionHandle h, SipMessage& msg)
@@ -826,101 +824,101 @@ BasicClientUserAgent::onNonDialogCreatingProvisional(AppDialogSetHandle h, const
 ////////////////////////////////////////////////////////////////////////////////
 // ClientSubscriptionHandler ///////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-// void
-// BasicClientUserAgent::onUpdatePending(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onUpdatePending(h, msg, outOfOrder);
-//    //    return;
-//    // }
-//    InfoLog(<< "onUpdatePending(ClientSubscriptionHandle): " << msg.brief());
-//    // h->acceptUpdate();
-// }
+void
+BasicClientUserAgent::onUpdatePending(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onUpdatePending(h, msg, outOfOrder);
+   //    return;
+   // }
+   InfoLog(<< "onUpdatePending(ClientSubscriptionHandle): " << msg.brief());
+   h->acceptUpdate();
+}
 
-// void
-// BasicClientUserAgent::onUpdateActive(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onUpdateActive(h, msg, outOfOrder);
-//    //    return;
-//    // }
-//    InfoLog(<< "onUpdateActive(ClientSubscriptionHandle): " << msg.brief());
-//    // h->acceptUpdate();
-// }
+void
+BasicClientUserAgent::onUpdateActive(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onUpdateActive(h, msg, outOfOrder);
+   //    return;
+   // }
+   InfoLog(<< "onUpdateActive(ClientSubscriptionHandle): " << msg.brief());
+   h->acceptUpdate();
+}
 
-// void
-// BasicClientUserAgent::onUpdateExtension(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onUpdateExtension(h, msg, outOfOrder);
-//    //    return;
-//    // }
-//    InfoLog(<< "onUpdateExtension(ClientSubscriptionHandle): " << msg.brief());
-//    // h->acceptUpdate();
-// }
+void
+BasicClientUserAgent::onUpdateExtension(ClientSubscriptionHandle h, const SipMessage& msg, bool outOfOrder)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onUpdateExtension(h, msg, outOfOrder);
+   //    return;
+   // }
+   InfoLog(<< "onUpdateExtension(ClientSubscriptionHandle): " << msg.brief());
+   h->acceptUpdate();
+}
 
-// void 
-// BasicClientUserAgent::onNotifyNotReceived(ClientSubscriptionHandle h)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onNotifyNotReceived(h);
-//    //    return;
-//    // }
-//    WarningLog(<< "onNotifyNotReceived(ClientSubscriptionHandle)");
-//    h->end();
-// }
+void 
+BasicClientUserAgent::onNotifyNotReceived(ClientSubscriptionHandle h)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onNotifyNotReceived(h);
+   //    return;
+   // }
+   WarningLog(<< "onNotifyNotReceived(ClientSubscriptionHandle)");
+   h->end();
+}
 
-// void
-// BasicClientUserAgent::onTerminated(ClientSubscriptionHandle h, const SipMessage* msg)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onTerminated(h, msg);
-//    //    return;
-//    // }
-//    if(msg)
-//    {
-//       InfoLog(<< "onTerminated(ClientSubscriptionHandle): msg=" << msg->brief());
-//    }
-//    else
-//    {
-//       InfoLog(<< "onTerminated(ClientSubscriptionHandle)");
-//    }
-// }
+void
+BasicClientUserAgent::onTerminated(ClientSubscriptionHandle h, const SipMessage* msg)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onTerminated(h, msg);
+   //    return;
+   // }
+   if(msg)
+   {
+      InfoLog(<< "onTerminated(ClientSubscriptionHandle): msg=" << msg->brief());
+   }
+   else
+   {
+      InfoLog(<< "onTerminated(ClientSubscriptionHandle)");
+   }
+}
 
-// void
-// BasicClientUserAgent::onNewSubscription(ClientSubscriptionHandle h, const SipMessage& msg)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    call->onNewSubscription(h, msg);
-//    //    return;
-//    // }
-//    mClientSubscriptionHandle = h;
-//    InfoLog(<< "onNewSubscription(ClientSubscriptionHandle): msg=" << msg.brief());
-// }
+void
+BasicClientUserAgent::onNewSubscription(ClientSubscriptionHandle h, const SipMessage& msg)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    call->onNewSubscription(h, msg);
+   //    return;
+   // }
+   mClientSubscriptionHandle = h;
+   InfoLog(<< "onNewSubscription(ClientSubscriptionHandle): msg=" << msg.brief());
+}
 
-// int 
-// BasicClientUserAgent::onRequestRetry(ClientSubscriptionHandle h, int retrySeconds, const SipMessage& msg)
-// {
-//    // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
-//    // if(call)
-//    // {
-//    //    return call->onRequestRetry(h, retrySeconds, msg);
-//    // }
-//    InfoLog(<< "onRequestRetry(ClientSubscriptionHandle): msg=" << msg.brief());
-//    return FailedSubscriptionRetryTime;  
-// }
+int 
+BasicClientUserAgent::onRequestRetry(ClientSubscriptionHandle h, int retrySeconds, const SipMessage& msg)
+{
+   // BasicClientCall* call = dynamic_cast<BasicClientCall *>(h->getAppDialogSet().get());
+   // if(call)
+   // {
+   //    return call->onRequestRetry(h, retrySeconds, msg);
+   // }
+   InfoLog(<< "onRequestRetry(ClientSubscriptionHandle): msg=" << msg.brief());
+   return FailedSubscriptionRetryTime;  
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // ServerSubscriptionHandler ///////////////////////////////////////////////////
@@ -930,10 +928,10 @@ BasicClientUserAgent::onNewSubscription(ServerSubscriptionHandle h, const SipMes
 {
    InfoLog(<< "onNewSubscription(ServerSubscriptionHandle): " << msg.brief());
 
-   // mServerSubscriptionHandle = h;
-   // mServerSubscriptionHandle->setSubscriptionState(Active);
-   // mServerSubscriptionHandle->send(mServerSubscriptionHandle->accept());
-   // sendNotify();
+   mServerSubscriptionHandle = h;
+   mServerSubscriptionHandle->setSubscriptionState(Active);
+   mServerSubscriptionHandle->send(mServerSubscriptionHandle->accept());
+   sendNotify();
 }
 
 void 
@@ -1035,36 +1033,36 @@ BasicClientUserAgent::getDefaultExpires() const
 ////////////////////////////////////////////////////////////////////////////////
 // OutOfDialogHandler //////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-// void 
-// BasicClientUserAgent::onSuccess(ClientOutOfDialogReqHandle, const SipMessage& msg)
-// {
-//    InfoLog(<< "onSuccess(ClientOutOfDialogReqHandle): " << msg.brief());
-// }
+void 
+BasicClientUserAgent::onSuccess(ClientOutOfDialogReqHandle, const SipMessage& msg)
+{
+   InfoLog(<< "onSuccess(ClientOutOfDialogReqHandle): " << msg.brief());
+}
 
-// void 
-// BasicClientUserAgent::onFailure(ClientOutOfDialogReqHandle h, const SipMessage& msg)
-// {
-//    WarningLog(<< "onFailure(ClientOutOfDialogReqHandle): " << msg.brief());
-// }
+void 
+BasicClientUserAgent::onFailure(ClientOutOfDialogReqHandle h, const SipMessage& msg)
+{
+   WarningLog(<< "onFailure(ClientOutOfDialogReqHandle): " << msg.brief());
+}
 
-// void 
-// BasicClientUserAgent::onReceivedRequest(ServerOutOfDialogReqHandle ood, const SipMessage& msg)
-// {
-//    InfoLog(<< "onReceivedRequest(ServerOutOfDialogReqHandle): " << msg.brief());
+void 
+BasicClientUserAgent::onReceivedRequest(ServerOutOfDialogReqHandle ood, const SipMessage& msg)
+{
+   InfoLog(<< "onReceivedRequest(ServerOutOfDialogReqHandle): " << msg.brief());
 
-//    switch(msg.method())
-//    {
-//    case OPTIONS:
-//       {
-//          auto optionsAnswer = ood->answerOptions();
-//          ood->send(optionsAnswer);
-//          break;
-//       }
-//    default:
-//       ood->send(ood->reject(501 /* Not Implemented*/));
-//       break;
-//    }
-// }
+   switch(msg.method())
+   {
+   case OPTIONS:
+      {
+         auto optionsAnswer = ood->answerOptions();
+         ood->send(optionsAnswer);
+         break;
+      }
+   default:
+      ood->send(ood->reject(501 /* Not Implemented*/));
+      break;
+   }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // RedirectHandler /////////////////////////////////////////////////////////////
