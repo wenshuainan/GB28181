@@ -156,17 +156,24 @@ std::shared_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr)
     }
 }
 
-void Session::proc()
+void Session::threadProc()
 {
     while (m_bStarted)
     {
-        PES::ES_TYPE type;
-        int32_t len = read(m_agent->m_ch, type, m_buffer, m_size);
+        int32_t len = fetchVideo(m_buffer, m_size);
         if (len > 0)
         {
             for (auto& m : m_media)
             {
-                m->input(type, m_buffer, len);
+                m->input(m_vType, m_buffer, len);
+            }
+        }
+        len = fetchAudio(m_buffer, m_size);
+        if (len > 0)
+        {
+            for (auto& m : m_media)
+            {
+                m->input(m_aType, m_buffer, len);
             }
         }
 
@@ -194,7 +201,7 @@ bool Session::start()
     }
 
     m_bStarted = true;
-    m_thread = std::make_shared<std::thread>(&Session::proc, this);
+    m_thread = std::make_shared<std::thread>(&Session::threadProc, this);
 
     return true;
 }
@@ -255,11 +262,52 @@ bool Session::getSdp(SipUserMessage& sdp)
 SessionPlay::SessionPlay(SessionAgent *agent, const Attr& attr)
     : Session(agent, attr)
 {
-    m_devPlay = std::make_shared<DevPlay>();
+    m_devPlay = std::make_shared<DevPlay>(m_agent->m_ch);
 }
 
 SessionPlay::~SessionPlay()
 {}
+
+bool SessionPlay::start()
+{
+    if (m_devPlay == nullptr || !m_devPlay->start())
+    {
+        return false;
+    }
+    
+    return Session::start();
+}
+
+bool SessionPlay::stop()
+{
+    if (m_devPlay != nullptr)
+    {
+        Session::stop();
+        return m_devPlay->stop();
+    }
+    return false;
+}
+
+void SessionPlay::setStreamNumber(int32_t num)
+{
+    if (m_devPlay != nullptr)
+    {
+        Play::StreamType type;
+        switch (num)
+        {
+        case 0:
+            type = Play::STREAM_MAIN;
+            break;
+        case 1:
+            type = Play::STREAM_SUB1;
+            break;
+        
+        default:
+            return;
+        }
+        m_devPlay->setStreamType(type);
+    }
+}
 
 std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
 {
@@ -316,10 +364,14 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionPlay::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionPlay::fetchVideo(uint8_t *data, int32_t size)
 {
-    type = PES::AVC;
-    return m_devPlay->getVideo(ch, data, size);
+    return m_devPlay->getVideo(data, size);
+}
+
+int32_t SessionPlay::fetchAudio(uint8_t *data, int32_t size)
+{
+    return m_devPlay->getAudio(data, size);
 }
 
 SessionPlayback::SessionPlayback(SessionAgent *agent, const Attr& attr)
@@ -386,10 +438,14 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionPlayback::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionPlayback::fetchVideo(uint8_t *data, int32_t size)
 {
-    type = PES::AVC;
-    return m_devPlayback->read(ch, data, size);
+    return m_devPlayback->readVideo(data, size);
+}
+
+int32_t SessionPlayback::fetchAudio(uint8_t *data, int32_t size)
+{
+    return m_devPlayback->readAudio(data, size);
 }
 
 bool SessionPlayback::play()
@@ -508,10 +564,14 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
     return media;
 }
 
-int32_t SessionDownload::read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size)
+int32_t SessionDownload::fetchVideo(uint8_t *data, int32_t size)
 {
-    type = PES::AVC;
-    return m_devDownload->read(ch, data, size);
+    return m_devDownload->readVideo(data, size);
+}
+
+int32_t SessionDownload::fetchAudio(uint8_t *data, int32_t size)
+{
+    return m_devDownload->readAudio(data, size);
 }
 
 bool SessionDownload::isFileEnd()
@@ -606,6 +666,15 @@ std::shared_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
                     << "ssrc=" << mattr.SSRC  << " "
                     << std::endl;
 
+        if (mattr.type == "video")
+        {
+            const char* streamnumber = req.getSdpMediaAttr(i, "streamnumber");
+            if (strlen(streamnumber) > 0)
+            {
+                session->setStreamNumber(atoi(streamnumber));
+            }
+        }
+
         session->addMedia(mattr);
     }
     return session;
@@ -650,13 +719,9 @@ bool SessionAgent::dispatchACK(const SessionIdentifier& id)
     auto session = m_session.find(id);
     if (session != m_session.end())
     {
-        session->second->start();
-        return true;
+        return session->second->start();
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 bool SessionAgent::dispatchBYE(const SessionIdentifier& id)
@@ -668,10 +733,7 @@ bool SessionAgent::dispatchBYE(const SessionIdentifier& id)
         m_session.erase(session);
         return true;
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 RtpNet::Type SessionAgent::parseNetType(const std::string& str) const

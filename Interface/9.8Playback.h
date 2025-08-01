@@ -6,13 +6,17 @@
 
 class Playback
 {
+protected:
+    int32_t m_ch;
+
 public:
-    Playback() {}
+    Playback(int32_t ch) : m_ch(ch) {}
     virtual ~Playback() {}
 
 public:
-    virtual bool seek(int32_t ch, time_t timestamp) = 0;
-    virtual int32_t read(int32_t ch, uint8_t *data, int32_t size) = 0;
+    virtual bool seek(time_t timestamp) = 0;
+    virtual int32_t readVideo(uint8_t *data, int32_t size) = 0;
+    virtual int32_t readAudio(uint8_t *data, int32_t size) = 0;
 };
 
 #endif

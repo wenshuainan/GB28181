@@ -57,6 +57,8 @@ public:
 
 class Session
 {
+    friend SessionAgent;
+
 public:
     struct Attr
     {
@@ -69,16 +71,18 @@ public:
         time_t endTime;
     };
 
-protected:
-    SessionAgent *m_agent;
-    std::vector<std::shared_ptr<Media>> m_media;
-    Attr m_attr;
-
 private:
+    Attr m_attr;
     std::shared_ptr<std::thread> m_thread;
     bool m_bStarted;
     uint8_t *m_buffer;
     int32_t m_size;
+
+protected:
+    SessionAgent *m_agent;
+    std::vector<std::shared_ptr<Media>> m_media;
+    PES::ES_TYPE m_vType;
+    PES::ES_TYPE m_aType;
 
 public:
     Session(SessionAgent *agent, const Attr& attr);
@@ -86,17 +90,17 @@ public:
     static std::shared_ptr<Session> create(SessionAgent *agent, const Attr& attr);
 
 private:
-    void proc();
-
-public:
-    bool start();
-    bool stop();
+    void threadProc();
     bool getSdp(SipUserMessage& sdp);
 
 public:
+    virtual bool start();
+    virtual bool stop();
+    virtual void setStreamNumber(int32_t num) { return; }
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
-    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size) = 0;
-    virtual bool isMANSRTSP() = 0;
+    virtual int32_t fetchVideo(uint8_t *data, int32_t size) = 0;
+    virtual int32_t fetchAudio(uint8_t *data, int32_t size) = 0;
+    virtual bool isMANSRTSP() const = 0;
     virtual const char* getName() const = 0;
     virtual bool isFileEnd() = 0;
 };
@@ -111,9 +115,13 @@ public:
     virtual ~SessionPlay();
 
 public:
+    virtual bool start();
+    virtual bool stop();
+    virtual void setStreamNumber(int32_t num);
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return false; } // not support MANSRTSP
+    virtual int32_t fetchVideo(uint8_t *data, int32_t size);
+    virtual int32_t fetchAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() const { return false; } // not support MANSRTSP
     virtual const char* getName() const { return "Play"; }
     virtual bool isFileEnd() { return false; } // never end
 };
@@ -129,8 +137,9 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return true; } // playback support MANSRTSP
+    virtual int32_t fetchVideo(uint8_t *data, int32_t size);
+    virtual int32_t fetchAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() const { return true; } // playback support MANSRTSP
     virtual const char* getName() const { return "Playback"; }
     virtual bool isFileEnd();
 
@@ -153,8 +162,9 @@ public:
 
 public:
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr);
-    virtual int32_t read(int32_t ch, PES::ES_TYPE &type, uint8_t *data, int32_t size);
-    virtual bool isMANSRTSP() { return false; } // download not support MANSRTSP
+    virtual int32_t fetchVideo(uint8_t *data, int32_t size);
+    virtual int32_t fetchAudio(uint8_t *data, int32_t size);
+    virtual bool isMANSRTSP() const { return false; } // download not support MANSRTSP
     virtual const char* getName() const { return "Download"; }
     virtual bool isFileEnd();
 };
@@ -162,6 +172,9 @@ public:
 class SessionAgent : public Agent
 {
     friend Session;
+    friend SessionPlay;
+    friend SessionPlayback;
+    friend SessionDownload;
     
 private:
     int32_t m_ch;

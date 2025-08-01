@@ -567,6 +567,51 @@ uint32_t SipUserMessage::getSdpMediaSSRC(int32_t index) const
     }
 }
 
+const char* SipUserMessage::getSdpMediaAttr(int32_t index, const char *key) const
+{
+    if (key == nullptr || strlen(key) == 0)
+    {
+        return "";
+    }
+
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    resip::Contents *contents = instance->getContents();
+    if (contents == nullptr)
+    {
+        return "";
+    }
+
+    resip::SdpContents *sdp = dynamic_cast<resip::SdpContents*>(contents);
+    if (sdp == nullptr)
+    {
+        return "";
+    }
+
+    const resip::SdpContents::Session &session = sdp->session();
+    const resip::SdpContents::Session::MediumContainer &container = session.media();
+    if ((uint32_t)index < container.size())
+    {
+        auto m = container.begin();
+        std::advance(m, index);
+        if (!m->exists(key))
+        {
+            return "";
+        }
+        const std::list<Data>& values = m->getValues(key);
+        if (values.empty())
+        {
+            return "";
+        }
+        return values.begin()->c_str();
+    }
+    return "";
+}
+
 const MANSRTSP::Message* SipUserMessage::getMANSRTSP() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)

@@ -1,42 +1,34 @@
-#include <stdio.h>
 #include <iostream>
-#include "DevPlay.h"
+#include "DevPlayback.h"
 
-DevPlay::DevPlay()
-{}
-
-DevPlay::~DevPlay()
-{
-    stop();
-}
-
-bool DevPlay::start()
+DevPlayback::DevPlayback()
 {
     const char *name = "./assets/128x128.h264";
     // const char *name = "./assets/nature.h264";
 
     m_testVideo = fopen(name, "rb");
-    if (m_testVideo != nullptr)
-    {
-        return true;
-    }
+    if (m_testVideo == nullptr)
     {
         std::cout << "failed open video " << name << std::endl;
-        return false;
+        return;
     }
 }
 
-bool DevPlay::stop()
+DevPlayback::~DevPlayback()
 {
     if (m_testVideo)
     {
         fclose(m_testVideo);
         m_testVideo = nullptr;
     }
-    return true;
 }
 
-int32_t DevPlay::getVideo(int32_t ch, uint8_t *data, int32_t size)
+bool DevPlayback::seek(int32_t ch, time_t timestamp)
+{
+    return false;
+}
+
+int32_t DevPlayback::read(int32_t ch, uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
@@ -46,9 +38,4 @@ int32_t DevPlay::getVideo(int32_t ch, uint8_t *data, int32_t size)
     {
         return 0;
     }
-}
-
-int32_t DevPlay::getAudio(int32_t ch, uint8_t *data, int32_t size)
-{
-    return 0;
 }

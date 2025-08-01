@@ -51,6 +51,7 @@ public:
     int32_t getSdpMediaPayloadType(int32_t index, uint16_t type[10]) const;
     const char* getSdpMediaIpv4(int32_t index) const;
     uint32_t getSdpMediaSSRC(int32_t index) const;
+    const char* getSdpMediaAttr(int32_t index, const char *key) const;
 
     const MANSRTSP::Message* getMANSRTSP() const;
 

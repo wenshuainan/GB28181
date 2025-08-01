@@ -8,12 +8,27 @@
 class Play
 {
 public:
-    Play() {}
+    enum StreamType
+    {
+        STREAM_MAIN,
+        STREAM_SUB1,
+        STREAM_SUB2,
+    };
+
+protected:
+    int32_t m_ch;
+    StreamType m_type;
+
+public:
+    Play(int32_t ch, StreamType type = STREAM_MAIN) : m_ch(ch), m_type(type) {}
     virtual ~Play() {}
 
 public:
-    virtual int32_t getVideo(int32_t ch, uint8_t *data, int32_t size) = 0;
-    virtual int32_t getAudio(int32_t ch, uint8_t *data, int32_t size) = 0;
+    virtual void setStreamType(StreamType type) { m_type = type; }
+    virtual bool start() = 0;
+    virtual bool stop() = 0;
+    virtual int32_t getVideo(uint8_t *data, int32_t size) = 0;
+    virtual int32_t getAudio(uint8_t *data, int32_t size) = 0;
 };
 
 #endif
