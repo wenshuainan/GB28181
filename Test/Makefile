@@ -7,7 +7,7 @@ CC  = gcc
 CPP = g++
 
 LIB_ROOT := ../Build/output
-TARGET := GB28181Demo
+TARGET := GB28181Test
 
 CSRCS += 
 CPPSRCS += test.cpp

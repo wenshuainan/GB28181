@@ -5,4 +5,4 @@ Build/*
 *--
 Test/*.d
 Test/*.o
-Test/GB28181Demo
+Test/GB28181Test
