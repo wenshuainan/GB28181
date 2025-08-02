@@ -1,7 +1,8 @@
 #include <iostream>
 #include "DevPlayback.h"
 
-DevPlayback::DevPlayback()
+DevPlayback::DevPlayback(int32_t ch)
+    : Playback(ch)
 {
     const char *name = "./assets/128x128.h264";
     // const char *name = "./assets/nature.h264";
@@ -23,12 +24,12 @@ DevPlayback::~DevPlayback()
     }
 }
 
-bool DevPlayback::seek(int32_t ch, time_t timestamp)
+bool DevPlayback::seek(time_t timestamp)
 {
     return false;
 }
 
-int32_t DevPlayback::read(int32_t ch, uint8_t *data, int32_t size)
+int32_t DevPlayback::readVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
@@ -38,4 +39,9 @@ int32_t DevPlayback::read(int32_t ch, uint8_t *data, int32_t size)
     {
         return 0;
     }
+}
+
+int32_t DevPlayback::readAudio(uint8_t *data, int32_t size)
+{
+    return 0;
 }

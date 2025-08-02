@@ -14,6 +14,7 @@
 #include "Interface/9.9Download.h"
 
 class SessionAgent;
+class Session;
 
 struct Connection
 {
@@ -22,6 +23,8 @@ struct Connection
 
 class Media : public PSCallback
 {
+    friend Session;
+
 public:
     struct Attr
     {
@@ -51,8 +54,6 @@ public:
     bool connect();
     bool disconnect();
     bool input(PES::ES_TYPE type, const uint8_t *data, int32_t size);
-    const std::shared_ptr<RtpParticipant>& getRtpParticipant() const;
-    RtpPayload::Type getRtpPaylodaType() const;
 };
 
 class Session
@@ -92,11 +93,14 @@ public:
 private:
     void threadProc();
     bool getSdp(SipUserMessage& sdp);
+    virtual void setStreamNumber(int32_t num) { return; }
+
+protected:
+    bool convertPayloadType(PES::ES_TYPE src, RtpPayload::Type& dst) const;
 
 public:
     virtual bool start();
     virtual bool stop();
-    virtual void setStreamNumber(int32_t num) { return; }
     virtual std::shared_ptr<Media> addMedia(const Media::Attr& attr) = 0;
     virtual int32_t fetchVideo(uint8_t *data, int32_t size) = 0;
     virtual int32_t fetchAudio(uint8_t *data, int32_t size) = 0;

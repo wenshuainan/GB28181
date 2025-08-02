@@ -9,14 +9,16 @@ private:
     FILE *m_testVideo;
 
 public:
-    DevPlay();
+    DevPlay(int32_t ch);
     virtual ~DevPlay();
 
 public:
     virtual bool start();
     virtual bool stop();
-    virtual int32_t getVideo(int32_t ch, uint8_t *data, int32_t size);
-    virtual int32_t getAudio(int32_t ch, uint8_t *data, int32_t size);
+    virtual int32_t getVideo(uint8_t *data, int32_t size);
+    virtual int32_t getAudio(uint8_t *data, int32_t size);
+    virtual PES::ES_TYPE getVideoType();
+    virtual PES::ES_TYPE getAudioType();
 };
 
 #endif

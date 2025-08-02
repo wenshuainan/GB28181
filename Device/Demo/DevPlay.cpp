@@ -2,7 +2,8 @@
 #include <iostream>
 #include "DevPlay.h"
 
-DevPlay::DevPlay()
+DevPlay::DevPlay(int32_t ch)
+    : Play(ch)
 {}
 
 DevPlay::~DevPlay()
@@ -20,6 +21,7 @@ bool DevPlay::start()
     {
         return true;
     }
+    else
     {
         std::cout << "failed open video " << name << std::endl;
         return false;
@@ -36,7 +38,7 @@ bool DevPlay::stop()
     return true;
 }
 
-int32_t DevPlay::getVideo(int32_t ch, uint8_t *data, int32_t size)
+int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
@@ -48,7 +50,17 @@ int32_t DevPlay::getVideo(int32_t ch, uint8_t *data, int32_t size)
     }
 }
 
-int32_t DevPlay::getAudio(int32_t ch, uint8_t *data, int32_t size)
+int32_t DevPlay::getAudio(uint8_t *data, int32_t size)
 {
     return 0;
+}
+
+PES::ES_TYPE DevPlay::getVideoType()
+{
+    return PES::AVC;
+}
+
+PES::ES_TYPE DevPlay::getAudioType()
+{
+    return PES::G711A;
 }

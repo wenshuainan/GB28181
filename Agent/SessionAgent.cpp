@@ -113,22 +113,12 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
     return true;
 }
 
-const std::shared_ptr<RtpParticipant>& Media::getRtpParticipant() const
-{
-    return m_rtpParticipant;
-}
-
-RtpPayload::Type Media::getRtpPaylodaType() const
-{
-    return m_rtpPayloadType;
-}
-
 Session::Session(SessionAgent *agent, const Attr& attr)
-    : m_agent(agent)
-    , m_attr(attr)
+    : m_attr(attr)
     , m_bStarted(false)
     , m_buffer(nullptr)
     , m_size(0)
+    , m_agent(agent)
 {}
 
 Session::~Session()
@@ -186,6 +176,68 @@ void Session::threadProc()
     }
 }
 
+bool Session::getSdp(SipUserMessage& sdp)
+{
+    int num = m_media.size();
+    if (num != 0)
+    {
+        sdp.setSdpMediaNum(num);
+    }
+    else
+    {
+        return false;
+    }
+
+    for (int i = 0; i < num; i++)
+    {
+        auto media = m_media[i];
+        switch (media->m_rtpPayloadType)
+        {
+        case RtpPayload::PS:
+        case RtpPayload::H264:
+        case RtpPayload::H265:
+            sdp.setSdpMediaType(i, "video");
+            break;
+        case RtpPayload::AAC:
+        case RtpPayload::G711A:
+            sdp.setSdpMediaType(i, "audio");
+            break;
+        
+        default:
+            break;
+        }
+        sdp.setSdpMediaPort(i, media->m_rtpParticipant->getLocalPort());
+        sdp.setSdpMediaTransport(i, media->m_rtpParticipant->getTransportType());
+        sdp.setSdpMediaPayloadType(i, media->m_rtpPayloadType);
+        sdp.addSdpMediaAttr(i, "sendonly", "");
+        sdp.setSdpMediaSSRC(i, media->m_rtpParticipant->getSSRC());
+    }
+    return true;
+}
+
+bool Session::convertPayloadType(PES::ES_TYPE src, RtpPayload::Type& dst) const
+{
+    switch (src)
+    {
+    case PES::AVC:
+        dst = RtpPayload::H264;
+        break;
+    case PES::HEVC:
+        dst = RtpPayload::H265;
+        break;
+    case PES::AAC:
+        dst = RtpPayload::AAC;
+        break;
+    case PES::G711A:
+        dst = RtpPayload::G711A;
+        break;
+        
+    default:
+        return false;
+    }
+    return true;
+}
+
 bool Session::start()
 {
     if (m_bStarted)
@@ -214,48 +266,12 @@ bool Session::stop()
     }
 
     m_bStarted = false;
-    m_thread->join();
-    m_thread = nullptr;
+    if (m_thread != nullptr)
+    {
+        m_thread->join();
+        m_thread = nullptr;
+    }
     delete []m_buffer;
-    return true;
-}
-
-bool Session::getSdp(SipUserMessage& sdp)
-{
-    int num = m_media.size();
-    if (num != 0)
-    {
-        sdp.setSdpMediaNum(num);
-    }
-    else
-    {
-        return false;
-    }
-
-    for (int i = 0; i < num; i++)
-    {
-        auto media = m_media[i];
-        switch (media->getRtpPaylodaType())
-        {
-        case RtpPayload::PS:
-        case RtpPayload::H264:
-        case RtpPayload::H265:
-            sdp.setSdpMediaType(i, "video");
-            break;
-        case RtpPayload::AAC:
-        case RtpPayload::G711A:
-            sdp.setSdpMediaType(i, "audio");
-            break;
-        
-        default:
-            break;
-        }
-        sdp.setSdpMediaPort(i, media->getRtpParticipant()->getLocalPort());
-        sdp.setSdpMediaTransport(i, media->getRtpParticipant()->getTransportType());
-        sdp.setSdpMediaPayloadType(i, media->getRtpPaylodaType());
-        sdp.addSdpMediaAttr(i, "sendonly", "");
-        sdp.setSdpMediaSSRC(i, media->getRtpParticipant()->getSSRC());
-    }
     return true;
 }
 
@@ -263,6 +279,11 @@ SessionPlay::SessionPlay(SessionAgent *agent, const Attr& attr)
     : Session(agent, attr)
 {
     m_devPlay = std::make_shared<DevPlay>(m_agent->m_ch);
+    if (m_devPlay != nullptr)
+    {
+        m_vType = m_devPlay->getVideoType();
+        m_aType = m_devPlay->getAudioType();
+    }
 }
 
 SessionPlay::~SessionPlay()
@@ -323,10 +344,14 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
         }
         else
         {
-            RtpPayload::Type payloadType = RtpPayload::H264;
-            // 获取设备当前视频编码类型
-            // payloadType = xxx
+            /* 获取设备当前视频编码类型 */
+            RtpPayload::Type payloadType;
+            if (!convertPayloadType(m_vType, payloadType))
+            {
+                return nullptr;
+            }
 
+            /* 查询当前设备视频编码是否匹配SDP请求 */
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
             {
@@ -334,16 +359,20 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
             }
             else // 不支持这个类型
             {
-                media = nullptr;
+                return nullptr;
             }
         }
     }
     else if (attr.type == "audio")
     {
-        RtpPayload::Type payloadType = RtpPayload::G711A;
-        // 获取设备当前音频编码类型...
-        // payloadType = xxx
+        /* 获取设备当前音频编码类型 */
+        RtpPayload::Type payloadType;
+        if (!convertPayloadType(m_aType, payloadType))
+        {
+            return nullptr;
+        }
 
+        /* 查询当前设备音频编码是否匹配SDP请求 */
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
         {
@@ -351,7 +380,7 @@ std::shared_ptr<Media> SessionPlay::addMedia(const Media::Attr& attr)
         }
         else // 不支持这个类型
         {
-            media = nullptr;
+            return nullptr;
         }
     }
 
@@ -377,7 +406,7 @@ int32_t SessionPlay::fetchAudio(uint8_t *data, int32_t size)
 SessionPlayback::SessionPlayback(SessionAgent *agent, const Attr& attr)
     : Session(agent, attr)
 {
-    m_devPlayback = std::make_shared<DevPlayback>();
+    m_devPlayback = std::make_shared<DevPlayback>(m_agent->m_ch);
 }
 
 SessionPlayback::~SessionPlayback()
@@ -397,9 +426,12 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
         }
         else
         {
-            RtpPayload::Type payloadType = RtpPayload::H264;
-            // 获取录像文件视频编码类型
-            // payloadType = xxx
+            /* 获取录像文件视频编码类型 */
+            RtpPayload::Type payloadType;
+            if (!convertPayloadType(m_vType, payloadType))
+            {
+                return nullptr;
+            }
 
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
@@ -408,15 +440,18 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
             }
             else // 不支持这个类型
             {
-                media = nullptr;
+                return nullptr;
             }
         }
     }
     else if (attr.type == "audio")
     {
-        RtpPayload::Type payloadType = RtpPayload::G711A;
-        // 获取录像文件音频编码类型...
-        // payloadType = xxx
+        /* 获取录像文件音频编码类型 */
+        RtpPayload::Type payloadType;
+        if (!convertPayloadType(m_aType, payloadType))
+        {
+            return nullptr;
+        }
 
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
@@ -425,7 +460,7 @@ std::shared_ptr<Media> SessionPlayback::addMedia(const Media::Attr& attr)
         }
         else // 不支持这个类型
         {
-            media = nullptr;
+            return nullptr;
         }
     }
 
@@ -503,7 +538,7 @@ bool SessionPlayback::isFileEnd()
 SessionDownload::SessionDownload(SessionAgent *agent, const Attr& attr)
     : Session(agent, attr)
 {
-    m_devDownload = std::make_shared<DevDownload>();
+    m_devDownload = std::make_shared<DevDownload>(m_agent->m_ch);
 }
 
 SessionDownload::~SessionDownload()
@@ -523,9 +558,12 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
         }
         else
         {
-            RtpPayload::Type payloadType = RtpPayload::H264;
-            // 获取录像文件视频编码类型
-            // payloadType = xxx
+            /* 获取录像文件视频编码类型 */
+            RtpPayload::Type payloadType;
+            if (!convertPayloadType(m_vType, payloadType))
+            {
+                return nullptr;
+            }
 
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
@@ -534,15 +572,18 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
             }
             else // 不支持这个类型
             {
-                media = nullptr;
+                return nullptr;
             }
         }
     }
     else if (attr.type == "audio")
     {
-        RtpPayload::Type payloadType = RtpPayload::G711A;
-        // 获取录像文件音频编码类型...
-        // payloadType = xxx
+        /* 获取录像文件音频编码类型 */
+        RtpPayload::Type payloadType;
+        if (!convertPayloadType(m_aType, payloadType))
+        {
+            return nullptr;
+        }
 
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
@@ -551,7 +592,7 @@ std::shared_ptr<Media> SessionDownload::addMedia(const Media::Attr& attr)
         }
         else // 不支持这个类型
         {
-            media = nullptr;
+            return nullptr;
         }
     }
 

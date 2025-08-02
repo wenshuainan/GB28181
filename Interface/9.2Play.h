@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <memory>
+#include "PS/Packetizer/PacketizedES.h"
 
 class Play
 {
@@ -29,6 +30,8 @@ public:
     virtual bool stop() = 0;
     virtual int32_t getVideo(uint8_t *data, int32_t size) = 0;
     virtual int32_t getAudio(uint8_t *data, int32_t size) = 0;
+    virtual PES::ES_TYPE getVideoType() = 0;
+    virtual PES::ES_TYPE getAudioType() = 0;
 };
 
 #endif

@@ -1,7 +1,8 @@
 #include <iostream>
 #include "DevDownload.h"
 
-DevDownload::DevDownload()
+DevDownload::DevDownload(int32_t ch)
+    : Download(ch)
 {
     const char *name = "./assets/128x128.h264";
     // const char *name = "./assets/nature.h264";
@@ -23,12 +24,12 @@ DevDownload::~DevDownload()
     }
 }
 
-bool DevDownload::seek(int32_t ch, time_t timestamp)
+bool DevDownload::seek(time_t timestamp)
 {
     return false;
 }
 
-int32_t DevDownload::read(int32_t ch, uint8_t *data, int32_t size)
+int32_t DevDownload::readVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
@@ -38,4 +39,9 @@ int32_t DevDownload::read(int32_t ch, uint8_t *data, int32_t size)
     {
         return 0;
     }
+}
+
+int32_t DevDownload::readAudio(uint8_t *data, int32_t size)
+{
+    return 0;
 }

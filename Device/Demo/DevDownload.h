@@ -10,12 +10,13 @@ private:
     FILE *m_testVideo;
 
 public:
-    DevDownload();
+    DevDownload(int32_t ch);
     virtual ~DevDownload();
 
 public:
-    virtual bool seek(int32_t ch, time_t timestamp);
-    virtual int32_t read(int32_t ch, uint8_t *data, int32_t size);
+    virtual bool seek(time_t timestamp);
+    virtual int32_t readVideo(uint8_t *data, int32_t size);
+    virtual int32_t readAudio(uint8_t *data, int32_t size);
 };
 
 #endif
