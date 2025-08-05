@@ -45,6 +45,7 @@ public:
     const char* getDeviceId(int32_t ch) const;
     bool makeKeepaliveNotify();
     int32_t getChNum(const std::string& deviceId) const;
+    std::shared_ptr<Alarm> getDevAlarm() const;
 
 public:
     bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令

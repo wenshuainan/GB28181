@@ -7,7 +7,7 @@ DevQuery::DevQuery()
 DevQuery::~DevQuery()
 {}
 
-bool DevQuery::handle(int32_t ch, itemType& item)
+bool DevQuery::queryCatalog(int32_t ch, itemType& item)
 {
     item.Name = "DemoDev";
     item.Manufacturer = "Manufacturer 1";
@@ -21,7 +21,7 @@ bool DevQuery::handle(int32_t ch, itemType& item)
     return true;
 }
 
-bool DevQuery::handle(DeviceInfoQueryResponse& res)
+bool DevQuery::queryDeviceInfo(DeviceInfoQueryResponse& res)
 {
     res.DeviceName = "DemoDev";
     res.Manufacturer = "Manufacturer 1";

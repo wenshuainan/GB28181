@@ -33,7 +33,7 @@ public:
 /* A.3.2 PTZ指令 */
 class PTZCommand : public CommandFormat
 {
-private:
+public:
     struct
     {
         bool out;
@@ -68,7 +68,7 @@ public:
 /* A.3.3 FI指令 */
 class FICommand : public CommandFormat
 {
-private:
+public:
     struct
     {
         bool small;

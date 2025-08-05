@@ -11,7 +11,7 @@ public:
     virtual ~RecordQuery() {}
 
 public:
-    virtual bool handle(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res) = 0;
+    virtual bool queryRecordInfo(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res) = 0;
 };
 
 #endif

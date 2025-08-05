@@ -10,7 +10,7 @@ public:
     virtual ~DevRecordQuery();
 
 public:
-    virtual bool handle(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res);
+    virtual bool queryRecordInfo(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res);
 };
 
 #endif

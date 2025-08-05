@@ -10,8 +10,8 @@ public:
     virtual ~DevQuery();
 
 public:
-    virtual bool handle(int32_t ch, itemType& item);
-    virtual bool handle(DeviceInfoQueryResponse& res);
+    virtual bool queryCatalog(int32_t ch, itemType& item);
+    virtual bool queryDeviceInfo(DeviceInfoQueryResponse& res);
 };
 
 #endif

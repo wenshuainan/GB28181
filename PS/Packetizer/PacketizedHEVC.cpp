@@ -1,22 +1,27 @@
 #include <string.h>
-#include "PacketizedAVC.h"
+#include "PacketizedHEVC.h"
 #include "PSMux.h"
 
-PacketizedAVC::PacketizedAVC(PSMux *mux)
+PacketizedHEVC::PacketizedHEVC(PSMux *mux)
     : PES(mux)
 {
-    m_naluHeader = 0;
+    m_naluHeader[0] = m_naluHeader[1] = 0;
     m_cacheLen = 0;
     m_packet.bKeyFrame = false;
-    m_packet.stream_type = 0x1B; // H264 PSM.stream_type = 0x1B
-    m_packet.pes = std::make_shared<PESPacket>(0xE0); // H264 PSM.stream_id = 0xE0
+    m_packet.stream_type = 0x24; // H265 PSM.stream_type = 0x24
+    m_packet.pes = std::make_shared<PESPacket>(0xE0); // H265 PSM.stream_id = 0xE0
     m_packet.bFirst = true;
 }
 
-PacketizedAVC::~PacketizedAVC()
+PacketizedHEVC::~PacketizedHEVC()
 {}
 
-void PacketizedAVC::pushPacket(uint8_t naluType)
+uint8_t PacketizedHEVC::calcNaluType(const uint8_t nalHeader[2])
+{
+    return ((nalHeader[0] & 0x7E) >> 1);
+}
+
+void PacketizedHEVC::pushPacket(uint8_t naluType)
 {
     if (m_packet.pes == nullptr)
     {
@@ -25,10 +30,10 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
 
     switch (naluType)
     {
-    case 5: //IDR
-    case 6: //SEI
-    case 7: //SPS
-    case 8: //PPS
+    case 19: //IDR
+    case 32: //VPS
+    case 33: //SPS
+    case 34: //PPS
         m_packet.bKeyFrame = true;
         break;
 
@@ -43,7 +48,7 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
     m_packet.bKeyFrame = false;
 }
 
-int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
+int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
 {
     if (data == nullptr || size <= 0)
     {
@@ -59,18 +64,18 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
 
     if (m_cacheLen > 0)
     {
-        uint8_t assemble[8] = {0};
+        uint8_t assemble[10] = {0};
         int32_t assembleLen = 0;
 
         memcpy(assemble, m_cache, m_cacheLen);
         assembleLen += m_cacheLen;
 
-        int32_t dataLen = size > 4 ? 4 : size;
+        int32_t dataLen = size > 5 ? 5 : size;
         memcpy(assemble + assembleLen, data, dataLen);
         assembleLen += dataLen;
 
         int i;
-        for (i = 0; i < assembleLen - 4; i++)
+        for (i = 0; i < assembleLen - 5; i++)
         {
             if (assemble[i] == 0x00
                 && assemble[i+1] == 0x00
@@ -81,8 +86,9 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
                 {
                     m_packet.pes->writeDataByte(assemble, i);
                 }
-                pushPacket(m_naluHeader & 0x1F);
-                m_naluHeader = assemble[i+4];
+                pushPacket(calcNaluType(m_naluHeader));
+                m_naluHeader[0] = assemble[i+4];
+                m_naluHeader[1] = assemble[i+5];
                 m_packet.pes = std::make_shared<PESPacket>(0xE0);
                 m_packet.pes->writeDataByte(assemble + i, assembleLen - i);
                 m_packet.bFirst = true;
@@ -95,7 +101,7 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
         int len = m_packet.pes->writeDataByte(m_cache, m_cacheLen);
         if (len < m_cacheLen)
         {
-            pushPacket(m_naluHeader & 0x1F);
+            pushPacket(calcNaluType(m_naluHeader));
             m_packet.pes = std::make_shared<PESPacket>(0xE0);
             m_packet.pes->writeDataByte(m_cache + len, m_cacheLen - len);
         }
@@ -110,20 +116,21 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
     }
 
     int parsed;
-    for (parsed = 0; parsed < size - 4; parsed++)
+    for (parsed = 0; parsed < size - 5; parsed++)
     {
         if (data[parsed] == 0x00
             && data[parsed+1] == 0x00
             && data[parsed+2] == 0x00
             && data[parsed+3] == 0x01)
         {
-            int lastNaluType = (m_naluHeader & 0x1F);
-            int newNaluType = (data[parsed+4] & 0x1F);
-            if (lastNaluType == 1 || newNaluType == 1) // P or B Frame，否则将IDR、SPS、PPS按照一个帧处理
+            int lastNaluType = calcNaluType(m_naluHeader);
+            int newNaluType = calcNaluType(data + parsed + 4);
+            if (lastNaluType == 1 || newNaluType == 1) // P or B Frame，否则将IDR、VPS、SPS、PPS按照一个帧处理
             {
                 break;
             }
-            m_naluHeader = data[parsed+4];
+            m_naluHeader[0] = data[parsed+4];
+            m_naluHeader[1] = data[parsed+5];
         }
     }
 
@@ -133,34 +140,35 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
         int w = m_packet.pes->writeDataByte(data + len, parsed - len);
         if (w < parsed - len)
         {
-            pushPacket(m_naluHeader & 0x1F);
+            pushPacket(calcNaluType(m_naluHeader));
             m_packet.pes = std::make_shared<PESPacket>(0xE0);
         }
         len += w;
     }
 
-    if (parsed == size - 4)
+    if (parsed == size - 5)
     {
-        memcpy(m_cache, data + parsed, 4);
-        m_cacheLen = 4;
-        parsed += 4;
+        memcpy(m_cache, data + parsed, 5);
+        m_cacheLen = 5;
+        parsed += 5;
     }
     else
     {
-        pushPacket(m_naluHeader & 0x1F);
-        m_naluHeader = data[parsed+4];
+        pushPacket(calcNaluType(m_naluHeader));
+        m_naluHeader[0] = data[parsed+4];
+        m_naluHeader[1] = data[parsed+5];
         m_packet.pes = std::make_shared<PESPacket>(0xE0);
-        m_packet.pes->writeDataByte(data + parsed, 5);
+        m_packet.pes->writeDataByte(data + parsed, 6);
         m_packet.bFirst = true;
 
         m_cacheLen = 0;
-        parsed += 5;
+        parsed += 6;
     }
 
     return parsed;
 }
 
-int32_t PacketizedAVC::packetized(const uint8_t *data, int32_t size)
+int32_t PacketizedHEVC::packetized(const uint8_t *data, int32_t size)
 {
     if (data == nullptr || size <= 0)
     {

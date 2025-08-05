@@ -11,8 +11,8 @@ public:
     virtual ~Query() {}
 
 public:
-    virtual bool handle(int32_t ch, itemType& item) = 0;
-    virtual bool handle(DeviceInfoQueryResponse& res) = 0;
+    virtual bool queryCatalog(int32_t ch, itemType& item) = 0;
+    virtual bool queryDeviceInfo(DeviceInfoQueryResponse& res) = 0;
 };
 
 #endif

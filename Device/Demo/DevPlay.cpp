@@ -13,8 +13,10 @@ DevPlay::~DevPlay()
 
 bool DevPlay::start()
 {
-    const char *name = "./assets/128x128.h264";
+    // const char *name = "./assets/128x128.h264";
     // const char *name = "./assets/nature.h264";
+    // const char *name = "./assets/352x288.h265";
+    const char *name = "./assets/640x360.h265";
 
     m_testVideo = fopen(name, "rb");
     if (m_testVideo != nullptr)
@@ -57,7 +59,7 @@ int32_t DevPlay::getAudio(uint8_t *data, int32_t size)
 
 PES::ES_TYPE DevPlay::getVideoType()
 {
-    return PES::AVC;
+    return PES::HEVC;
 }
 
 PES::ES_TYPE DevPlay::getAudioType()

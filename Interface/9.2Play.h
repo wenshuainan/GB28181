@@ -21,7 +21,7 @@ protected:
     StreamType m_type;
 
 public:
-    Play(int32_t ch, StreamType type = STREAM_MAIN) : m_ch(ch), m_type(type) {}
+    Play(int32_t ch, StreamType type = STREAM_SUB1) : m_ch(ch), m_type(type) {}
     virtual ~Play() {}
 
 public:

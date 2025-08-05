@@ -105,7 +105,7 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
         item.DeviceID = i.first;
         item.Parental = 1;
         item.ParentID = m_agent->getMainDeviceId();
-        m_query->handle(i.second, item);
+        m_query->queryCatalog(i.second, item);
         res.DeviceList.Item.push_back(item);
     }
 
@@ -181,7 +181,7 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     }
 
     DeviceInfoQueryResponse res(req);
-    res.Result = m_query->handle(res);
+    res.Result = m_query->queryDeviceInfo(res);
 
     XMLDocument xmldocRes;
     if (res.encode(&xmldocRes))
@@ -281,7 +281,7 @@ bool RecordInfoQuery::handle(const XMLElement *xmlReq)
     }
 
     RecordInfoQueryResponse res(req);
-    m_recordQuery->handle(ch, req, res);
+    m_recordQuery->queryRecordInfo(ch, req, res);
 
     XMLDocument xmldocRes;
     if (res.encode(&xmldocRes))

@@ -7,7 +7,7 @@ DevRecordQuery::DevRecordQuery()
 DevRecordQuery::~DevRecordQuery()
 {}
 
-bool DevRecordQuery::handle(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res)
+bool DevRecordQuery::queryRecordInfo(int32_t ch, const RecordInfoQuery::Request& req, RecordInfoQueryResponse& res)
 {
     res.Name = "Camera1";
     res.SumNum = 1;

@@ -15,6 +15,8 @@ public:
     virtual ~DevAlarm();
 
 public:
+    virtual bool setGuard(int32_t ch);
+    virtual bool resetGuard(int32_t ch);
     virtual bool postVideoAlarm(int32_t ch, int32_t type);
 };
 

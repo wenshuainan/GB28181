@@ -41,16 +41,29 @@ void Media::onProgramStream(const uint8_t *data, int32_t size)
 
 bool Media::connect()
 {
-    return m_rtpParticipant->connect();
+    if (m_rtpParticipant)
+    {
+        return m_rtpParticipant->connect();
+    }
+    return false;
 }
 
 bool Media::disconnect()
 {
-    return m_rtpParticipant->disconnect();
+    if (m_rtpParticipant)
+    {
+        return m_rtpParticipant->disconnect();
+    }
+    return false;
 }
 
 bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
 {
+    if (!m_rtpParticipant)
+    {
+        return false;
+    }
+
     switch (type)
     {
     case PES::AVC:
@@ -63,6 +76,10 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
                 if (m_vpes == nullptr)
                 {
                     m_vpes = PES::create(type, m_psmux.get());
+                    if (m_vpes == nullptr)
+                    {
+                        return false;
+                    }
                 }
                 m_vpes->packetized(data, size);
                 break;
@@ -89,6 +106,10 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
                 if (m_apes == nullptr)
                 {
                     m_apes = PES::create(type, m_psmux.get());
+                    if (m_apes == nullptr)
+                    {
+                        return false;
+                    }
                 }
                 m_apes->packetized(data, size);
                 break;

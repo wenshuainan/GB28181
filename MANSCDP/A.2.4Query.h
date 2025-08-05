@@ -1,6 +1,7 @@
 #ifndef A_2_4_QUERY_H
 #define A_2_4_QUERY_H
 
+#include <vector>
 #include <memory>
 #include "A.2.2CmdType.h"
 

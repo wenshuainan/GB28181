@@ -97,7 +97,17 @@ bool CommandFormat::parse()
 
 PTZCommand::PTZCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    m_pan.left = false;
+    m_pan.right = false;
+    m_tilt.up = false;
+    m_tilt.down = false;
+    m_zoom.in = false;
+    m_zoom.out = false;
+    m_panSpeed = 0;
+    m_tiltSpeed = 0;
+    m_zoomSpeed = 0;
+}
 
 PTZCommand::~PTZCommand()
 {}
@@ -135,62 +145,25 @@ bool PTZCommand::parse()
     return true;
 }
 
-bool PTZCommand::handle(int ch, Control* control)
+bool PTZCommand::handle(int32_t ch, Control* control)
 {
-    if (m_pan.left)
+    if (control)
     {
-        control->startPanLeft(ch, m_panSpeed);
+        return control->controlPTZ(ch, this);
     }
-    else
-    {
-        control->stopPanLeft(ch);
-    }
-    if (m_pan.right)
-    {
-        control->startPanRight(ch, m_panSpeed);
-    }
-    else
-    {
-        control->stopPanRight(ch);
-    }
-    if (m_tilt.up)
-    {
-        control->startTiltUp(ch, m_tiltSpeed);
-    }
-    else
-    {
-        control->stopTiltUp(ch);
-    }
-    if (m_tilt.down)
-    {
-        control->startTiltDown(ch, m_tiltSpeed);
-    }
-    else
-    {
-        control->stopTiltDown(ch);
-    }
-    if (m_zoom.in)
-    {
-        control->startZoomIn(ch, m_zoomSpeed);
-    }
-    else
-    {
-        control->stopZoomIn(ch);
-    }
-    if (m_zoom.out)
-    {
-        control->startZoomOut(ch, m_zoomSpeed);
-    }
-    else
-    {
-        control->stopZoomOut(ch);
-    }
-    return true;
+    return false;
 }
 
 FICommand::FICommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    m_iris.small = false;
+    m_iris.big = false;
+    m_focus.near = false;
+    m_focus.far = false;
+    m_focusSpeed = 0;
+    m_irisSpeed = 0;
+}
 
 FICommand::~FICommand()
 {}
@@ -221,41 +194,13 @@ bool FICommand::parse()
     return true;
 }
 
-bool FICommand::handle(int ch, Control* control)
+bool FICommand::handle(int32_t ch, Control* control)
 {
-    if (m_focus.near)
+    if (control)
     {
-        control->startFocusNear(ch, m_focusSpeed);
+        return control->controlFI(ch, this);
     }
-    else
-    {
-        control->stopFocusNear(ch);
-    }
-    if (m_focus.far)
-    {
-        control->startFocusFar(ch, m_focusSpeed);
-    }
-    else
-    {
-        control->stopFocusFar(ch);
-    }
-    if (m_iris.small)
-    {
-        control->startIrisSmall(ch, m_irisSpeed);
-    }
-    else
-    {
-        control->stopIrisSmall(ch);
-    }
-    if (m_iris.big)
-    {
-        control->startIrisBig(ch, m_irisSpeed);
-    }
-    else
-    {
-        control->stopIrisBig(ch);
-    }
-    return true;
+    return false;
 }
 
 PresetCommand::PresetCommand(const uint8_t* cmd)

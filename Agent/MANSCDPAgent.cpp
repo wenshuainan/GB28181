@@ -13,7 +13,7 @@
 
 MANSCDPAgent::MANSCDPAgent(UA *ua) : Agent(ua)
 {
-    m_devControl = std::make_shared<DevControl>();
+    m_devControl = std::make_shared<DevControl>(this);
     m_devQuery = std::make_shared<DevQuery>();
     m_devStatus = std::make_shared<DevStatus>();
     m_devRecordQuery = std::make_shared<DevRecordQuery>();
@@ -109,6 +109,11 @@ bool MANSCDPAgent::makeKeepaliveNotify()
 int32_t MANSCDPAgent::getChNum(const std::string& deviceId) const
 {
     return m_ua->getChNum(deviceId);
+}
+
+std::shared_ptr<Alarm> MANSCDPAgent::getDevAlarm() const
+{
+    return m_devAlarm;
 }
 
 bool MANSCDPAgent::sendResponseCmd(const XMLDocument& xmldocRes) const
