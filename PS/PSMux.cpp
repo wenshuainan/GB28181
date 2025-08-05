@@ -47,6 +47,7 @@ void PSMux::multiplexed()
     std::shared_ptr<SystemHeader> systemheader = std::make_shared<SystemHeader>();
     std::shared_ptr<ProgramStreamMap> psm = std::make_shared<ProgramStreamMap>();
     bool bVauFinished = false; // video access unit finished
+    bool bVKeyFrame = false;
 
     while (bRunning)
     {
@@ -65,6 +66,7 @@ void PSMux::multiplexed()
                     pack = std::make_shared<Pack>();
                     if (packet.bKeyFrame)
                     {
+                        bVKeyFrame = true;
                         systemheader->addVideoStreamType(0xE0);
                         pack->addSystemHeader(systemheader);
 
@@ -81,17 +83,19 @@ void PSMux::multiplexed()
             }
         }
 
-        if (!audioStream.empty())
+        if (bVKeyFrame && !audioStream.empty())
         {
             if (bVauFinished)
             {
                 Packet packet = audioStream.front();
-                audioStream.pop();
-
                 systemheader->addAudioStreamType(0xC0);
                 psm->addElementaryStream(packet.stream_type, 0xC0);
-
-                pack->addPESPacket(packet.pes);
+                while (!audioStream.empty())
+                {
+                    Packet packet = audioStream.front();
+                    audioStream.pop();
+                    pack->addPESPacket(packet.pes);
+                }
             }
         }
 
@@ -100,6 +104,7 @@ void PSMux::multiplexed()
             sendPack(pack);
             pack = nullptr;
             bVauFinished = false;
+            bVKeyFrame = false;
         }
     }
 }

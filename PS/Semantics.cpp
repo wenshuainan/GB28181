@@ -415,6 +415,8 @@ void PackHeader::toBitStream(BitStream& bitstream)
     }
     if (system_header != nullptr)
     {
+        system_header->toBitStream();
+        updateMuxRate(system_header->getBitStreamLength());
         bitstream.writeBitStream(system_header->getBitStream());
     }
 }
@@ -812,12 +814,13 @@ void Pack::toBitStream()
 
 void Pack::toBitStream(BitStream& bitstream)
 {
-    pack_header.toBitStream(bitstream);
+    for (auto it : PES_packet)
+    {
+        it->toBitStream();
+        pack_header.updateMuxRate(it->getBitStreamLength());
+    }
 
-    // for (auto it : PES_packet)
-    // {
-    //     it->toBitStream(bitstream);
-    // }
+    pack_header.toBitStream(bitstream);
 }
 
 const BitStream& Pack::getBitStream() const
@@ -827,16 +830,12 @@ const BitStream& Pack::getBitStream() const
 
 void Pack::addSystemHeader(const std::shared_ptr<SystemHeader>& system_header)
 {
-    system_header->toBitStream();
     pack_header.setSystemHeader(system_header);
-    pack_header.updateMuxRate(system_header->getBitStreamLength());
 }
 
 void Pack::addPESPacket(const std::shared_ptr<PESPacket>& packet)
 {
-    packet->toBitStream();
-    this->PES_packet.push_back(packet);
-    pack_header.updateMuxRate(packet->getBitStreamLength());
+    PES_packet.push_back(packet);
 }
 
 const std::vector<std::shared_ptr<PESPacket>>& Pack::getPESPacket() const
