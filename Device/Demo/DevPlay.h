@@ -7,6 +7,7 @@ class DevPlay : public Play
 {
 private:
     FILE *m_testVideo;
+    FILE *m_testAudio;
 
 public:
     DevPlay(int32_t ch);

@@ -6,3 +6,4 @@ Build/*
 Test/*.d
 Test/*.o
 Test/GB28181Test
+Test/*

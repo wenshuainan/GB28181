@@ -33,6 +33,14 @@ Media::~Media()
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
 {
+#if 1
+    static FILE *psfile = fopen("./stream.ps", "wb");
+    if (psfile)
+    {
+        fwrite(data, 1, size, psfile);
+        fflush(psfile);
+    }
+#endif
     if (m_rtpParticipant != nullptr)
     {
         m_rtpParticipant->transport(data, size);

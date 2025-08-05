@@ -2,6 +2,7 @@
 #include "PacketizedAVC.h"
 #include "PacketizedHEVC.h"
 #include "PacketizedG711A.h"
+#include "PacketizedAAC.h"
 
 PES::PES(PSMux *mux)
     : m_mux(mux)
@@ -29,6 +30,9 @@ std::shared_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
         break;
     case G711A:
         pes = std::make_shared<PacketizedG711A>(mux);
+        break;
+    case AAC:
+        pes = std::make_shared<PacketizedAAC>(mux);
         break;
     
     default:
