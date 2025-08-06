@@ -81,11 +81,14 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
                 {
                     m_packet.pes->writeDataByte(assemble, i);
                 }
-                pushPacket(m_naluHeader & 0x1F);
+                if ((m_naluHeader & 0x1F) == 1 || (assemble[i+4] & 0x1F) == 1)
+                {
+                    pushPacket(m_naluHeader & 0x1F);
+                    m_packet.pes = std::make_shared<PESPacket>(0xE0);
+                    m_packet.bFirst = true;
+                }
                 m_naluHeader = assemble[i+4];
-                m_packet.pes = std::make_shared<PESPacket>(0xE0);
                 m_packet.pes->writeDataByte(assemble + i, assembleLen - i);
-                m_packet.bFirst = true;
                 m_cacheLen = 0;
 
                 return dataLen;

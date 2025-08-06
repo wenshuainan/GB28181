@@ -86,12 +86,15 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
                 {
                     m_packet.pes->writeDataByte(assemble, i);
                 }
-                pushPacket(calcNaluType(m_naluHeader));
+                if (calcNaluType(m_naluHeader) == 1 || calcNaluType(assemble + i + 4) == 1)
+                {
+                    pushPacket(calcNaluType(m_naluHeader));
+                    m_packet.pes = std::make_shared<PESPacket>(0xE0);
+                    m_packet.bFirst = true;
+                }
                 m_naluHeader[0] = assemble[i+4];
                 m_naluHeader[1] = assemble[i+5];
-                m_packet.pes = std::make_shared<PESPacket>(0xE0);
                 m_packet.pes->writeDataByte(assemble + i, assembleLen - i);
-                m_packet.bFirst = true;
                 m_cacheLen = 0;
 
                 return dataLen;

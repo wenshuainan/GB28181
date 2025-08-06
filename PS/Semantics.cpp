@@ -394,6 +394,12 @@ void PackHeader::toBitStream()
 
 void PackHeader::toBitStream(BitStream& bitstream)
 {
+    if (system_header != nullptr)
+    {
+        system_header->toBitStream();
+        updateMuxRate(system_header->getBitStreamLength());
+    }
+
     bitstream.write32(32, pack_start_code);
     bitstream.write8(2, 0x01);
     bitstream.write64(3, system_clock_reference_base, 30);
@@ -415,8 +421,6 @@ void PackHeader::toBitStream(BitStream& bitstream)
     }
     if (system_header != nullptr)
     {
-        system_header->toBitStream();
-        updateMuxRate(system_header->getBitStreamLength());
         bitstream.writeBitStream(system_header->getBitStream());
     }
 }

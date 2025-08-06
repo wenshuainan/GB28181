@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/time.h>
 #include "RtpPayloadAvc.h"
 
@@ -53,8 +52,6 @@ void RtpPayloadAvc::pushFomated()
 
     m_formated.bFirst = false;
     m_formated.marker = 0;
-
-    usleep(40000);
 }
 
 int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)

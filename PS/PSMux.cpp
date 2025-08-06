@@ -43,7 +43,7 @@ void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
 
 void PSMux::multiplexed()
 {
-    std::shared_ptr<Pack> pack = nullptr;
+    std::shared_ptr<Pack> pack;
     std::shared_ptr<SystemHeader> systemheader = std::make_shared<SystemHeader>();
     std::shared_ptr<ProgramStreamMap> psm = std::make_shared<ProgramStreamMap>();
     bool bVauFinished = false; // video access unit finished
