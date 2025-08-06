@@ -17,8 +17,8 @@ bool DevPlay::start()
     // const char *name = "./assets/nature.h264";
     // const char *name = "./assets/352x288.h265";
     // const char *name = "./assets/640x360.h265";
-    // const char *audio = "./assets/alaw.raw";
-    const char *audio = "./assets/test.aac";
+    const char *audio = "./assets/alaw.raw";
+    // const char *audio = "./assets/test.aac";
 
     m_testVideo = fopen(name, "rb");
     if (m_testVideo == nullptr)
@@ -54,7 +54,7 @@ int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
-        return fread(data, 1, size, m_testVideo);
+        return fread(data, 1, 1024, m_testVideo);
     }
     else
     {
@@ -81,5 +81,5 @@ PES::ES_TYPE DevPlay::getVideoType()
 
 PES::ES_TYPE DevPlay::getAudioType()
 {
-    return PES::AAC;
+    return PES::G711A;
 }

@@ -106,11 +106,11 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
    {
       mAor = toUri(inputAor, "aor");
    }
-   else
-   {
-      mAor.user() = "test";
-      mAor.host() = DnsUtil::getLocalHostName();
-   }
+   // else
+   // {
+   //    mAor.user() = "test";
+   //    mAor.host() = DnsUtil::getLocalHostName();
+   // }
    
    mPassword = password;
    mOutboundProxy = toUri(inputOutboundProxy, "outbound proxy");
@@ -138,7 +138,7 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(const SipUserAgent::ClientInf
    BasicClientCmdLineParser(0, nullptr)
 {
    mAor.user() = info.id;
-   mAor.host() = (!info.ipv4.empty()) ? Data(info.ipv4) : DnsUtil::getLocalIpAddress();
+   mAor.host() = (!info.ipv4.empty()) ? Data(info.ipv4) : DnsUtil::getLocalIpAddress(); //默认使用第一张网卡
    mUdpPort = info.port > 0 ? info.port : 5060;
    mPassword = info.passwd;
    mRegisterDuration = info.expire;

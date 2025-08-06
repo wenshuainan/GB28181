@@ -179,20 +179,20 @@ void Session::threadProc()
 {
     while (m_bStarted)
     {
-        int32_t len = fetchVideo(m_buffer, m_size);
-        if (len > 0)
-        {
-            for (auto& m : m_media)
-            {
-                m->input(m_vType, m_buffer, len);
-            }
-        }
-        len = fetchAudio(m_buffer, m_size);
+        int32_t len = fetchAudio(m_buffer, m_size);
         if (len > 0)
         {
             for (auto& m : m_media)
             {
                 m->input(m_aType, m_buffer, len);
+            }
+        }
+        len = fetchVideo(m_buffer, m_size);
+        if (len > 0)
+        {
+            for (auto& m : m_media)
+            {
+                m->input(m_vType, m_buffer, len);
             }
         }
 

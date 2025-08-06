@@ -54,6 +54,8 @@ void PSMux::multiplexed()
         if (!videoStream.empty())
         {
             Packet packet = videoStream.front();
+            systemheader->addVideoStreamType(0xE0);
+            psm->addElementaryStream(packet.stream_type, 0xE0);
 
             if (packet.bFirst)
             {
@@ -66,11 +68,7 @@ void PSMux::multiplexed()
                     pack = std::make_shared<Pack>();
                     if (packet.bKeyFrame)
                     {
-                        bVKeyFrame = true;
-                        systemheader->addVideoStreamType(0xE0);
                         pack->addSystemHeader(systemheader);
-
-                        psm->addElementaryStream(packet.stream_type, 0xE0);
                         pack->addPESPacket(psm);
                     }
                 }
@@ -83,28 +81,25 @@ void PSMux::multiplexed()
             }
         }
 
-        if (bVKeyFrame && !audioStream.empty())
+        if (!audioStream.empty())
         {
-            if (bVauFinished)
-            {
-                Packet packet = audioStream.front();
-                systemheader->addAudioStreamType(0xC0);
-                psm->addElementaryStream(packet.stream_type, 0xC0);
-                while (!audioStream.empty())
-                {
-                    Packet packet = audioStream.front();
-                    audioStream.pop();
-                    pack->addPESPacket(packet.pes);
-                }
-            }
+            Packet packet = audioStream.front();
+            systemheader->addAudioStreamType(0xC0);
+            psm->addElementaryStream(packet.stream_type, 0xC0);
         }
 
         if (bVauFinished)
         {
+            while (!audioStream.empty())
+            {
+                Packet packet = audioStream.front();
+                audioStream.pop();
+                pack->addPESPacket(packet.pes);
+            }
+
             sendPack(pack);
             pack = nullptr;
             bVauFinished = false;
-            bVKeyFrame = false;
         }
     }
 }

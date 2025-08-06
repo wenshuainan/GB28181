@@ -316,6 +316,83 @@ index 7ed566263..da74fd473 100644
  
  if(NOT WITH_C_ARES)
     add_subdirectory(dns/ares)
+diff --git a/rutil/Log.cxx b/rutil/Log.cxx
+old mode 100644
+new mode 100755
+index efd4a89dd..490141ba7
+--- a/rutil/Log.cxx
++++ b/rutil/Log.cxx
+@@ -309,38 +309,41 @@ Log::initialize(Type type, Level level, const Data& appName,
+       }
+ #endif
+ 
+-      char buffer[1024];  
+-      buffer[1023] = '\0';
+-      if(gethostname(buffer, sizeof(buffer)) == -1)
++      if (messageStructure == JSON_CEE)
+       {
+-         mHostname = "?";
+-      }
+-      else
+-      {
+-         mHostname = buffer;
+-      }
+-
+-      // Note: for Windows users, you must call initNetwork to initialize WinSock before calling 
+-      //       Log::initialize in order for getaddrinfo to be successful
+-      {
+-         struct addrinfo hints;
+-         struct addrinfo* info = nullptr;
+-         int gai_result;
+-
+-         memset (&hints, 0, sizeof (hints));
+-         hints.ai_family = AF_UNSPEC;    /*either IPV4 or IPV6 */
+-         hints.ai_socktype = SOCK_STREAM;
+-         hints.ai_flags = AI_CANONNAME;
+-
+-         if ((gai_result = getaddrinfo (buffer, 0, &hints, &info)) != 0) {
+-            mFqdn = mHostname;
+-         } else if (info == NULL) {
+-            mFqdn = mHostname;
+-         } else {
+-            mFqdn = info->ai_canonname;
++         char buffer[1024];  
++         buffer[1023] = '\0';
++         if(gethostname(buffer, sizeof(buffer)) == -1)
++         {
++            mHostname = "?";
++         }
++         else
++         {
++            mHostname = buffer;
+          }
+ 
+-         freeaddrinfo (info);
++         // Note: for Windows users, you must call initNetwork to initialize WinSock before calling 
++         //       Log::initialize in order for getaddrinfo to be successful
++         {
++            struct addrinfo hints;
++            struct addrinfo* info = nullptr;
++            int gai_result;
++
++            memset (&hints, 0, sizeof (hints));
++            hints.ai_family = AF_UNSPEC;    /*either IPV4 or IPV6 */
++            hints.ai_socktype = SOCK_STREAM;
++            hints.ai_flags = AI_CANONNAME;
++
++            if ((gai_result = getaddrinfo (buffer, 0, &hints, &info)) != 0) {
++               mFqdn = mHostname;
++            } else if (info == NULL) {
++               mFqdn = mHostname;
++            } else {
++               mFqdn = info->ai_canonname;
++            }
++
++            freeaddrinfo (info);
++         }
+       }
+ 
+    }
 diff --git a/rutil/dns/ares/CMakeLists.txt b/rutil/dns/ares/CMakeLists.txt
 index 021b8cf28..2d1a54b74 100644
 --- a/rutil/dns/ares/CMakeLists.txt

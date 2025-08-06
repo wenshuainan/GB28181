@@ -1,5 +1,4 @@
 #include <string.h>
-#include <unistd.h>
 #include "PacketizedAVC.h"
 #include "PSMux.h"
 
@@ -42,8 +41,6 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
 
     m_packet.bFirst = false;
     m_packet.bKeyFrame = false;
-
-    usleep(40000);
 }
 
 int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
