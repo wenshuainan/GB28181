@@ -46,14 +46,17 @@ void RtpParticipant::process()
 
     while (m_bConnected)
     {
+        std::lock_guard<std::mutex> guard(m_queMutex);
         if (m_formatedQue.empty())
         {
+            guard.~lock_guard();
             usleep(10000);
             continue;
         }
 
         Formated formated = m_formatedQue.front();
         m_formatedQue.pop();
+        guard.~lock_guard();
 
         if (formated.bFirst)
         {
@@ -74,6 +77,7 @@ void RtpParticipant::process()
 
 bool RtpParticipant::pushPayload(const Formated& formated)
 {
+    std::lock_guard<std::mutex> guard(m_queMutex);
     m_formatedQue.push(formated);
     return true;
 }

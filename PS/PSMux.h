@@ -6,6 +6,7 @@
 #include <memory>
 #include <functional>
 #include <thread>
+#include <mutex>
 #include "Semantics.h"
 
 class PSCallback
@@ -28,10 +29,12 @@ public:
     };
 
 private:
-    std::queue<Packet> videoStream;
-    std::queue<Packet> audioStream;
-    bool bRunning;
-    std::thread *thread;
+    std::queue<Packet> m_videoStream;
+    std::queue<Packet> m_audioStream;
+    bool m_bRunning;
+    std::thread *m_thread;
+    std::mutex m_vMutex;
+    std::mutex m_aMutex;
 
 private:
     PSCallback *m_callback;

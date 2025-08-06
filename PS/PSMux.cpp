@@ -4,23 +4,23 @@ PSMux::PSMux(PSCallback *callback)
 {
     m_callback = callback;
 
-    bRunning = true;
-    thread = new std::thread(&PSMux::multiplexed, this);
+    m_bRunning = true;
+    m_thread = new std::thread(&PSMux::multiplexed, this);
 }
 
 PSMux::~PSMux()
 {
-    if (!bRunning)
+    if (!m_bRunning)
     {
         return;
     }
 
-    bRunning = false;
-    if (thread != nullptr)
+    m_bRunning = false;
+    if (m_thread != nullptr)
     {
-        thread->join();
-        delete thread;
-        thread = nullptr;
+        m_thread->join();
+        delete m_thread;
+        m_thread = nullptr;
     }
 }
 
@@ -47,54 +47,62 @@ void PSMux::multiplexed()
     std::shared_ptr<SystemHeader> systemheader = std::make_shared<SystemHeader>();
     std::shared_ptr<ProgramStreamMap> psm = std::make_shared<ProgramStreamMap>();
     bool bVauFinished = false; // video access unit finished
-    bool bVKeyFrame = false;
 
-    while (bRunning)
+    while (m_bRunning)
     {
-        if (!videoStream.empty())
         {
-            Packet packet = videoStream.front();
-            systemheader->addVideoStreamType(0xE0);
-            psm->addElementaryStream(packet.stream_type, 0xE0);
-
-            if (packet.bFirst)
+            std::lock_guard<std::mutex> guard(m_vMutex);
+            if (!m_videoStream.empty())
             {
-                if (pack != nullptr)
+                Packet packet = m_videoStream.front();
+                systemheader->addVideoStreamType(0xE0);
+                psm->addElementaryStream(packet.stream_type, 0xE0);
+
+                if (packet.bFirst)
                 {
-                    bVauFinished = true;
-                }
-                else
-                {
-                    pack = std::make_shared<Pack>();
-                    if (packet.bKeyFrame)
+                    if (pack != nullptr)
                     {
-                        pack->addSystemHeader(systemheader);
-                        pack->addPESPacket(psm);
+                        bVauFinished = true;
+                    }
+                    else
+                    {
+                        pack = std::make_shared<Pack>();
+                        if (packet.bKeyFrame)
+                        {
+                            pack->addSystemHeader(systemheader);
+                            pack->addPESPacket(psm);
+                        }
                     }
                 }
-            }
 
-            if (!bVauFinished)
-            {
-                pack->addPESPacket(packet.pes);
-                videoStream.pop();
+                if (!bVauFinished)
+                {
+                    pack->addPESPacket(packet.pes);
+                    m_videoStream.pop();
+                }
             }
         }
 
-        if (!audioStream.empty())
         {
-            Packet packet = audioStream.front();
-            systemheader->addAudioStreamType(0xC0);
-            psm->addElementaryStream(packet.stream_type, 0xC0);
+            std::lock_guard<std::mutex> guard(m_aMutex);
+            if (!m_audioStream.empty())
+            {
+                Packet packet = m_audioStream.front();
+                systemheader->addAudioStreamType(0xC0);
+                psm->addElementaryStream(packet.stream_type, 0xC0);
+            }
         }
 
         if (bVauFinished)
         {
-            while (!audioStream.empty())
             {
-                Packet packet = audioStream.front();
-                audioStream.pop();
-                pack->addPESPacket(packet.pes);
+                std::lock_guard<std::mutex> guard(m_aMutex);
+                while (!m_audioStream.empty())
+                {
+                    Packet packet = m_audioStream.front();
+                    m_audioStream.pop();
+                    pack->addPESPacket(packet.pes);
+                }
             }
 
             sendPack(pack);
@@ -106,12 +114,14 @@ void PSMux::multiplexed()
 
 bool PSMux::pushVideoPES(const Packet& packet)
 {
-    this->videoStream.push(packet);
+    std::lock_guard<std::mutex> guard(m_vMutex);
+    this->m_videoStream.push(packet);
     return true;
 }
 
 bool PSMux::pushAudioPES(const Packet& packet)
 {
-    this->audioStream.push(packet);
+    std::lock_guard<std::mutex> guard(m_aMutex);
+    this->m_audioStream.push(packet);
     return true;
 }

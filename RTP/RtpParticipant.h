@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include <string>
+#include <mutex>
 #include "Transport/RtpNet.h"
 #include "RtpPacket.h"
 #include "Payload/RtpPayload.h"
@@ -36,6 +37,7 @@ private:
     std::shared_ptr<RtpNet> m_net;
     std::shared_ptr<RtpPayload> m_payloadFormat;
     std::queue<Formated> m_formatedQue;
+    std::mutex m_queMutex;
     std::shared_ptr<std::thread> m_thread;
     bool m_bConnected;
     RtpPayload::Type m_payloadType;
