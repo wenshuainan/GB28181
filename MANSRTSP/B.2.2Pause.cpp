@@ -14,5 +14,6 @@ bool Pause::match(const Message& req)
 
 bool Pause::handle(SessionPlayback& session, const Message& req)
 {
+    printf("MANSRTSP Pause request\n");
     return session.pause();
 }

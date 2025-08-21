@@ -1,15 +1,15 @@
 #ifndef MANSRTSP_TEARDOWN_H
 #define MANSRTSP_TEARDOWN_H
 
-#include "Request.h"
+#include "CmdType.h"
 
 namespace MANSRTSP
 {
 
-class Teardown : public Request
+class Teardown : public CmdTypeRequest
 {
 public:
-    Teardown(MANSRTSPAgent *agent) : Request(agent) {}
+    Teardown(MANSRTSPAgent *agent) : CmdTypeRequest(agent) {}
 
 public:
     virtual bool match(const Message& req);

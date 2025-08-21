@@ -1,7 +1,8 @@
 #include <iostream>
 #include "DevStatus.h"
 
-DevStatus::DevStatus()
+DevStatus::DevStatus(MANSCDPAgent *agent)
+    : Status(agent)
 {}
 
 DevStatus::~DevStatus()
@@ -13,9 +14,11 @@ bool DevStatus::getStatus(int32_t ch)
 }
 
 void DevStatus::onKeepaliveSuccess()
-{}
+{
+    printf("Keepalive success\n");
+}
 
 void DevStatus::onKeepaliveTimeout(int32_t count)
 {
-    std::cout << "Keepalive timeout: " << count << std::endl;
+    printf("Keepalive timeout: %d\n", count);
 }

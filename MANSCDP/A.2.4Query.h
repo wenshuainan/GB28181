@@ -5,14 +5,19 @@
 #include <memory>
 #include "A.2.2CmdType.h"
 
+class Query;
+class RecordQuery;
+
 /* A.2.4 查询命令 */
 class QueryRequest : public CmdTypeRequest
 {
 private:
-    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
+    std::unique_ptr<Query> m_devQuery;
+    std::unique_ptr<RecordQuery> m_devRecordQuery;
+    std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    QueryRequest(MANSCDPAgent *agent, Query *query, RecordQuery *recordQuery);
+    QueryRequest(MANSCDPAgent *agent);
     virtual ~QueryRequest();
 
 public:
@@ -42,8 +47,11 @@ public:
         /* 〈elementname="EndTime"type="dateTime"minOccurS= "0"/〉 */
     };
 
+private:
+    Query *m_devQuery;
+
 public:
-    CatalogQuery(MANSCDPAgent *agent, Query *query);
+    CatalogQuery(MANSCDPAgent *agent, Query *devQuery);
     virtual ~CatalogQuery();
 
 private:
@@ -67,9 +75,12 @@ public:
         /* 〈! -- 目标设备编码(必选)--〉 */
         deviceIDType DeviceID;
     };
+
+private:
+    Query *m_devQuery;
     
 public:
-    DeviceInfoQuery(MANSCDPAgent *agent, Query *query);
+    DeviceInfoQuery(MANSCDPAgent *agent, Query *devQuery);
     virtual ~DeviceInfoQuery();
 
 private:
@@ -129,8 +140,11 @@ public:
         stringType AlarmType;
     };
 
+private:
+    RecordQuery *m_devRecordQuery;
+
 public:
-    RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *recordQuery);
+    RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *devRecordQuery);
     virtual ~RecordInfoQuery();
 
 private:

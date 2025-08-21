@@ -6,7 +6,7 @@
 class DevQuery : public Query
 {
 public:
-    DevQuery();
+    DevQuery(MANSCDPAgent *agent);
     virtual ~DevQuery();
 
 public:

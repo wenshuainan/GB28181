@@ -34,11 +34,11 @@ public:
     };
     
 private:
-    std::shared_ptr<RtpNet> m_net;
-    std::shared_ptr<RtpPayload> m_payloadFormat;
+    std::unique_ptr<RtpNet> m_net;
+    std::unique_ptr<RtpPayload> m_payloadFormat;
     std::queue<Formated> m_formatedQue;
     std::mutex m_queMutex;
-    std::shared_ptr<std::thread> m_thread;
+    std::unique_ptr<std::thread> m_thread;
     bool m_bConnected;
     RtpPayload::Type m_payloadType;
     Participant::Destination m_destination;

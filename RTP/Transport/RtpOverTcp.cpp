@@ -10,18 +10,23 @@
 
 RtpOverTcp::RtpOverTcp(int localPort)
     : RtpNet(localPort)
-{}
+{
+    printf("++++++ RtpOverTcp %p\n", this);
+}
 
 RtpOverTcp::~RtpOverTcp()
 {
+    printf("------ RtpOverTcp %p\n", this);
     disconnect();
 }
 
 bool RtpOverTcp::connect(const std::string& ipv4, int port)
 {
+    printf("tcp connect %p [%s:%d]\n", this, ipv4.c_str(), port);
     m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockfd < 0)
     {
+        printf("failed socket %p\n", this);
         return false;
     }
 
@@ -60,6 +65,7 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
         }
     }
 
+    printf("tcp nonblock connected=%d %p\n", err, this);
     if (err == 0)
     {
         fcntl(m_sockfd, F_SETFL, flags);
@@ -75,6 +81,7 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
 
 bool RtpOverTcp::disconnect()
 {
+    printf("tcp disconnect %p\n", this);
     if (m_sockfd > 0)
     {
         close(m_sockfd);
@@ -87,12 +94,12 @@ bool RtpOverTcp::disconnect()
 bool RtpOverTcp::send(RtpPacket& packet)
 {
 #if 0
-    static FILE *debugf = fopen("./tcpstream.rtp", "wb");
-    if (debugf != NULL)
+    static FILE *file = fopen("./tcpstream.rtp", "wb");
+    if (file != NULL)
     {
-        fwrite(packet.getHeader(), 1, packet.getHeaderLength(), debugf);
-        fwrite(packet.getPayload(), 1, packet.getPayloadLength(), debugf);
-        fflush(debugf);
+        fwrite(packet.getHeader(), 1, packet.getHeaderLength(), file);
+        fwrite(packet.getPayload(), 1, packet.getPayloadLength(), file);
+        fflush(file);
     }
 #endif
 

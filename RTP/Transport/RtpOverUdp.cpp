@@ -8,18 +8,23 @@
 
 RtpOverUdp::RtpOverUdp(int localPort)
     : RtpNet(localPort)
-{}
+{
+    printf("++++++ RtpOverUdp %p\n", this);
+}
 
 RtpOverUdp::~RtpOverUdp()
 {
+    printf("------ RtpOverUdp %p\n", this);
     disconnect();
 }
 
 bool RtpOverUdp::connect(const std::string& ipv4, int port)
 {
+    printf("udp connect %p [%s:%d]\n", this, ipv4.c_str(), port);
     m_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (m_sockfd < 0)
     {
+        printf("failed socket %p\n", this);
         return false;
     }
 
@@ -31,6 +36,7 @@ bool RtpOverUdp::connect(const std::string& ipv4, int port)
 
     if (::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
     {
+        printf("failed connect %p\n", this);
         close(m_sockfd);
         m_sockfd = -1;
         return false;
@@ -41,6 +47,7 @@ bool RtpOverUdp::connect(const std::string& ipv4, int port)
 
 bool RtpOverUdp::disconnect()
 {
+    printf("udp disconnect %p\n", this);
     if (m_sockfd > 0)
     {
         close(m_sockfd);
@@ -53,12 +60,12 @@ bool RtpOverUdp::disconnect()
 bool RtpOverUdp::send(RtpPacket& packet)
 {
 #if 0
-    static FILE *debugf = fopen("./udpstream.rtp", "wb");
-    if (debugf != NULL)
+    static FILE *file = fopen("./udpstream.rtp", "wb");
+    if (file != NULL)
     {
-        fwrite(packet.getHeader(), 1, packet.getHeaderLength(), debugf);
-        fwrite(packet.getPayload(), 1, packet.getPayloadLength(), debugf);
-        fflush(debugf);
+        fwrite(packet.getHeader(), 1, packet.getHeaderLength(), file);
+        fwrite(packet.getPayload(), 1, packet.getPayloadLength(), file);
+        fflush(file);
     }
 #endif
 

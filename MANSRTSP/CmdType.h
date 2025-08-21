@@ -1,5 +1,5 @@
-#ifndef MANSRTSP_REQUEST_H
-#define MANSRTSP_REQUEST_H
+#ifndef MANSRTSP_CMD_TYPE_H
+#define MANSRTSP_CMD_TYPE_H
 
 #include <string.h>
 #include <memory>
@@ -11,14 +11,14 @@ class MANSRTSPAgent;
 namespace MANSRTSP
 {
 
-class Request
+class CmdTypeRequest
 {
 protected:
     MANSRTSPAgent* m_agent;
 
 public:
-    Request(MANSRTSPAgent* agent) { m_agent = agent; }
-    ~Request() {}
+    CmdTypeRequest(MANSRTSPAgent* agent) { m_agent = agent; }
+    ~CmdTypeRequest() {}
 
 protected:
     bool strCaseCmp(const std::string& str1, const std::string& str2)

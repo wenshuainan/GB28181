@@ -17,7 +17,7 @@ private:
 public:
     CommandFormat(const uint8_t* cmd);
     virtual ~CommandFormat();
-    static std::shared_ptr<CommandFormat> create(const uint8_t* cmd);
+    static std::unique_ptr<CommandFormat> create(const uint8_t* cmd);
 
 protected:
     bool readBit(int32_t byte, int32_t bit) const;

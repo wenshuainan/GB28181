@@ -5,14 +5,17 @@
 #include <memory>
 #include "A.2.2CmdType.h"
 
+class Control;
+
 /* A.2.3 控制命令 */
 class ControlReuest : public CmdTypeRequest
 {
 private:
-    std::vector<std::shared_ptr<CmdTypeControl>> spec;
+    std::unique_ptr<Control> m_devControl;
+    std::vector<std::unique_ptr<CmdTypeControl>> spec;
 
 public:
-    ControlReuest(MANSCDPAgent *agent, Control *control);
+    ControlReuest(MANSCDPAgent *agent);
     virtual ~ControlReuest();
 
 public:
@@ -39,11 +42,13 @@ public:
     };
 
 private:
-    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
+    std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    DeviceControlRequest(MANSCDPAgent *agent, Control *control);
+    DeviceControlRequest(MANSCDPAgent *agent, Control *devControl);
     virtual ~DeviceControlRequest();
+
+public:
     static bool parse(const XMLElement *xmlReq, Request& req);
 
 public:
@@ -69,8 +74,11 @@ public:
         } PTZCmdParams;
     };
 
+private:
+    Control *m_devControl;
+
 public:
-    PTZCmdControl(MANSCDPAgent *agent, Control *control);
+    PTZCmdControl(MANSCDPAgent *agent, Control *devControl);
     virtual ~PTZCmdControl();
 
 private:
@@ -91,8 +99,11 @@ public:
         stringType TeleBoot;
     };
 
+private:
+    Control *m_devControl;
+
 public:
-    TeleBootControl(MANSCDPAgent *agent, Control *control);
+    TeleBootControl(MANSCDPAgent *agent, Control *devControl);
     virtual ~TeleBootControl();
 
 private:
@@ -115,8 +126,11 @@ public:
         integerType StreamNumber;
     };
 
+private:
+    Control *m_devControl;
+
 public:
-    RecordControl(MANSCDPAgent *agent, Control *control);
+    RecordControl(MANSCDPAgent *agent, Control *devControl);
     virtual ~RecordControl();
 
 private:
@@ -136,9 +150,12 @@ public:
         /* <!-- 报警布防/撤防命令（可选） --> */
         guardType GuardCmd;
     };
+
+private:
+    Control *m_devControl;
     
 public:
-    GuardControl(MANSCDPAgent *agent, Control *control);
+    GuardControl(MANSCDPAgent *agent, Control *devControl);
     virtual ~GuardControl();
     
 private:
@@ -177,9 +194,12 @@ public:
             stringType AlarmType;
         } Info;
     };
+
+private:
+    Control *m_devControl;
     
 public:
-    AlarmControl(MANSCDPAgent *agent, Control *control);
+    AlarmControl(MANSCDPAgent *agent, Control *devControl);
     virtual ~AlarmControl();
     
 private:
@@ -223,10 +243,10 @@ public:
     };
 
 private:
-    std::vector<std::shared_ptr<CmdTypeSpecRequest>> spec;
+    std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
     
 public:
-    DeviceConfigRequest(MANSCDPAgent *agent, Control *control);
+    DeviceConfigRequest(MANSCDPAgent *agent, Control *devControl);
     virtual ~DeviceConfigRequest();
     static bool parse(const XMLElement *xmlReq, Request& req);
 

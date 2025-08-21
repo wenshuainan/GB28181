@@ -2,56 +2,47 @@
 #define MANSCDP_AGENT_H
 
 #include <memory>
+#include <list>
 #include "UA.h"
 #include "Agent.h"
-#include "Interface/9.3Control.h"
-#include "Interface/9.4Alarm.h"
-#include "Interface/9.5Query.h"
-#include "Interface/9.6Status.h"
-#include "Interface/9.7RecordQuery.h"
+#include "MANSCDP/A.2.2CmdType.h"
 
 class MANSCDPAgent : public Agent
 {
     friend UA;
-    
-private:
-    std::shared_ptr<Control> m_devControl;
-    std::shared_ptr<Query> m_devQuery;
-    std::shared_ptr<Status> m_devStatus;
-    std::shared_ptr<RecordQuery> m_devRecordQuery;
-    std::shared_ptr<Alarm> m_devAlarm;
 
 private:
-    /* 
-     * MANSCDP规定的所有请求命令
+     /* MANSCDP规定的所有请求命令
      * Control、Query、Notify
      * 遍历所有请求命令，匹配成功则调用其dispach方法处理
      */
-    std::vector<std::shared_ptr<CmdTypeRequest>> m_cmdRequests;
+    std::vector<std::unique_ptr<CmdTypeRequest>> m_cmdRequests;
+
+    /* 消息响应处理器链表
+     * 所有需要处理响应结果的命令，例如心跳、多响应消息传输等
+     */
+    std::list<std::shared_ptr<MessageResultHandler>> m_handlers;
 
 public:
     MANSCDPAgent(UA *ua);
     ~MANSCDPAgent();
 
 public:
+    template<typename T, typename A1, typename A2>
+    std::shared_ptr<T> createCmdMessage(A1 a1, A2 a2)
+    {
+        return std::make_shared<T>(a1, a2);
+    }
+
     bool match(const std::string& method, const std::string& contentType);
     bool agent(const SipUserMessage& message);
-    bool agent(const XMLDocument &xmldocReq) const;
-    int32_t getKeepaliveTimeoutCount() const;
-    bool recvedKeepaliveResponse(int32_t code) const;
-    void clearKeepaliveTimeoutCount() const;
+    bool agent(const XMLDocument &cmdReq);
+    bool agent(int32_t code, const XMLDocument& cmd);
     const std::unordered_map<std::string, int32_t>& getChannels() const;
     const char* getMainDeviceId() const;
     const char* getDeviceId(int32_t ch) const;
-    bool makeKeepaliveNotify();
-    int32_t getChNum(const std::string& deviceId) const;
-    std::shared_ptr<Alarm> getDevAlarm() const;
-
-public:
-    bool sendResponseCmd(const XMLDocument& xmldocRes) const; //有应答命令
-    bool sendKeepaliveNotify(const XMLDocument& notify) const;
-    bool sendMediaStatusNotify(const SessionIdentifier& id, const XMLDocument& notify) const;
-    bool sendAlarmNotify(const XMLDocument& notify) const;
+    int32_t getChannel(const std::string& deviceId) const;
+    bool sendCmd(const XMLDocument& cmd, std::shared_ptr<MessageResultHandler> handler = nullptr);
 };
 
 #endif

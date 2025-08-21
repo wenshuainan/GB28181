@@ -10,37 +10,29 @@ bool Play::match(const Message& req)
 {
     if (strCaseCmp(req.getStartLine().getMethod(), "PLAY"))
     {
-        std::string range;
-        std::string paramNow;
-        std::string scale;
-        for (auto header : req.getHeaders())
+        bool bNptNow = false;
+        bool bScale = false;
+
+        auto range = req.getHeader("Range");
+        if (range)
         {
-            if (strCaseCmp(header.getName(), "Range"))
+            auto param = range->getParameter("npt");
+            if (param && param->getValue() == "now-")
             {
-                range = "Range";
-                for (auto param : header.getParameters())
-                {
-                    if (strCaseCmp(param.getName(), "npt"))
-                    {
-                        paramNow = strCaseCmp(param.getValue(), "now-") ? "now-" : "";
-                    }
-                }
-            }
-            else if (strCaseCmp(header.getName(), "Scale"))
-            {
-                scale = "Scale";
+                bNptNow = true;
             }
         }
-        if (!range.empty() && !paramNow.empty() && scale.empty())
-        {
-            return true;
-        }
+        auto scale = req.getHeader("Scale");
+        bScale = scale != nullptr;
+
+        return bNptNow && !bScale;
     }
     return false;
 }
 
 bool Play::handle(SessionPlayback& session, const Message& req)
 {
+    printf("MANSRTSP Play request\n");
     return session.play();
 }
 

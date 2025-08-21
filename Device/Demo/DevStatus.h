@@ -6,7 +6,7 @@
 class DevStatus : public Status
 {
 public:
-    DevStatus();
+    DevStatus(MANSCDPAgent *agent);
     ~DevStatus();
 
 public:

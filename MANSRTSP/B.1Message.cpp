@@ -1,5 +1,6 @@
-#include <iostream>
 #include <ctype.h>
+#include <iostream>
+#include <string>
 #include <algorithm>
 #include "B.1Message.h"
 
@@ -98,6 +99,30 @@ bool Header::Parameter::encode(std::string& data) const
     data += "=";
     data += m_value;
     return true;
+}
+
+int32_t Header::Parameter::getInt() const
+{
+    try
+    {
+        return std::stoi(m_value);
+    }
+    catch(...)
+    {
+        return 0;
+    }
+}
+
+float Header::Parameter::getFloat() const
+{
+    try
+    {
+        return std::stof(m_value);
+    }
+    catch(...)
+    {
+        return 0.0f;
+    }
 }
 
 int32_t Header::parseName(const char* data, int32_t size)
@@ -208,8 +233,50 @@ bool Header::encode(std::string& data) const
     return true;
 }
 
+int32_t Header::getInt() const
+{
+    try
+    {
+        return std::stoi(m_value.c_str());
+    }
+    catch(...)
+    {
+        return 0;
+    }
+}
+
+float Header::getFloat() const
+{
+    try
+    {
+        return std::stof(m_value.c_str());
+    }
+    catch(...)
+    {
+        return 0.0f;
+    }
+}
+
+const Header::Parameter* Header::getParameter(const char* name) const
+{
+    for (const auto& param : m_parameters)
+    {
+        if (param.getName() == name)
+        {
+            return &param;
+        }
+    }
+    return nullptr;
+}
+
+bool Header::isExist(const char* param) const
+{
+    return getParameter(param) != nullptr;
+}
+
 int32_t Message::parse(const char* data, int32_t size)
 {
+    printf("MANSRTSP message parsed:\n");
     int32_t i = 0;
     i = m_startline.parse(data, size);
     while (i + 1 < size && !(data[i] == '\r' && data[i+1] == '\n'))
@@ -251,8 +318,23 @@ bool Message::encode(std::string& data) const
         data += m_body;
     }
 
-    std::cout << "encoded:" << std::endl;
-    std::cout << data << std::endl;
-
+    printf("MANSRTSP message encoded:\n%s\n", data.c_str());
     return true;
+}
+
+const Header* Message::getHeader(const char* name) const
+{
+    for (const auto& header : m_headers)
+    {
+        if (header.getName() == name)
+        {
+            return &header;
+        }
+    }
+    return nullptr;
+}
+
+bool Message::isExist(const char* name) const
+{
+    return getHeader(name) != nullptr;
 }

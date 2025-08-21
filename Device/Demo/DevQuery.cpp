@@ -1,7 +1,9 @@
 #include <iostream>
 #include "DevQuery.h"
+#include "Agent/MANSCDPAgent.h"
 
-DevQuery::DevQuery()
+DevQuery::DevQuery(MANSCDPAgent *agent)
+    : Query(agent)
 {}
 
 DevQuery::~DevQuery()
@@ -9,11 +11,14 @@ DevQuery::~DevQuery()
 
 bool DevQuery::queryCatalog(int32_t ch, itemType& item)
 {
-    item.Name = "DemoDev";
-    item.Manufacturer = "Manufacturer 1";
-    item.Model = "Model 1";
-    item.CivilCode = "CivilCode 1";
-    item.Address = "Address 1";
+    item.DeviceID = m_agent->getDeviceId(ch);
+    item.Name = "Channel 1";
+    item.Manufacturer = "Manufacturer";
+    item.Model = "Model";
+    item.CivilCode = "CivilCode";
+    item.Address = "Address";
+    item.Parental = 1;
+    item.ParentID = m_agent->getMainDeviceId();
     item.RegisterWay = 1;
     item.Secrecy = 0;
     item.Status = statusType::ON;
@@ -24,8 +29,8 @@ bool DevQuery::queryCatalog(int32_t ch, itemType& item)
 bool DevQuery::queryDeviceInfo(DeviceInfoQueryResponse& res)
 {
     res.DeviceName = "DemoDev";
-    res.Manufacturer = "Manufacturer 1";
-    res.Model = "Model 1";
+    res.Manufacturer = "Manufacturer";
+    res.Model = "Model";
     res.Firmware = "Firmware 1.0";
 
     return true;

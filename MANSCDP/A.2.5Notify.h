@@ -6,6 +6,9 @@
 #include "A.2.2CmdType.h"
 #include "SIP/Adapter/SipAdapter.h"
 
+class Status;
+class Alarm;
+
 /* A.2.5 通知命令 */
 
 /* A.2.5.1 通知命令消息体 */
@@ -13,16 +16,17 @@ class NotifyRequest
 {
 protected:
     bool encode(XMLDocument *xmldocNotify);
+    bool match(const XMLElement *cmd);
 };
 
 /* A.2.5.2 状态信息报送 */
-class KeepaliveNotify : public NotifyRequest
+class KeepaliveNotify : public NotifyRequest, public MessageResultHandler
 {
 public:
     /* 〈! -- 命令类型:设备状态信息报送(必选)--〉 */
     stringType CmdType;
     /* 〈! -- 命令序列号(必选)--〉 */
-    SNType SN;
+    static SNType SN;
     /* 〈! -- 源设备/系统编码(必选)--〉 */
     deviceIDType DeviceID;
     /* 〈! -- 是否正常工作(必选)--〉 */
@@ -34,28 +38,31 @@ public:
     } Info;
 
 private:
-    MANSCDPAgent *m_agent;
     class Status *m_devStatus;
 
 public:
-    KeepaliveNotify(MANSCDPAgent *agent, class Status *status);
+    KeepaliveNotify(MANSCDPAgent *agent, class Status *devStatus);
     virtual ~KeepaliveNotify();
 
 private:
     bool encode(XMLDocument *xmldocNotify);
 
 public:
-    virtual bool notify();
+    virtual bool notify(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /* A.2.5.3 报警通知 */
-class AlarmNotify : public NotifyRequest
+class AlarmNotify : public NotifyRequest, public MessageResultHandler
 {
 public:
     /* 〈! -- 命令类型:报警通知(必选)--〉 */
     stringType CmdType;
     /* 〈! -- 命令序列号(必选)--〉 */
-    SNType SN;
+    static SNType SN;
     /* 〈! -- 报警设备编码或报警中心编码(10位)(必选)--〉 */
     deviceIDType DeviceID;
     /* 〈! -- 报警级别(必选),1-一级警情;2-二级警情;3-三级警情;4-四级警情--〉 */
@@ -94,45 +101,52 @@ public:
     /* 〈! -- 扩展信息,可多项--〉 */
 
 private:
-    MANSCDPAgent *m_agent;
+    Alarm *m_devAlarm;
 
 public:
-    AlarmNotify(MANSCDPAgent *agent);
+    AlarmNotify(MANSCDPAgent *agent, Alarm *devAlarm);
     virtual ~AlarmNotify();
 
 private:
     bool encode(XMLDocument *xmldocNotify);
 
 public:
-    virtual bool notify(int32_t ch, int32_t method, int32_t type, time_t alarmTime);
+    virtual bool notify(int32_t ch, std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /* A.2.5.4 媒体通知 */
-class MediaStatusNotify : public NotifyRequest
+class MediaStatusNotify : public NotifyRequest, public MessageResultHandler
 {
 public:
     /* 〈! --命令类型:媒体通知(必选)--〉 */
     stringType CmdType;
     /* 〈! --命令序列号(必选)--〉 */
-    SNType SN;
+    static SNType SN;
     /* 〈! --媒体发送设备编码(必选)--〉 */
     deviceIDType DeviceID;
     /* 〈! --媒体发送设备编码(必选)--〉 */
     stringType NotifyType;
 
 private:
-    MANSCDPAgent *m_agent;
     const SessionIdentifier& m_sessionId;
 
 public:
-    MediaStatusNotify(MANSCDPAgent *agent, const SessionIdentifier& sessionId);
+    MediaStatusNotify(SessionAgent *agent, const SessionIdentifier& sessionId);
     virtual ~MediaStatusNotify();
 
 private:
     bool encode(XMLDocument *xmldocNotify);
 
 public:
-    virtual bool notify(const std::string& deviceId, const std::string& notifyType);
+    virtual bool notify(const std::string& deviceId, const std::string& notifyType, std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /* A.2.5.5 语音广播通知 */

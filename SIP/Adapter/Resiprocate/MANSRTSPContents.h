@@ -4,22 +4,20 @@
 #include "resip/stack/Contents.hxx"
 #include "MANSRTSP/B.1Message.h"
 
-using namespace resip;
-
 /**
    @ingroup sip_payload
    @brief SIP body type for holding xml contents (MIME content-type Application/MANSRTSP).
 */
-class MANSRTSPContents : public Contents
+class MANSRTSPContents : public resip::Contents
 {
    public:
       static const MANSRTSPContents Empty;
 
       MANSRTSPContents();
       MANSRTSPContents(const MANSRTSP::Message& message);
-      MANSRTSPContents(const Data& text);
-      MANSRTSPContents(const HeaderFieldValue& hfv, const Mime& contentType);
-      MANSRTSPContents(const Data& text, const Mime& contentType);
+      MANSRTSPContents(const resip::Data& text);
+      MANSRTSPContents(const resip::HeaderFieldValue& hfv, const resip::Mime& contentType);
+      MANSRTSPContents(const resip::Data& text, const resip::Mime& contentType);
       MANSRTSPContents(const MANSRTSPContents& rhs);
       virtual ~MANSRTSPContents();
       MANSRTSPContents& operator=(const MANSRTSPContents& rhs);
@@ -27,12 +25,12 @@ class MANSRTSPContents : public Contents
       /** @brief duplicate an MANSRTSPContents object
           @return pointer to a new MANSRTSPContents object  
         **/
-      virtual Contents* clone() const;
+      virtual resip::Contents* clone() const;
 
-      static const Mime& getStaticType();
+      static const resip::Mime& getStaticType();
 
       virtual EncodeStream& encodeParsed(EncodeStream& str) const;
-      virtual void parse(ParseBuffer& pb);
+      virtual void parse(resip::ParseBuffer& pb);
 
       const MANSRTSP::Message& message() const {checkParsed(); return mMessage;}
       MANSRTSP::Message& message() {checkParsed(); return mMessage;}

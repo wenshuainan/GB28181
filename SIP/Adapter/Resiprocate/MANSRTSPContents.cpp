@@ -11,7 +11,7 @@
 using namespace resip;
 using namespace std;
 
-#define RESIPROCATE_SUBSYSTEM Subsystem::SIP
+#define RESIPROCATE_SUBSYSTEM Subsystem::APP
 
 const MANSRTSPContents MANSRTSPContents::Empty;
 static bool invokeMANSRTSPContentsInit = MANSRTSPContents::init();

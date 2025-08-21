@@ -3,7 +3,7 @@
 
 #include <time.h>
 #include <string>
-#include "tinyxml2.h"
+#include "tinyxml2/tinyxml2.h"
 
 using namespace tinyxml2;
 
@@ -11,22 +11,17 @@ class integerType
 {
 protected:
     int32_t value;
-    std::string strValue;
+    std::string str;
     bool bValid; // 可选/必选
 
 public:
-    integerType() : bValid(false) {}
+    integerType() : value(0), bValid(false) {}
     virtual ~integerType() {}
 
 public:
     bool isValid() const
     {
         return bValid;
-    }
-
-    int32_t getValue() const
-    {
-        return value;
     }
 
     int32_t getInt() const
@@ -36,39 +31,53 @@ public:
 
     const std::string& getStr() const
     {
-        return strValue;
+        return str;
     }
 
     integerType& operator=(const integerType& other)
     {
         value = other.value;
-        strValue = other.strValue;
+        str = other.str;
         bValid = other.bValid;
         return *this;
     }
 
-    integerType& operator=(const int32_t& num)
+    integerType& operator=(int32_t num)
     {
         value = num;
-        strValue = std::to_string(num);
+        str = std::to_string(num);
         bValid = true;
         return *this;
     }
 
     integerType& operator=(const std::string& str)
     {
-        value = std::stoi(str); // WARN: will crash if str is not a number
-        strValue = str;
-        bValid = true;
-        return *this;
+        try
+        {
+            value = std::stoi(str); // WARN: will crash if str is not a number
+            this->str = str;
+            bValid = true;
+            return *this;
+        }
+        catch(...)
+        {
+            bValid = false;
+            return *this;
+        }
     }
 
-    integerType& operator++(int)
+    integerType operator++(int)
     {
+        integerType tmp = *this;
         value++;
-        strValue = std::to_string(value);
+        str = std::to_string(value);
         bValid = true;
-        return *this;
+        return tmp;
+    }
+
+    bool operator==(int32_t value) const
+    {
+        return bValid && this->value == value;
     }
 };
 
@@ -89,19 +98,21 @@ public:
         return bValid;
     }
 
-    const std::string& getValue() const
+    const std::string& getStr() const
     {
         return value;
     }
 
     int32_t getInt() const
     {
-        return std::stoi(value);
-    }
-
-    const std::string& getStr() const
-    {
-        return value;
+        try
+        {
+            return std::stoi(value);
+        }
+        catch(...)
+        {
+            return 0;
+        }
     }
 
     stringType& operator=(const stringType& other)
@@ -118,11 +129,16 @@ public:
         return *this;
     }
 
-    stringType& operator=(const int32_t& num)
+    stringType& operator=(int32_t num)
     {
         value = std::to_string(num);
         bValid = true;
         return *this;
+    }
+
+    bool operator==(const std::string& str) const
+    {
+        return bValid && value == str;
     }
 };
 
@@ -130,22 +146,17 @@ class doubleType
 {
 protected:
     double value;
-    std::string strValue;
+    std::string str;
     bool bValid; // 可选/必选
 
 public:
-    doubleType() : bValid(false) {}
+    doubleType() : value(0.0), bValid(false) {}
     virtual ~doubleType() {}
 
 public:
     bool isValid() const
     {
         return bValid;
-    }
-
-    double getValue() const
-    {
-        return value;
     }
 
     double getDouble() const
@@ -155,31 +166,31 @@ public:
 
     const std::string& getStr() const
     {
-        return strValue;
+        return str;
     }
 
     doubleType& operator=(const doubleType& other)
     {
         value = other.value;
-        strValue = other.strValue;
+        str = other.str;
         bValid = other.bValid;
-        return *this;
-    }
-
-    doubleType& operator=(const int32_t& num)
-    {
-        value = num;
-        strValue = std::to_string(num);
-        bValid = true;
         return *this;
     }
 
     doubleType& operator=(const std::string& str)
     {
-        value = std::stod(str); // WARN: will crash if str is not a number
-        strValue = str;
-        bValid = true;
-        return *this;
+        try
+        {
+            value = std::stod(str); // WARN: will crash if str is not a number
+            this->str = str;
+            bValid = true;
+            return *this;
+        }
+        catch(...)
+        {
+            bValid = false;
+            return *this;
+        }
     }
 };
 
@@ -187,74 +198,54 @@ public:
 typedef stringType deviceIDType;
 
 /* A.2.1.3 命令序列号类型 */
-class SNType : public integerType
-{
-private:
-    const int32_t minInclusize = 1;
-
-public:
-    SNType& operator=(const SNType& other)
-    {
-        value = other.value;
-        bValid = other.bValid;
-        return *this;
-    }
-
-    SNType& operator=(const std::string& str)
-    {
-        value = std::stoi(str);
-        bValid = true;
-        return *this;
-    }
-
-    SNType& operator=(const int32_t& num)
-    {
-        value = num;
-        bValid = true;
-        return *this;
-    }
-};
+typedef integerType SNType;
 
 /* A.2.1.4 状态类型 */
 class statusType : public stringType
 {
 public:
-    enum
+    enum Status
     {
         ON,
-        OFF
+        OFF,
+
+        INVALID,
     };
 
 public:
-    statusType& operator=(const statusType& other)
+    int32_t getInt() const
     {
-        value = other.value;
-        bValid = other.bValid;
-        return *this;
+        if (value == "ON")
+        {
+            return ON;
+        }
+        else if (value == "OFF")
+        {
+            return OFF;
+        }
+        else
+        {
+            return INVALID;
+        }
     }
 
-    statusType& operator=(const std::string& str)
-    {
-        value = str;
-        bValid = true;
-        return *this;
-    }
-
-    statusType& operator=(const int32_t& num)
+    statusType& operator=(int32_t num)
     {
         switch (num)
         {
         case ON:
             value = "ON";
+            bValid = true;
             break;
         case OFF:
             value = "OFF";
+            bValid = true;
             break;
         
         default:
+            bValid = false;
             break;
         }
-        bValid = true;
         return *this;
     }
 };
@@ -263,57 +254,48 @@ public:
 class resultType : public stringType
 {
 public:
-    enum ERestult
+    enum Restult
     {
         OK,
-        ERROR
+        ERROR,
+
+        INVALID,
     };
 
-private:
-    ERestult m_result;
-
 public:
-    resultType& operator=(const resultType& other)
+    int32_t getInt() const
     {
-        value = other.value;
-        bValid = other.bValid;
-        return *this;
-    }
-
-    resultType& operator=(const std::string& str)
-    {
-        value = str;
-        bValid = true;
         if (value == "OK")
         {
-            m_result = OK;
+            return OK;
         }
         else if (value == "ERROR")
         {
-            m_result = ERROR;
+            return ERROR;
         }
         else
         {
-            bValid = false;
+            return INVALID;
         }
-        return *this;
     }
 
-    resultType& operator=(const int32_t& num)
+    resultType& operator=(int32_t num)
     {
         switch (num)
         {
         case OK:
             value = "OK";
+            bValid = true;
             break;
         case ERROR:
             value = "ERROR";
+            bValid = true;
             break;
         
         default:
+            bValid = false;
             break;
         }
-        bValid = true;
         return *this;
     }
 
@@ -325,50 +307,24 @@ public:
     }
 };
 
-class dateTimeType
+/* 日期时间类型 yyyy-MM-ddTHH:mm:SS.SSS */
+class dateTimeType : public stringType
 {
-private:
-    bool bValid;
-    std::string strValue;
-    int32_t year;
-    int32_t month;
-    int32_t day;
-    int32_t hour;
-    int32_t minute;
-    int32_t second;
-
 public:
-    dateTimeType() : bValid(false) {}
-
-public:
-    bool isValid() const { return bValid; }
-
-    const std::string& getStr()
+    time_t getTime() const
     {
-        char str[128] = {0};
-        snprintf(str, sizeof(str), "%04d-%02d-%02dT%02d:%02d:%02d",
-            year, month, day, hour, minute, second);
-        return strValue = str;
-    }
-
-    dateTimeType& operator=(const dateTimeType& other)
-    {
-        year = other.year;
-        month = other.month;
-        day = other.day;
-        hour = other.hour;
-        minute = other.minute;
-        second = other.second;
-        bValid = other.bValid;
-        return *this;
+        struct tm tm = {0};
+        strptime(value.c_str(), "%Y-%m-%dT%H:%M:%S", &tm);
+        return mktime(&tm);
     }
 
     dateTimeType& operator=(const std::string& str)
     {
-        int ret = sscanf(str.c_str(), "%d-%d-%dT%d:%d:%d",
-                    &year, &month, &day, &hour, &minute, &second);
-        if (ret == 6)
+        struct tm tm = {0};
+        char *ret = strptime(str.c_str(), "%Y-%m-%dT%H:%M:%S", &tm);
+        if (ret != nullptr && ret == str.c_str() + 19)
         {
+            value = str;
             bValid = true;
         }
         else
@@ -380,15 +336,11 @@ public:
 
     dateTimeType& operator=(const time_t& unixTime)
     {
-        if (unixTime > 0)
+        char str[64] = {0};
+        size_t size = strftime(str, sizeof(str), "%Y-%m-%dT%H:%M:%S", localtime(&unixTime));
+        if (size == 19)
         {
-            struct tm* p = localtime(&unixTime);
-            year = p->tm_year + 1900;
-            month = p->tm_mon + 1;
-            day = p->tm_mday;
-            hour = p->tm_hour;
-            minute = p->tm_min;
-            second = p->tm_sec;
+            value = str;
             bValid = true;
         }
         else
@@ -406,31 +358,21 @@ private:
     uint8_t m_cmd[8];
 
 public:
-    PTZCmdType& operator=(const PTZCmdType& other)
+    const uint8_t* getCmd() const
     {
-        value = other.value;
-        bValid = other.bValid;
-
-        return *this;
+        return m_cmd;
     }
 
     PTZCmdType& operator=(const std::string& str)
     {
         value = str;
-
         int ret = sscanf(str.c_str(), "%02x%02x%02x%02x%02x%02x%02x%02x",
                     (uint32_t*)&m_cmd[0], (uint32_t*)&m_cmd[1],
                     (uint32_t*)&m_cmd[2], (uint32_t*)&m_cmd[3],
                     (uint32_t*)&m_cmd[4], (uint32_t*)&m_cmd[5],
                     (uint32_t*)&m_cmd[6], (uint32_t*)&m_cmd[7]);
         bValid = (ret == sizeof(m_cmd));
-
         return *this;
-    }
-
-    const uint8_t* getValue() const
-    {
-        return m_cmd;
     }
 };
 
@@ -441,45 +383,37 @@ public:
     enum ERecord
     {
         Record,
-        StopRecord
+        StopRecord,
+
+        Invalid,
     };
 
-private:
-    ERecord m_rec;
-
 public:
-    recordType& operator=(const recordType& other)
+    int32_t getInt() const
     {
-        value = other.value;
-        bValid = other.bValid;
-
-        return *this;
+        if (value == "Record")
+        {
+            return Record;
+        }
+        else if (value == "StopRecord")
+        {
+            return StopRecord;
+        }
+        else
+        {
+            return Invalid;
+        }
     }
 
     recordType& operator=(const std::string& str)
     {
-        value = str;
-        bValid = true;
-
-        if (value == "Record")
-        {
-            m_rec = Record;
-        }
-        else if (value == "StopRecord")
-        {
-            m_rec = StopRecord;
-        }
-        else
+        stringType::operator=(str);
+        if (value != "Record"
+            && value != "StopRecord")
         {
             bValid = false;
         }
-
         return *this;
-    }
-
-    ERecord getValue() const
-    {
-        return m_rec;
     }
 };
 
@@ -490,45 +424,37 @@ public:
     enum EGuard
     {
         SetGuard,
-        ResetGuard
+        ResetGuard,
+
+        Invalid,
     };
 
-private:
-    EGuard m_guard;
-
 public:
-    guardType& operator=(const guardType& other)
+    int32_t getInt() const
     {
-        value = other.value;
-        bValid = other.bValid;
-
-        return *this;
+        if (value == "SetGuard")
+        {
+            return SetGuard;
+        }
+        else if (value == "ResetGuard")
+        {
+            return ResetGuard;
+        }
+        else
+        {
+            return Invalid;
+        }
     }
 
     guardType& operator=(const std::string& str)
     {
-        value = str;
-        bValid = true;
-        
-        if (value == "SetGuard")
-        {
-            m_guard = SetGuard;
-        }
-        else if (value == "ResetGuard")
-        {
-            m_guard = ResetGuard;
-        }
-        else
+        stringType::operator=(str);
+        if (value != "SetGuard"
+            && value != "ResetGuard")
         {
             bValid = false;
         }
-
         return *this;
-    }
-
-    EGuard getValue() const
-    {
-        return m_guard;
     }
 };
 
@@ -630,7 +556,7 @@ public:
         parent->InsertEndChild(xmlAddress);
 
         XMLElement *xmlParental = doc->NewElement("Parental");
-        xmlParental->SetText(Parental.getValue());
+        xmlParental->SetText(Parental.getInt());
         parent->InsertEndChild(xmlParental);
 
         XMLElement *xmlParentID = doc->NewElement("ParentID");
@@ -638,7 +564,7 @@ public:
         parent->InsertEndChild(xmlParentID);
 
         XMLElement *xmlRegisterWay = doc->NewElement("RegisterWay");
-        xmlRegisterWay->SetText(RegisterWay.getValue());
+        xmlRegisterWay->SetText(RegisterWay.getInt());
         parent->InsertEndChild(xmlRegisterWay);
 
         if (SecurityLevelCode.isValid())
@@ -649,7 +575,7 @@ public:
         }
 
         XMLElement *xmlSecrecy = doc->NewElement("Secrecy");
-        xmlSecrecy->SetText(Secrecy.getValue());
+        xmlSecrecy->SetText(Secrecy.getInt());
         parent->InsertEndChild(xmlSecrecy);
 
         if (IPAddress.isValid())
@@ -742,7 +668,7 @@ public:
         }
 
         XMLElement *xmlSecrecy = doc->NewElement("Secrecy");
-        xmlSecrecy->SetText(Secrecy.getValue());
+        xmlSecrecy->SetText(Secrecy.getInt());
         parent->InsertEndChild(xmlSecrecy);
 
         if (Type.isValid())
@@ -776,7 +702,7 @@ public:
         if (StreamNumber.isValid())
         {
             XMLElement *xmlStreamNumber = doc->NewElement("StreamNumber");
-            xmlStreamNumber->SetText(StreamNumber.getValue());
+            xmlStreamNumber->SetText(StreamNumber.getInt());
             parent->InsertEndChild(xmlStreamNumber);
         }
 

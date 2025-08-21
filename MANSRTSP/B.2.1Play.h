@@ -1,15 +1,15 @@
 #ifndef MANSRTSP_PLAY_H
 #define MANSRTSP_PLAY_H
 
-#include "Request.h"
+#include "CmdType.h"
 
 namespace MANSRTSP
 {
 
-class Play : public Request
+class Play : public CmdTypeRequest
 {
 public:
-    Play(MANSRTSPAgent* agent) : Request(agent) {}
+    Play(MANSRTSPAgent* agent) : CmdTypeRequest(agent) {}
 
 public:
     virtual bool match(const Message& req);

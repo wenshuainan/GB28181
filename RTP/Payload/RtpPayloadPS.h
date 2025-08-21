@@ -2,7 +2,7 @@
 #define RTP_PAYLOAD_PS_H
 
 #include "RtpPayload.h"
-#include "RtpParticipant.h"
+#include "../RtpParticipant.h"
 
 class RtpPayloadPS : public RtpPayload
 {

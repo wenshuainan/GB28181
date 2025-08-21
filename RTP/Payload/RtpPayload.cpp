@@ -9,9 +9,9 @@ RtpPayload::RtpPayload(RtpParticipant *participant, int32_t maxLen)
 RtpPayload::~RtpPayload()
 {}
 
-std::shared_ptr<RtpPayload> RtpPayload::create(RtpParticipant *participant, Type type, int32_t maxLen)
+std::unique_ptr<RtpPayload> RtpPayload::create(RtpParticipant *participant, Type type, int32_t maxLen)
 {
-    std::shared_ptr<RtpPayload> payload = nullptr;
+    RtpPayload *payload = nullptr;
 
     if (participant == nullptr)
     {
@@ -21,15 +21,15 @@ std::shared_ptr<RtpPayload> RtpPayload::create(RtpParticipant *participant, Type
     switch (type)
     {
     case H264:
-        payload = std::make_shared<RtpPayloadAvc>(participant, maxLen);
+        payload = new RtpPayloadAvc(participant, maxLen);
         break;
     case PS:
-        payload = std::make_shared<RtpPayloadPS>(participant, maxLen);
+        payload = new RtpPayloadPS(participant, maxLen);
         break;
     
     default:
         break;
     }
 
-    return payload;
+    return std::unique_ptr<RtpPayload>(payload);
 }

@@ -23,6 +23,7 @@ public:
     struct Packet
     {
         bool bFirst;
+        bool bFinished;
         bool bKeyFrame;
         uint8_t stream_type;
         std::shared_ptr<PESPacket> pes;
@@ -32,9 +33,10 @@ private:
     std::queue<Packet> m_videoStream;
     std::queue<Packet> m_audioStream;
     bool m_bRunning;
-    std::thread *m_thread;
+    std::unique_ptr<std::thread> m_thread;
     std::mutex m_vMutex;
     std::mutex m_aMutex;
+    bool m_bFinishFlag;
 
 private:
     PSCallback *m_callback;
@@ -44,12 +46,13 @@ public:
     ~PSMux();
 
 private:
-    void sendPack(const std::shared_ptr<Pack>& pack);
+    void sendPack(const std::unique_ptr<Pack>& pack);
     void multiplexed();
 
 public:
     bool pushVideoPES(const Packet& packet);
     bool pushAudioPES(const Packet& packet);
+    void finished();
 };
 
 #endif

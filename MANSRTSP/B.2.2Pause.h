@@ -1,15 +1,15 @@
 #ifndef MANSRTSP_PAUSE_H
 #define MANSRTSP_PAUSE_H
 
-#include "Request.h"
+#include "CmdType.h"
 
 namespace MANSRTSP
 {
 
-class Pause : public Request
+class Pause : public CmdTypeRequest
 {
 public:
-    Pause(MANSRTSPAgent *agent) : Request(agent) {}
+    Pause(MANSRTSPAgent *agent) : CmdTypeRequest(agent) {}
     
 public:
     virtual bool match(const Message& req);

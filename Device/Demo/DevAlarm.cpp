@@ -22,9 +22,3 @@ bool DevAlarm::resetGuard(int32_t ch)
     std::cout << "resetGuard" << " channel=" << ch << std::endl;
     return true;
 }
-
-bool DevAlarm::postVideoAlarm(int32_t ch, int32_t type)
-{
-    AlarmNotify alarm(m_agent);
-    return alarm.notify(ch, 5, type, time(NULL));
-}

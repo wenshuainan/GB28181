@@ -2,8 +2,7 @@
 #define RESIPROCATE_ADAPTER_H
 
 #include <memory>
-#include <thread>
-#include "SipAdapter.h"
+#include "../SipAdapter.h"
 #include "basicClientUserAgent.hxx"
 
 struct SipAdapterMessage
@@ -15,29 +14,23 @@ class ResipUserAgent : public SipUserAgent, public resip::BasicClientUserAgent
 {
 private:
     resip::Uri mServerUri;
-    resip::ClientPagerMessageHandle mKeepaliveHandle; // 向服务器发送keepalive命令
-    resip::ClientPagerMessageHandle mMANSCDPResponseHandle; // 向服务器发送MANSCDP应答命令
-    resip::ClientPagerMessageHandle mAlarmNotifyHandle; // 向服务器发送ALARM notify命令
-    std::shared_ptr<std::thread> mThread;
     
 public:
     ResipUserAgent(const SipUserAgent::ClientInfo& info, const SipUserAgent::ServerInfo& server);
     virtual ~ResipUserAgent();
 
-private:
-    void threadProc();
-
 public:
+    virtual bool start();
+    virtual bool stop();
+    virtual bool threadFunc(int32_t interval);
     virtual const char* getSipUser();
-    virtual bool makeRegistrationRequest(SipUserMessage& req);
+    virtual bool makeRegistration(SipUserMessage& req);
     virtual bool sendRegistration(const SipUserMessage& req);
-    virtual bool sendKeepaliveNotify(const XMLDocument& notify);
-    virtual bool sendMANSCDPResponse(const XMLDocument& res);
+    virtual bool sendMANSCDP(const XMLDocument& cmd);
     virtual bool makeSessionResponse(const SipUserMessage& req, SipUserMessage& res, int32_t code);
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res);
-    virtual bool sendSessionNotify(const SessionIdentifier& id, const XMLDocument& notify);
-    virtual bool sendMANSRTSPResponse(const SessionIdentifier& id, const MANSRTSP::Message& res);
-    virtual bool sendAlarmNotify(const XMLDocument& notify);
+    virtual bool sendSessionMessage(const SessionIdentifier& id, const XMLDocument& cmd);
+    virtual bool sendMANSRTSP(const SessionIdentifier& id, const MANSRTSP::Message& cmd);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////

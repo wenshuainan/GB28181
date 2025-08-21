@@ -4,7 +4,7 @@
 #include <vector>
 #include <resip/stack/Uri.hxx>
 #include <rutil/Data.hxx>
-#include "SipAdapter.h"
+#include "../SipAdapter.h"
 
 namespace resip
 {
@@ -38,8 +38,8 @@ public:
    Uri mContact;
    bool mOutboundEnabled;
 
-   Uri mSubscribeTarget;
-   Uri mCallTarget;
+   // Uri mSubscribeTarget;
+   // Uri mCallTarget;
 };
  
 }

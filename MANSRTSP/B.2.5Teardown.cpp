@@ -14,5 +14,6 @@ bool Teardown::match(const Message& req)
 
 bool Teardown::handle(SessionPlayback& session, const Message& req)
 {
+    printf("MANSRTSP TEARDOWN request\n");
     return session.teardown();
 }

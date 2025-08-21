@@ -4,10 +4,15 @@
 #include "MANSCDP/A.2.4Query.h"
 #include "MANSCDP/A.2.6Response.h"
 
+class MANSCDPAgent;
+
 class Query
 {
+protected:
+    MANSCDPAgent *m_agent;
+
 public:
-    Query() {}
+    Query(MANSCDPAgent *agent) : m_agent(agent) {}
     virtual ~Query() {}
 
 public:

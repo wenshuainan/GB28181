@@ -7,29 +7,17 @@ bool RangePlay::match(const Message& req)
 {
     if (strCaseCmp(req.getStartLine().getMethod(), "PLAY"))
     {
-        std::string range;
-        std::string scale;
-        for (auto header : req.getHeaders())
-        {
-            if (strCaseCmp(header.getName(), "Range"))
-            {
-                range = "Range";
-            }
-            else if (strCaseCmp(header.getName(), "Scale"))
-            {
-                scale = "Scale";
-                break;
-            }
-        }
-        if (!range.empty() && scale.empty())
-        {
-            return true;
-        }
+        auto range = req.getHeader("Range");
+        auto scale = req.getHeader("Scale");
+        return range && !scale;
     }
     return false;
 }
 
 bool RangePlay::handle(SessionPlayback& session, const Message& req)
 {
-    return session.rangePlay();
+    printf("MANSRTSP RangePlay request\n");
+    int32_t range = 0;
+    sscanf(req.getHeader("Range")->getParameter("npt")->getValue().c_str(), "%d-", &range);
+    return session.rangePlay(range);
 }

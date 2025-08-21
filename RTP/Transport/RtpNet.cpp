@@ -19,24 +19,24 @@ RtpNet::RtpNet(int localPort)
 RtpNet::~RtpNet()
 {}
 
-std::shared_ptr<RtpNet> RtpNet::create(Type type, int localPort)
+std::unique_ptr<RtpNet> RtpNet::create(Type type, int localPort)
 {
-    std::shared_ptr<RtpNet> net = nullptr;
+    RtpNet *net = nullptr;
 
     switch (type)
     {
     case UDP:
-        net = std::make_shared<RtpOverUdp>(localPort);
+        net = new RtpOverUdp(localPort);
         break;
     case TCP_ACTIVE:
-        net = std::make_shared<RtpOverTcp>(localPort);
+        net = new RtpOverTcp(localPort);
         break;
     
     default:
         break;
     }
 
-    return net;
+    return std::unique_ptr<RtpNet>(net);
 }
 
 bool RtpNet::isConnected()

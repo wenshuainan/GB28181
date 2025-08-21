@@ -14,9 +14,16 @@ public:
     virtual ~DevDownload();
 
 public:
-    virtual bool seek(time_t timestamp);
+    virtual void setTime(time_t start, time_t end);
+    virtual bool setSpeed(int speed);
+    virtual uint64_t getFileSize();
+    virtual bool start();
+    virtual bool stop();
     virtual int32_t readVideo(uint8_t *data, int32_t size);
     virtual int32_t readAudio(uint8_t *data, int32_t size);
+    virtual bool isFileEnd();
+    virtual PES::ES_TYPE getVideoType();
+    virtual PES::ES_TYPE getAudioType();
 };
 
 #endif

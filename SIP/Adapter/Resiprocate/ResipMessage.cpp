@@ -1,7 +1,7 @@
 #include <strings.h>
 #include <iostream>
 #include <stdlib.h>
-#include "SipAdapter.h"
+#include "../SipAdapter.h"
 #include "resip/stack/SipMessage.hxx"
 #include "resip/stack/SdpContents.hxx"
 #include "ResipUserAgent.h"
@@ -103,6 +103,28 @@ const char* SipUserMessage::getRequestUser() const
     }
 
     return instance->header(resip::h_RequestLine).uri().user().c_str();
+}
+
+const char* SipUserMessage::getHeaderDate() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (!instance->exists(resip::h_Date))
+    {
+        return "";
+    }
+
+    const resip::HeaderFieldValueList *hfvl = instance->getRawHeader(resip::Headers::Date);
+    if (!hfvl || hfvl->empty())
+    {
+        return "";
+    }
+
+    return hfvl->front()->getBuffer();
 }
 
 int32_t SipUserMessage::getSdpSessionVersion() const
@@ -464,7 +486,7 @@ int32_t SipUserMessage::getSdpMediaPayloadType(int32_t index, uint16_t type[10])
     std::advance(m, index);
     if (m != container.end())
     {
-        const std::list<Data>& formats = m->getFormats();
+        const std::list<resip::Data>& formats = m->getFormats();
         for (auto f : formats)
         {
             type[i++] = atoi(f.c_str());
@@ -602,7 +624,7 @@ const char* SipUserMessage::getSdpMediaAttr(int32_t index, const char *key) cons
         {
             return "";
         }
-        const std::list<Data>& values = m->getValues(key);
+        const std::list<resip::Data>& values = m->getValues(key);
         if (values.empty())
         {
             return "";

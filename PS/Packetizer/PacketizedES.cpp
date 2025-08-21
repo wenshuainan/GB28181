@@ -11,33 +11,35 @@ PES::PES(PSMux *mux)
 PES::~PES()
 {}
 
-std::shared_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
+std::unique_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
 {
-    std::shared_ptr<PES> pes = nullptr;
+    PES *pes = nullptr;
 
     if (mux == nullptr)
     {
+        printf("mux == nullptr\n");
         return nullptr;
     }
 
     switch (type)
     {
     case AVC:
-        pes = std::make_shared<PacketizedAVC>(mux);
+        pes = new PacketizedAVC(mux);
         break;
     case HEVC:
-        pes = std::make_shared<PacketizedHEVC>(mux);
+        pes = new PacketizedHEVC(mux);
         break;
     case G711A:
-        pes = std::make_shared<PacketizedG711A>(mux);
+        pes = new PacketizedG711A(mux);
         break;
     case AAC:
-        pes = std::make_shared<PacketizedAAC>(mux);
+        pes = new PacketizedAAC(mux);
         break;
     
     default:
+        printf("PES not support %d\n", type);
         return nullptr;
     }
 
-    return pes;
+    return std::unique_ptr<PES>(pes);
 }

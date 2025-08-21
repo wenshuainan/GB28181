@@ -1,8 +1,9 @@
 #ifndef PACKETIZED_ELEMENTARY_STREAM_H
 #define PACKETIZED_ELEMENTARY_STREAM_H
 
-#include "Semantics.h"
-#include "PSMux.h"
+#include <memory>
+#include "../Semantics.h"
+#include "../PSMux.h"
 
 class PES
 {
@@ -23,10 +24,11 @@ public:
     virtual ~PES();
 
 public:
-    static std::shared_ptr<PES> create(ES_TYPE type, PSMux *mux);
+    static std::unique_ptr<PES> create(ES_TYPE type, PSMux *mux);
 
 public:
     virtual int32_t packetized(const uint8_t *data, int32_t size) = 0;
+    virtual void finished() = 0;
 };
 
 #endif

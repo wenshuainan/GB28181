@@ -11,6 +11,7 @@ public:
 
 public:
     virtual int32_t packetized(const uint8_t *data, int32_t size);
+    virtual void finished() { return; }
 };
 
 #endif

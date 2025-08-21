@@ -3,43 +3,50 @@
 
 CommandFormat::CommandFormat(const uint8_t* cmd)
 {
+    printf("++++++ CommandFormat\n");
     memcpy(m_bytes, cmd, 8);
 }
 
 CommandFormat::~CommandFormat()
-{}
-
-std::shared_ptr<CommandFormat> CommandFormat::create(const uint8_t* cmd)
 {
+    printf("------ CommandFormat\n");
+}
+
+std::unique_ptr<CommandFormat> CommandFormat::create(const uint8_t* cmd)
+{
+    printf("FrontDeviceControl create Command\n");
+    CommandFormat *command = nullptr;
     if ((cmd[3] & 0xC0) == 0)
     {
-        return std::make_shared<PTZCommand>(cmd);
+        command = new PTZCommand(cmd);
     }
     else if ((cmd[3] & 0xF0) == 0x40)
     {
-        return std::make_shared<FICommand>(cmd);
+        command = new FICommand(cmd);
     }
     else if (cmd[3] == 0x81 || cmd[3] == 0x82 || cmd[3] == 0x83)
     {
-        return std::make_shared<PresetCommand>(cmd);
+        command = new PresetCommand(cmd);
     }
     else if (cmd[3] == 0x84 || cmd[3] == 0x85 || cmd[3] == 0x86
         || cmd[3] == 0x87 || cmd[3] == 0x88)
     {
-        return std::make_shared<CruiseCommand>(cmd);
+        command = new CruiseCommand(cmd);
     }
     else if (cmd[3] == 0x89 || cmd[3] == 0x8A)
     {
-        return std::make_shared<ScanCommand>(cmd);
+        command = new ScanCommand(cmd);
     }
     else if (cmd[3] == 0x8C || cmd[3] == 0x8D)
     {
-        return std::make_shared<AuxiliaryCommand>(cmd);
+        command = new AuxiliaryCommand(cmd);
     }
     else
     {
+        printf("unknown front device control command %02X\n", cmd[3]);
         return nullptr;
     }
+    return std::unique_ptr<CommandFormat>(command);
 }
 
 bool CommandFormat::readBit(int32_t byte, int32_t bit) const
@@ -66,17 +73,20 @@ bool CommandFormat::parse()
 {
     if (readByte(1) != 0xA5)
     {
+        printf("!=0xA5\n");
         return false;
     }
 
     if (readMSB4(2) != 0)
     {
+        printf("!=0\n");
         return false;
     }
 
     uint8_t checkbit = (readMSB4(1) + readLSB4(1) + readMSB4(2)) % 16;
     if (readLSB4(2) != checkbit)
     {
+        printf("!=%d\n", checkbit);
         return false;
     }
 
@@ -98,6 +108,7 @@ bool CommandFormat::parse()
 PTZCommand::PTZCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
+    printf("++++++ PTZCommand\n");
     m_pan.left = false;
     m_pan.right = false;
     m_tilt.up = false;
@@ -110,7 +121,9 @@ PTZCommand::PTZCommand(const uint8_t* cmd)
 }
 
 PTZCommand::~PTZCommand()
-{}
+{
+    printf("------ PTZCommand\n");
+}
 
 bool PTZCommand::parse()
 {
@@ -127,14 +140,17 @@ bool PTZCommand::parse()
     m_pan.right = readBit(4, 0);
     if (m_zoom.out && m_zoom.in)
     {
+        printf("m_zoom.out == m_zoom.in == true\n");
         return false;
     }
     if (m_tilt.up && m_tilt.down)
     {
+        printf("m_tilt.up == m_tilt.down == true\n");
         return false;
     }
     if (m_pan.left && m_pan.right)
     {
+        printf("m_pan.left == m_pan.right == true\n");
         return false;
     }
 
@@ -157,6 +173,7 @@ bool PTZCommand::handle(int32_t ch, Control* control)
 FICommand::FICommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
+    printf("++++++ FICommand\n");
     m_iris.small = false;
     m_iris.big = false;
     m_focus.near = false;
@@ -166,7 +183,9 @@ FICommand::FICommand(const uint8_t* cmd)
 }
 
 FICommand::~FICommand()
-{}
+{
+    printf("------ FICommand\n");
+}
 
 bool FICommand::parse()
 {
@@ -181,10 +200,12 @@ bool FICommand::parse()
     m_focus.far = readBit(4, 0);
     if (m_iris.small && m_iris.big)
     {
+        printf("m_iris.small == m_iris.big == true\n");
         return false;
     }
     if (m_focus.near && m_focus.far)
     {
+        printf("m_focus.near == m_focus.far == true\n");
         return false;
     }
 
@@ -205,10 +226,14 @@ bool FICommand::handle(int32_t ch, Control* control)
 
 PresetCommand::PresetCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    printf("++++++ PresetCommand\n");
+}
 
 PresetCommand::~PresetCommand()
-{}
+{
+    printf("------ PresetCommand\n");
+}
 
 bool PresetCommand::parse()
 {
@@ -220,6 +245,7 @@ bool PresetCommand::parse()
     m_presetNum = readByte(6);
     if (m_presetNum == 0)
     {
+        printf("m_presetNum is 0\n");
         return false;
     }
 
@@ -233,10 +259,14 @@ bool PresetCommand::handle(int ch, Control* control)
 
 CruiseCommand::CruiseCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    printf("++++++ CruiseCommand\n");
+}
 
 CruiseCommand::~CruiseCommand()
-{}
+{
+    printf("------ CruiseCommand\n");
+}
 
 bool CruiseCommand::parse()
 {
@@ -250,10 +280,14 @@ bool CruiseCommand::handle(int ch, Control* control)
 
 ScanCommand::ScanCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    printf("++++++ ScanCommand\n");
+}
 
 ScanCommand::~ScanCommand()
-{}
+{
+    printf("------ ScanCommand\n");
+}
 
 bool ScanCommand::parse()
 {
@@ -267,10 +301,14 @@ bool ScanCommand::handle(int ch, Control* control)
 
 AuxiliaryCommand::AuxiliaryCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
-{}
+{
+    printf("++++++ AuxiliaryCommand\n");
+}
 
 AuxiliaryCommand::~AuxiliaryCommand()
-{}
+{
+    printf("------ AuxiliaryCommand\n");
+}
 
 bool AuxiliaryCommand::parse()
 {

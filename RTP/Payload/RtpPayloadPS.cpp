@@ -4,10 +4,14 @@
 
 RtpPayloadPS::RtpPayloadPS(RtpParticipant *participant, int32_t maxLen)
     : RtpPayload(participant, maxLen)
-{}  
+{
+    printf("++++++ RtpPayloadPS %p\n", this);
+}
 
 RtpPayloadPS::~RtpPayloadPS()
-{}
+{
+    printf("------ RtpPayloadPS %p\n", this);
+}
 
 void RtpPayloadPS::pushFormated()
 {
@@ -25,6 +29,7 @@ int32_t RtpPayloadPS::format(const uint8_t *data, int32_t len)
 {
     if (data == nullptr || len <= 0)
     {
+        printf("invalid param %p %d\n", data, len);
         return 0;
     }
 

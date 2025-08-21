@@ -10,8 +10,9 @@
 
 using namespace resip;
 using namespace std;
+using namespace tinyxml2;
 
-#define RESIPROCATE_SUBSYSTEM Subsystem::SIP
+#define RESIPROCATE_SUBSYSTEM Subsystem::APP
 
 const MANSCDPContents MANSCDPContents::Empty;
 static bool invokeMANSCDPContentsInit = MANSCDPContents::init();

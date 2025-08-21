@@ -70,6 +70,8 @@ public:
         bool encode(std::string& data) const;
         const std::string& getName() const { return m_name; }
         const std::string& getValue() const { return m_value; }
+        int32_t getInt() const;
+        float getFloat() const;
         Parameter& operator=(const Parameter& other)
         {
             this->m_name = other.m_name;
@@ -93,7 +95,10 @@ public:
     bool encode(std::string& data) const;
     const std::string& getName() const { return m_name; }
     const std::string& getValue() const { return m_value; }
-    const std::vector<Parameter>& getParameters() const { return m_parameters; }
+    int32_t getInt() const;
+    float getFloat() const;
+    const Parameter* getParameter(const char* name) const;
+    bool isExist(const char* param) const;
     Header& operator=(const Header& other)
     {
         this->m_name = other.m_name;
@@ -121,7 +126,9 @@ public:
     int32_t parse(const char* data, int32_t size);
     bool encode(std::string& data) const;
     const StartLine& getStartLine() const { return m_startline; }
+    const Header* getHeader(const char* name) const;
     const std::vector<Header>& getHeaders() const { return m_headers; }
+    bool isExist(const char* name) const;
     Message& operator=(const Message& other)
     {
         this->m_startline = other.m_startline;

@@ -6,13 +6,16 @@
 RtpPayloadAvc::RtpPayloadAvc(RtpParticipant *participant, int32_t maxLen)
     : RtpPayload(participant, maxLen)
 {
+    printf("++++++ RtpPayloadAvc %p\n", this);
     m_formated.marker = 0;
     m_formated.bFirst = false;
     m_formated.payload = nullptr;
 }
 
 RtpPayloadAvc::~RtpPayloadAvc()
-{}
+{
+    printf("------ RtpPayloadAvc %p\n", this);
+}
 
 uint8_t RtpPayloadAvc::makeFUAIndicator(uint8_t naluHeader)
 {

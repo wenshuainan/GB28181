@@ -12,10 +12,11 @@ class CmdTypeResponse
 {
 protected:
     bool encode(XMLDocument *xmldocRes);
+    bool match(const XMLElement *cmd);
 };
 
 /*  A.2.6.2 设备控制应答 */
-class DeviceControlResponse : public CmdTypeResponse
+class DeviceControlResponse : public CmdTypeResponse, public MessageResultHandler
 {
 public:
     /* 〈! -- 命令类型:设备控制(必选)--〉 */
@@ -28,27 +29,27 @@ public:
     resultType Result;
 
 public:
-    DeviceControlResponse(const DeviceControlRequest::Request& req);
+    DeviceControlResponse(MANSCDPAgent *agent, const DeviceControlRequest::Request& req);
+    virtual ~DeviceControlResponse();
+
+private:
     bool encode(XMLDocument *xmldocRes);
+
+public:
+    bool response(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /*  A.2.6.3 报警通知应答 */
-class AlarmNotifyResponse : public CmdTypeResponse
-{
-public:
-    /* 〈! -- 命令类型:报警通知(必选)--〉 */
-    stringType CmdType;
-    /* 〈!-- 命令序列号(必选)--〉 */
-    SNType SN;
-    /* 〈! -- 目标设备/区域/系统编码(必选)--〉 */
-    deviceIDType DeviceID;
-    /* 〈! -- 执行结果标志(必选)--〉 */
-    resultType Result;
-};
 
 /*  A.2.6.4 设备目录信息查询应答 */
-class CatalogQueryResponse : public CmdTypeResponse
+class CatalogQueryResponse : public CmdTypeResponse, public MessageResultHandler
 {
+    friend CatalogQuery;
+
 public:
     /* 〈!-- 命令类型:设备目录查询(必选)--〉 */
     stringType CmdType;
@@ -66,13 +67,26 @@ public:
     } DeviceList;
     /* 〈! -- 扩展信息,可多项--〉 */
 
+private:
+    std::shared_ptr<CatalogQueryResponse> m_next; // 多响应消息，指向下一条，等收到上一条SIP响应后再发送 GB28181 附录M
+
 public:
-    CatalogQueryResponse(const CatalogQuery::Request& req);
+    CatalogQueryResponse(MANSCDPAgent *agent, const CatalogQuery::Request& req);
+    virtual ~CatalogQueryResponse();
+
+private:
     bool encode(XMLDocument *xmldocRes);
+
+public:
+    bool response(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /*  A.2.6.5 设备信息查询应答 */
-class DeviceInfoQueryResponse : public CmdTypeResponse
+class DeviceInfoQueryResponse : public CmdTypeResponse, public MessageResultHandler
 {
 public:
     /* 〈! -- 命令类型:设备信息查询(必选)--〉 */
@@ -96,15 +110,27 @@ public:
     /* 〈! -- 扩展信息,可多项--〉 */
 
 public:
-    DeviceInfoQueryResponse(const DeviceInfoQuery::Request& req);
+    DeviceInfoQueryResponse(MANSCDPAgent *agent, const DeviceInfoQuery::Request& req);
+    virtual ~DeviceInfoQueryResponse();
+
+private:
     bool encode(XMLDocument *xmldocRes);
+
+public:
+    bool response(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /*  A.2.6.6 设备状态查询应答 */
 
 /*  A.2.6.7 文件目录检索应答 */
-class RecordInfoQueryResponse : public CmdTypeResponse
+class RecordInfoQueryResponse : public CmdTypeResponse, public MessageResultHandler
 {
+    friend RecordInfoQuery;
+
 public:
     /* 〈! -- 命令类型:文件目录查询(必选)--〉 */
     stringType CmdType;
@@ -123,9 +149,22 @@ public:
         integerType Num; //attribute
     } RecordList;
 
+private:
+    std::shared_ptr<RecordInfoQueryResponse> m_next; // 多响应消息，指向下一条，等收到上一条SIP响应后再发送 GB28181 附录M
+
 public:
-    RecordInfoQueryResponse(const RecordInfoQuery::Request& req);
+    RecordInfoQueryResponse(MANSCDPAgent *agent, const RecordInfoQuery::Request& req);
+    virtual ~RecordInfoQueryResponse();
+
+private:
     bool encode(XMLDocument *xmldocRes);
+
+public:
+    bool response(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
 };
 
 /*  A.2.6.8 设备配置应答 */

@@ -5,12 +5,13 @@
 
 RtpParticipant::RtpParticipant(Participant& participant)
 {
+    printf("++++++ RtpParticipant %p\n", this);
     m_bConnected = false;
     m_payloadType = participant.payloadType;
     m_SSRC = participant.SSRC;
     m_destination = participant.destination;
 
-    m_net = std::shared_ptr<RtpNet>(RtpNet::create(participant.netType, participant.destination.port));
+    m_net = RtpNet::create(participant.netType, participant.destination.port);
     if (m_net != nullptr)
     {
         m_payloadFormat = RtpPayload::create(this, m_payloadType, m_net->getEfficLen());
@@ -19,6 +20,7 @@ RtpParticipant::RtpParticipant(Participant& participant)
 
 RtpParticipant::~RtpParticipant()
 {
+    printf("------ RtpParticipant %p\n", this);
     disconnect();
 }
 
@@ -105,20 +107,24 @@ int32_t RtpParticipant::transport(const uint8_t *data, int32_t len)
 
 bool RtpParticipant::connect()
 {
+    printf("rtp connect %p\n", this);
     if (m_net == nullptr || m_net->isConnected())
     {
+        printf("failed %p:%p\n", this, m_net.get());
         return false;
     }
     if (m_destination.ipv4.empty() || m_destination.port <= 0)
     {
+        printf("invalid dst %p\n", this);
         return false;
     }
 
     bool connected = m_net->connect(m_destination.ipv4, m_destination.port);
     if (connected)
     {
+        printf("connect success %p\n", this);
         m_bConnected = true;
-        m_thread = std::make_shared<std::thread>(&RtpParticipant::process, this);
+        m_thread = std::move(std::unique_ptr<std::thread>(new std::thread(&RtpParticipant::process, this)));
     }
 
     return connected;
@@ -126,15 +132,19 @@ bool RtpParticipant::connect()
 
 bool RtpParticipant::disconnect()
 {
+    printf("rtp disconnect %p\n", this);
     if (m_net == nullptr || !m_net->isConnected())
     {
+        printf("failed %p:%p\n", this, m_net.get());
         return false;
     }
 
+    printf("wait thread join %p\n", this);
     m_bConnected = false;
     if (m_thread && m_thread->joinable())
     {
         m_thread->join();
+        printf("thread joined %p\n", this);
     }
 
     return m_net->disconnect();

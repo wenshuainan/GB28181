@@ -2,7 +2,7 @@
 #define RTP_NET_H
 
 #include <string>
-#include "RtpPacket.h"
+#include "../RtpPacket.h"
 
 class RtpNet
 {
@@ -31,7 +31,7 @@ public:
     virtual const char* getType() const = 0;
 
 public:
-    static std::shared_ptr<RtpNet> create(Type type, int localPort = 0);
+    static std::unique_ptr<RtpNet> create(Type type, int localPort = 0);
     virtual bool isConnected();
     virtual const std::string& getLocalIpv4();
     virtual int32_t getLocalPort();

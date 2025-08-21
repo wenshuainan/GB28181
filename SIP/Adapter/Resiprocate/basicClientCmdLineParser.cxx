@@ -14,7 +14,7 @@
 using namespace resip;
 using namespace std;
 
-#define RESIPROCATE_SUBSYSTEM Subsystem::TEST
+#define RESIPROCATE_SUBSYSTEM Subsystem::APP
 
 BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 {
@@ -44,8 +44,8 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 
    int outboundEnabled = false;
 
-   char* subscribeTarget = 0;
-   char* callTarget = 0;
+   // char* subscribeTarget = 0;
+   // char* callTarget = 0;
 
 #if defined(HAVE_POPT_H)
    struct poptOption table[] = {
@@ -118,15 +118,15 @@ BasicClientCmdLineParser::BasicClientCmdLineParser(int argc, char** argv)
 
    mOutboundEnabled = outboundEnabled != 0;
 
-   if(subscribeTarget)
-   {
-      mSubscribeTarget = toUri(subscribeTarget, "subscribe target");
-   }
+   // if(subscribeTarget)
+   // {
+   //    mSubscribeTarget = toUri(subscribeTarget, "subscribe target");
+   // }
 
-   if(callTarget)
-   {
-      mCallTarget = toUri(callTarget, "call target");
-   }
+   // if(callTarget)
+   // {
+   //    mCallTarget = toUri(callTarget, "call target");
+   // }
 
    // Free the option parsing context.
 #if defined(HAVE_POPT_H)

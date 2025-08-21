@@ -1,11 +1,13 @@
 #ifndef CONTROL_INTERFACE_H
 #define CONTROL_INTERFACE_H
 
+#include <memory>
 #include "MANSCDP/A.2.3Control.h"
 
 class MANSCDPAgent;
 class PTZCommand;
 class FICommand;
+class Alarm;
 
 class Control
 {

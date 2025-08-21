@@ -745,7 +745,7 @@ void ProgramStreamMap::toBitStream(BitStream& bitstream)
     bitstream.write8(7, 0);
     bitstream.write8(1, 1);
     bitstream.write16(16, program_stream_info_length);
-    for (auto it : descriptor)
+    for (auto& it : descriptor)
     {
         it->toBitStream(bitstream);
     }
@@ -769,7 +769,7 @@ void ProgramStreamMap::toBitStream(BitStream& bitstream)
         }
         else
         {
-            for (auto itdesc : it.descriptor)
+            for (auto& itdesc : it.descriptor)
             {
                 itdesc->toBitStream(bitstream);
             }

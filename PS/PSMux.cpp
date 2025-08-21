@@ -1,30 +1,34 @@
+#include <unistd.h>
 #include "PSMux.h"
 
 PSMux::PSMux(PSCallback *callback)
 {
+    printf("++++++ PSMux\n");
     m_callback = callback;
+    m_bFinishFlag = false;
 
     m_bRunning = true;
-    m_thread = new std::thread(&PSMux::multiplexed, this);
+    m_thread = std::move(std::unique_ptr<std::thread>(new std::thread(&PSMux::multiplexed, this)));
 }
 
 PSMux::~PSMux()
 {
+    printf("----- PSMux\n");
     if (!m_bRunning)
     {
         return;
     }
 
+    printf("wait thread join\n");
     m_bRunning = false;
     if (m_thread != nullptr)
     {
         m_thread->join();
-        delete m_thread;
-        m_thread = nullptr;
+        printf("thread joined\n");
     }
 }
 
-void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
+void PSMux::sendPack(const std::unique_ptr<Pack>& pack)
 {
     if (pack != nullptr && m_callback != nullptr)
     {
@@ -32,8 +36,8 @@ void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
         const BitStream stream = pack->getBitStream();
         m_callback->onProgramStream(stream.getData(), stream.getLength());
 
-        const std::vector<std::shared_ptr<PESPacket>>& PES_packet = pack->getPESPacket();
-        for (auto it : PES_packet)
+        auto PES_packet = pack->getPESPacket();
+        for (auto& it : PES_packet)
         {
             const BitStream pes = it->getBitStream();
             m_callback->onProgramStream(pes.getData(), pes.getLength());
@@ -43,72 +47,68 @@ void PSMux::sendPack(const std::shared_ptr<Pack>& pack)
 
 void PSMux::multiplexed()
 {
-    std::shared_ptr<Pack> pack;
+    Pack *pack = nullptr;
     std::shared_ptr<SystemHeader> systemheader = std::make_shared<SystemHeader>();
     std::shared_ptr<ProgramStreamMap> psm = std::make_shared<ProgramStreamMap>();
-    bool bVauFinished = false; // video access unit finished
+    bool bVauFinished = true; // video access unit finished
 
-    while (m_bRunning)
+    if (systemheader == nullptr || psm == nullptr)
+    {
+        printf("make_shared systemheader and psm failed\n");
+        return;
+    }
+
+    while (m_bRunning || (m_bFinishFlag && !m_videoStream.empty()))
     {
         {
             std::lock_guard<std::mutex> guard(m_vMutex);
             if (!m_videoStream.empty())
             {
                 Packet packet = m_videoStream.front();
+                m_videoStream.pop();
                 systemheader->addVideoStreamType(0xE0);
                 psm->addElementaryStream(packet.stream_type, 0xE0);
 
                 if (packet.bFirst)
                 {
-                    if (pack != nullptr)
+                    if ((pack = new Pack()) == nullptr)
                     {
-                        bVauFinished = true;
+                        printf("pack new failed\n");
+                        break;
                     }
-                    else
+                    if (packet.bKeyFrame)
                     {
-                        pack = std::make_shared<Pack>();
-                        if (packet.bKeyFrame)
-                        {
-                            pack->addSystemHeader(systemheader);
-                            pack->addPESPacket(psm);
-                        }
+                        // printf("add systemheader and psm\n");
+                        pack->addSystemHeader(systemheader);
+                        pack->addPESPacket(psm);
                     }
                 }
-
-                if (!bVauFinished)
-                {
-                    pack->addPESPacket(packet.pes);
-                    m_videoStream.pop();
-                }
+                pack->addPESPacket(packet.pes);
+                bVauFinished = packet.bFinished;
             }
         }
 
+        if (pack && bVauFinished)
         {
-            std::lock_guard<std::mutex> guard(m_aMutex);
-            if (!m_audioStream.empty())
-            {
-                Packet packet = m_audioStream.front();
-                systemheader->addAudioStreamType(0xC0);
-                psm->addElementaryStream(packet.stream_type, 0xC0);
-            }
-        }
-
-        if (bVauFinished)
-        {
+            /* PESA放到pack最后 */
             {
                 std::lock_guard<std::mutex> guard(m_aMutex);
                 while (!m_audioStream.empty())
                 {
                     Packet packet = m_audioStream.front();
                     m_audioStream.pop();
+                    systemheader->addAudioStreamType(0xC0);
+                    psm->addElementaryStream(packet.stream_type, 0xC0);
                     pack->addPESPacket(packet.pes);
                 }
             }
 
-            sendPack(pack);
+            // printf("send pack\n");
+            sendPack(std::move(std::unique_ptr<Pack>(pack)));
             pack = nullptr;
-            bVauFinished = false;
         }
+
+        usleep(10000);
     }
 }
 
@@ -124,4 +124,16 @@ bool PSMux::pushAudioPES(const Packet& packet)
     std::lock_guard<std::mutex> guard(m_aMutex);
     this->m_audioStream.push(packet);
     return true;
+}
+
+void PSMux::finished()
+{
+    printf("PS finished\n");
+    m_bRunning = false;
+    m_bFinishFlag = true;
+    if (m_thread != nullptr)
+    {
+        m_thread->join();
+    }
+    printf("PS video and audio stream completed\n");
 }

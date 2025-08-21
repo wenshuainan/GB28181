@@ -2,7 +2,7 @@
 #define RTP_PAYLOAD_AVC_H
 
 #include "RtpPayload.h"
-#include "RtpParticipant.h"
+#include "../RtpParticipant.h"
 
 class RtpPayloadAvc : public RtpPayload
 {

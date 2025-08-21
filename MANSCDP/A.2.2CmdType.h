@@ -4,10 +4,7 @@
 #include "A.2.1GlobalTypes.h"
 
 class MANSCDPAgent;
-class Control;
-class Query;
-class Status;
-class RecordQuery;
+class SessionAgent;
 
 /*  A.2.2.1 请求命令结构头文件定义
    〈elementref="tg:Control"/〉
@@ -60,32 +57,40 @@ class CmdTypeSpecRequest
 {
 protected:
     MANSCDPAgent *m_agent;
-    Control *m_control;
-    Query *m_query;
-    RecordQuery *m_recordQuery;
 
 public:
-    CmdTypeSpecRequest(MANSCDPAgent *agent, Control *control)
-        : m_agent(agent)
-        , m_control(control)
-        , m_query(nullptr)
-    {}
-    CmdTypeSpecRequest(MANSCDPAgent *agent, Query *query)
-        : m_agent(agent)
-        , m_control(nullptr)
-        , m_query(query)
-    {}
-    CmdTypeSpecRequest(MANSCDPAgent *agent, RecordQuery *recordQuery)
-        : m_agent(agent)
-        , m_control(nullptr)
-        , m_query(nullptr)
-        , m_recordQuery(recordQuery)
-    {}
+    CmdTypeSpecRequest(MANSCDPAgent *agent) : m_agent(agent) {}
     virtual ~CmdTypeSpecRequest() {}
 
 public:
     virtual bool match(const XMLElement *xmlReq) = 0;
     virtual bool handle(const XMLElement *xmlReq) = 0;
+};
+
+/* 消息响应结果处理器
+ * 例如心跳保活：是否回复了200 OK
+ * 例如多响应消息，文件目录应答回复了200 OK之后再传送下一条消息
+ */
+class MessageResultHandler
+{
+protected:
+    MANSCDPAgent *m_agent;
+    SessionAgent *m_sessionAgent; //会话内也会发送MANSCDP消息，回放、下载文件结束
+
+public:
+    MessageResultHandler(MANSCDPAgent *agent)
+        : m_agent(agent)
+        , m_sessionAgent(nullptr)
+    {}
+    MessageResultHandler(SessionAgent *sessionAgent)
+        : m_agent(nullptr)
+        , m_sessionAgent(sessionAgent)
+    {}
+    virtual ~MessageResultHandler() {}
+
+public:
+    virtual bool match(const XMLElement *cmd) = 0;
+    virtual bool handle(int32_t code) = 0;
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "A.2.6Response.h"
+#include "Agent/MANSCDPAgent.h"
 
 bool CmdTypeResponse::encode(XMLDocument *xmldocRes)
 {
@@ -15,16 +16,30 @@ bool CmdTypeResponse::encode(XMLDocument *xmldocRes)
     }
     else
     {
+        printf("xml new <Response> element failed\n");
         return false;
     }
 }
 
-DeviceControlResponse::DeviceControlResponse(const DeviceControlRequest::Request& req)
+bool CmdTypeResponse::match(const XMLElement *cmd)
 {
+    const char *name = cmd->Name();
+    return name && strcmp(name, "Response") == 0;
+}
+
+DeviceControlResponse::DeviceControlResponse(MANSCDPAgent *agent, const DeviceControlRequest::Request& req)
+    : MessageResultHandler(agent)
+{
+    printf("++++++ DeviceControlResponse\n");
     CmdType = req.CmdType;
     SN = req.SN;
     DeviceID = req.DeviceID;
     Result = resultType::ERROR;
+}
+
+DeviceControlResponse::~DeviceControlResponse()
+{
+    printf("------ DeviceControlResponse\n");
 }
 
 bool DeviceControlResponse::encode(XMLDocument *xmldocRes)
@@ -45,7 +60,7 @@ bool DeviceControlResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(SN.getValue());
+    xmlSN->SetText(SN.getInt());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
@@ -59,13 +74,48 @@ bool DeviceControlResponse::encode(XMLDocument *xmldocRes)
     return true;
 }
 
-CatalogQueryResponse::CatalogQueryResponse(const CatalogQuery::Request& req)
+bool DeviceControlResponse::response(std::shared_ptr<MessageResultHandler> handler)
 {
+    XMLDocument res;
+    if (!encode(&res))
+    {
+        return false;
+    }
+    return m_agent->sendCmd(res, handler);
+}
+
+bool DeviceControlResponse::match(const XMLElement *cmd)
+{
+    if (!CmdTypeResponse::match(cmd))
+    {
+        return false;
+    }
+    
+    const XMLElement *xmlCmdType = cmd->FirstChildElement("CmdType");
+    const XMLElement *xmlSN = cmd->FirstChildElement("SN");
+    return xmlCmdType && this->CmdType == xmlCmdType->GetText()
+        && xmlSN && this->SN == xmlSN->IntText();
+}
+
+bool DeviceControlResponse::handle(int32_t code)
+{
+    return true;
+}
+
+CatalogQueryResponse::CatalogQueryResponse(MANSCDPAgent *agent, const CatalogQuery::Request& req)
+    : MessageResultHandler(agent)
+{
+    printf("++++++ CatalogQueryResponse\n");
     CmdType = req.CmdType;
     SN = req.SN;
     DeviceID = req.DeviceID;
     SumNum = 0;
     DeviceList.Num = 0;
+}
+
+CatalogQueryResponse::~CatalogQueryResponse()
+{
+    printf("------ CatalogQueryResponse\n");
 }
 
 bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
@@ -86,7 +136,7 @@ bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(SN.getValue());
+    xmlSN->SetText(SN.getInt());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
@@ -94,15 +144,15 @@ bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlDeviceID);
 
     XMLElement *xmlSumNum = xmldocRes->NewElement("SumNum");
-    xmlSumNum->SetText(SumNum.getValue());
+    xmlSumNum->SetText(SumNum.getInt());
     rootElement->InsertEndChild(xmlSumNum);
 
-    XMLElement *xmlDeviceList = xmldocRes->NewElement("DeviceList");
-    rootElement->InsertEndChild(xmlDeviceList);
-    xmlDeviceList->SetAttribute("Num", DeviceList.Num.getValue());
-
-    if (DeviceList.Item.size() > 0)
+    if (SumNum.getInt() > 0)
     {
+        XMLElement *xmlDeviceList = xmldocRes->NewElement("DeviceList");
+        rootElement->InsertEndChild(xmlDeviceList);
+        xmlDeviceList->SetAttribute("Num", DeviceList.Num.getInt());
+
         for (auto item : DeviceList.Item)
         {
             XMLElement *xmlItem = xmldocRes->NewElement("Item");
@@ -114,12 +164,55 @@ bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
     return true;
 }
 
-DeviceInfoQueryResponse::DeviceInfoQueryResponse(const DeviceInfoQuery::Request& req)
+bool CatalogQueryResponse::response(std::shared_ptr<MessageResultHandler> handler)
 {
+    XMLDocument res;
+    if (!encode(&res))
+    {
+        return false;
+    }
+    return m_agent->sendCmd(res, handler);
+}
+
+bool CatalogQueryResponse::match(const XMLElement *cmd)
+{
+    if (!CmdTypeResponse::match(cmd))
+    {
+        return false;
+    }
+    
+    const XMLElement *xmlCmdType = cmd->FirstChildElement("CmdType");
+    const XMLElement *xmlSN = cmd->FirstChildElement("SN");
+    return xmlCmdType && this->CmdType == xmlCmdType->GetText()
+        && xmlSN && this->SN == xmlSN->IntText();
+}
+
+bool CatalogQueryResponse::handle(int32_t code)
+{
+    printf("CatalogQueryResponse::handle code=%d\n", code);
+    if (code == 200)
+    {
+        if (m_next)
+        {
+            return m_next->response(m_next);
+        }
+    }
+    return true;
+}
+
+DeviceInfoQueryResponse::DeviceInfoQueryResponse(MANSCDPAgent *agent, const DeviceInfoQuery::Request& req)
+    : MessageResultHandler(agent)
+{
+    printf("++++++ DeviceInfoQueryResponse\n");
     CmdType = req.CmdType;
     SN = req.SN;
     DeviceID = req.DeviceID;
     Result = resultType::ERROR;
+}
+
+DeviceInfoQueryResponse::~DeviceInfoQueryResponse()
+{
+    printf("------ DeviceInfoQueryResponse\n");
 }
 
 bool DeviceInfoQueryResponse::encode(XMLDocument *xmldocRes)
@@ -140,7 +233,7 @@ bool DeviceInfoQueryResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(SN.getValue());
+    xmlSN->SetText(SN.getInt());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
@@ -182,20 +275,55 @@ bool DeviceInfoQueryResponse::encode(XMLDocument *xmldocRes)
     if (Channel.isValid())
     {
         XMLElement *xmlChannel = xmldocRes->NewElement("Channel");
-        xmlChannel->SetText(Channel.getValue());
+        xmlChannel->SetText(Channel.getInt());
         rootElement->InsertEndChild(xmlChannel);
     }
 
     return true;
 }
 
-RecordInfoQueryResponse::RecordInfoQueryResponse(const RecordInfoQuery::Request& req)
+bool DeviceInfoQueryResponse::response(std::shared_ptr<MessageResultHandler> handler)
 {
+    XMLDocument res;
+    if (!encode(&res))
+    {
+        return false;
+    }
+    return m_agent->sendCmd(res, handler);
+}
+
+bool DeviceInfoQueryResponse::match(const XMLElement *cmd)
+{
+    if (!CmdTypeResponse::match(cmd))
+    {
+        return false;
+    }
+    
+    const XMLElement *xmlCmdType = cmd->FirstChildElement("CmdType");
+    const XMLElement *xmlSN = cmd->FirstChildElement("SN");
+    return xmlCmdType && this->CmdType == xmlCmdType->GetText()
+        && xmlSN && this->SN == xmlSN->IntText();
+}
+
+bool DeviceInfoQueryResponse::handle(int32_t code)
+{
+    return true;
+}
+
+RecordInfoQueryResponse::RecordInfoQueryResponse(MANSCDPAgent *agent, const RecordInfoQuery::Request& req)
+    : MessageResultHandler(agent)
+{
+    printf("++++++ RecordInfoQueryResponse\n");
     CmdType = req.CmdType;
     SN = req.SN;
     DeviceID = req.DeviceID;
     SumNum = 0;
     RecordList.Num = 0;
+}
+
+RecordInfoQueryResponse::~RecordInfoQueryResponse()
+{
+    printf("------ RecordInfoQueryResponse\n");
 }
 
 bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
@@ -216,7 +344,7 @@ bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlCmdType);
 
     XMLElement *xmlSN = xmldocRes->NewElement("SN");
-    xmlSN->SetText(SN.getValue());
+    xmlSN->SetText(SN.getInt());
     rootElement->InsertEndChild(xmlSN);
 
     XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
@@ -228,15 +356,15 @@ bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
     rootElement->InsertEndChild(xmlName);
 
     XMLElement *xmlSumNum = xmldocRes->NewElement("SumNum");
-    xmlSumNum->SetText(SumNum.getValue());
+    xmlSumNum->SetText(SumNum.getInt());
     rootElement->InsertEndChild(xmlSumNum);
 
-    XMLElement *xmlRecordList = xmldocRes->NewElement("RecordList");
-    rootElement->InsertEndChild(xmlRecordList);
-    xmlRecordList->SetAttribute("Num", RecordList.Num.getValue());
-
-    if (RecordList.Item.size() > 0)
+    if (SumNum.getInt() > 0)
     {
+        XMLElement *xmlRecordList = xmldocRes->NewElement("RecordList");
+        rootElement->InsertEndChild(xmlRecordList);
+        xmlRecordList->SetAttribute("Num", RecordList.Num.getInt());
+
         for (auto item : RecordList.Item)
         {
             XMLElement *xmlItem = xmldocRes->NewElement("Item");
@@ -245,5 +373,41 @@ bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
         }
     }
 
+    return true;
+}
+
+bool RecordInfoQueryResponse::response(std::shared_ptr<MessageResultHandler> handler)
+{
+    XMLDocument res;
+    if (!encode(&res))
+    {
+        return false;
+    }
+    return m_agent->sendCmd(res, handler);
+}
+
+bool RecordInfoQueryResponse::match(const XMLElement *cmd)
+{
+    if (!CmdTypeResponse::match(cmd))
+    {
+        return false;
+    }
+    
+    const XMLElement *xmlCmdType = cmd->FirstChildElement("CmdType");
+    const XMLElement *xmlSN = cmd->FirstChildElement("SN");
+    return xmlCmdType && this->CmdType == xmlCmdType->GetText()
+        && xmlSN && this->SN == xmlSN->IntText();
+}
+
+bool RecordInfoQueryResponse::handle(int32_t code)
+{
+    printf("RecordInfoQueryResponse::handle code=%d\n", code);
+    if (code == 200)
+    {
+        if (m_next)
+        {
+            return m_next->response(m_next);
+        }
+    }
     return true;
 }

@@ -1,15 +1,15 @@
 #ifndef MANSRTSP_SCALE_PLAY_H
 #define MANSRTSP_SCALE_PLAY_H
 
-#include "Request.h"
+#include "CmdType.h"
 
 namespace MANSRTSP
 {
 
-class ScalePlay : public Request
+class ScalePlay : public CmdTypeRequest
 {
 public:
-    ScalePlay(MANSRTSPAgent* agent) : Request(agent) {}
+    ScalePlay(MANSRTSPAgent* agent) : CmdTypeRequest(agent) {}
 
 public:
     virtual bool match(const Message& req);

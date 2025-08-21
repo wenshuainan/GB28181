@@ -2,16 +2,20 @@
 #include "Agent/MANSCDPAgent.h"
 #include "A.2.6Response.h"
 #include "A.3FrontDeviceControl.h"
+#include "DevControl.h"
 
-ControlReuest::ControlReuest(MANSCDPAgent *agent, Control *control)
+ControlReuest::ControlReuest(MANSCDPAgent *agent)
 {
-    spec.push_back(std::make_shared<DeviceControlRequest>(agent, control));
-    spec.push_back(std::make_shared<DeviceConfigRequest>(agent, control));
+    printf("++++++ ControlReuest\n");
+    m_devControl = std::move(std::unique_ptr<Control>(new DevControl(agent)));
+
+    spec.push_back(std::move(std::unique_ptr<DeviceControlRequest>(new DeviceControlRequest(agent, m_devControl.get()))));
+    spec.push_back(std::move(std::unique_ptr<DeviceConfigRequest>(new DeviceConfigRequest(agent, m_devControl.get()))));
 }
 
 ControlReuest::~ControlReuest()
 {
-    spec.clear();
+    printf("----- ControlReuest\n");
 }
 
 bool ControlReuest::match(const std::string& ReqType)
@@ -21,9 +25,11 @@ bool ControlReuest::match(const std::string& ReqType)
 
 bool ControlReuest::dispatch(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <Control> request\n");
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (!xmlCmdType)
     {
+        printf("CmdType not found\n");
         return false;
     }
 
@@ -36,21 +42,23 @@ bool ControlReuest::dispatch(const XMLElement *xmlReq)
         }
     }
 
+    printf("Not supported CmdType %s\n", xmlCmdType->GetText());
     return false;
 }
 
-DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent, Control *control)
+DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent, Control *devControl)
 {
-    spec.push_back(std::make_shared<PTZCmdControl>(agent, control));
-    spec.push_back(std::make_shared<TeleBootControl>(agent, control));
-    spec.push_back(std::make_shared<RecordControl>(agent, control));
-    spec.push_back(std::make_shared<GuardControl>(agent, control));
-    spec.push_back(std::make_shared<AlarmControl>(agent, control));
+    printf("++++++ DeviceControlRequest\n");
+    spec.push_back(std::move(std::unique_ptr<PTZCmdControl>(new PTZCmdControl(agent, devControl))));
+    spec.push_back(std::move(std::unique_ptr<TeleBootControl>(new TeleBootControl(agent, devControl))));
+    spec.push_back(std::move(std::unique_ptr<RecordControl>(new RecordControl(agent, devControl))));
+    spec.push_back(std::move(std::unique_ptr<GuardControl>(new GuardControl(agent, devControl))));
+    spec.push_back(std::move(std::unique_ptr<AlarmControl>(new AlarmControl(agent, devControl))));
 }
 
 DeviceControlRequest::~DeviceControlRequest()
 {
-    spec.clear();
+    printf("----- DeviceControlRequest\n");
 }
 
 bool DeviceControlRequest::parse(const XMLElement *xmlReq, Request& req)
@@ -58,18 +66,21 @@ bool DeviceControlRequest::parse(const XMLElement *xmlReq, Request& req)
     const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
     if (!xmlCmdType)
     {
+        printf("CmdType not found\n");
         return false;
     }
 
     const XMLElement *xmlSN = xmlReq->FirstChildElement("SN");
     if (!xmlSN)
     {
+        printf("SN not found\n");
         return false;
     }
 
     const XMLElement *xmlDeviceID = xmlReq->FirstChildElement("DeviceID");
     if (!xmlDeviceID)
     {
+        printf("DeviceID not found\n");
         return false;
     }
 
@@ -87,6 +98,7 @@ bool DeviceControlRequest::match(const std::string& CmdType)
 
 bool DeviceControlRequest::dispatch(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <DeviceControl> Request\n");
     for (auto& i : spec)
     {
         if (i->match(xmlReq))
@@ -95,15 +107,21 @@ bool DeviceControlRequest::dispatch(const XMLElement *xmlReq)
         }
     }
 
+    printf("Not handled DeviceControl Command\n");
     return false;
 }
 
-PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent, Control *control)
-    : CmdTypeSpecRequest(agent, control)
-{}
+PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent, Control *devControl)
+    : CmdTypeSpecRequest(agent)
+    , m_devControl(devControl)
+{
+    printf("++++++ PTZCmdControl\n");
+}
 
 PTZCmdControl::~PTZCmdControl()
-{}
+{
+    printf("----- PTZCmdControl\n");
+}
 
 bool PTZCmdControl::parse(const XMLElement *xmlReq, Request& req)
 {
@@ -118,6 +136,7 @@ bool PTZCmdControl::parse(const XMLElement *xmlReq, Request& req)
         req.PTZCmd = xmlPTZCmd->GetText();
         if (!req.PTZCmd.isValid())
         {
+            printf("PTZCmd not valid\n");
             return false;
         }
     }
@@ -149,35 +168,41 @@ bool PTZCmdControl::match(const XMLElement *xmlReq)
 
 bool PTZCmdControl::handle(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <PTZCmd> request\n");
     Request req;
     if (!parse(xmlReq, req))
     {
         return false;
     }
 
-    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
     if (ch < 0)
     {
         return false;
     }
 
-    std::shared_ptr<CommandFormat> cmd = CommandFormat::create(req.PTZCmd.getValue());
+    std::unique_ptr<CommandFormat> cmd = CommandFormat::create(req.PTZCmd.getCmd());
     if (cmd)
     {
         if (cmd->parse())
         {
-            return cmd->handle(ch, m_control);
+            return cmd->handle(ch, m_devControl);
         }
     }
     return false;
 }
 
-TeleBootControl::TeleBootControl(MANSCDPAgent *agent, Control *control)
-    : CmdTypeSpecRequest(agent, control)
-{}
+TeleBootControl::TeleBootControl(MANSCDPAgent *agent, Control *devControl)
+    : CmdTypeSpecRequest(agent)
+    , m_devControl(devControl)
+{
+    printf("++++++ TeleBootControl\n");
+}
 
 TeleBootControl::~TeleBootControl()
-{}
+{
+    printf("----- TeleBootControl\n");
+}
 
 bool TeleBootControl::parse(const XMLElement *xmlReq, Request& req)
 {
@@ -192,6 +217,7 @@ bool TeleBootControl::parse(const XMLElement *xmlReq, Request& req)
         req.TeleBoot = xmlTeleBoot->GetText();
         if (req.TeleBoot.getStr() != "Boot")
         {
+            printf("TeleBoot not valid\n");
             return false;
         }
     }
@@ -206,21 +232,27 @@ bool TeleBootControl::match(const XMLElement *xmlReq)
 
 bool TeleBootControl::handle(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <TeleBoot> request\n");
     Request req;
     if (!parse(xmlReq, req))
     {
         return false;
     }
 
-    return m_control->reboot();
+    return m_devControl->reboot();
 }
 
-RecordControl::RecordControl(MANSCDPAgent *agent, Control *control)
-    : CmdTypeSpecRequest(agent, control)
-{}
+RecordControl::RecordControl(MANSCDPAgent *agent, Control *devControl)
+    : CmdTypeSpecRequest(agent)
+    , m_devControl(devControl)
+{
+    printf("++++++ RecordControl\n");
+}
 
 RecordControl::~RecordControl()
-{}
+{
+    printf("----- RecordControl\n");
+}
 
 bool RecordControl::parse(const XMLElement *xmlReq, Request& req)
 {
@@ -235,6 +267,7 @@ bool RecordControl::parse(const XMLElement *xmlReq, Request& req)
         req.RecordCmd = xmlRecordCmd->GetText();
         if (!req.RecordCmd.isValid())
         {
+            printf("RecordCmd not valid\n");
             return false;
         }
     }
@@ -255,47 +288,51 @@ bool RecordControl::match(const XMLElement *xmlReq)
 
 bool RecordControl::handle(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <RecordCmd> request\n");
     Request req;
     if (!parse(xmlReq, req))
     {
         return false;
     }
 
-    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
     if (ch < 0)
     {
         return false;
     }
 
-    DeviceControlResponse res(req);
-    recordType::ERecord rec = req.RecordCmd.getValue();
-    if (rec == recordType::Record)
+    std::shared_ptr<DeviceControlResponse> res = m_agent->createCmdMessage<DeviceControlResponse>(m_agent, req);
+    if (!res)
     {
-        res.Result = m_control->startRecord(ch);
+        return false;
     }
-    else if (rec == recordType::StopRecord)
+    int32_t recCmd = req.RecordCmd.getInt();
+    if (recCmd == recordType::Record)
     {
-        res.Result = m_control->stopRecord(ch);
+        res->Result = m_devControl->startRecord(ch);
+    }
+    else if (recCmd == recordType::StopRecord)
+    {
+        res->Result = m_devControl->stopRecord(ch);
     }
     else
     {
-        res.Result = resultType::ERROR;
+        res->Result = resultType::ERROR;
     }
-    
-    XMLDocument xmldocRes;
-    if (res.encode(&xmldocRes))
-    {
-        return m_agent->sendResponseCmd(xmldocRes);
-    }
-    return false;
+    return res->response();
 }
 
-GuardControl::GuardControl(MANSCDPAgent *agent, Control *control)
-    : CmdTypeSpecRequest(agent, control)
-{}
+GuardControl::GuardControl(MANSCDPAgent *agent, Control *devControl)
+    : CmdTypeSpecRequest(agent)
+    , m_devControl(devControl)
+{
+    printf("++++++ GuardControl\n");
+}
 
 GuardControl::~GuardControl()
-{}
+{
+    printf("----- GuardControl\n");
+}
 
 bool GuardControl::parse(const XMLElement *xmlReq, Request& req)
 {
@@ -310,6 +347,7 @@ bool GuardControl::parse(const XMLElement *xmlReq, Request& req)
         req.GuardCmd = xmlGuardCmd->GetText();
         if (!req.GuardCmd.isValid())
         {
+            printf("GuardCmd not valid\n");
             return false;
         }
     }
@@ -324,47 +362,51 @@ bool GuardControl::match(const XMLElement *xmlReq)
 
 bool GuardControl::handle(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <GuardCmd> request\n");
     Request req;
     if (!parse(xmlReq, req))
     {
         return false;
     }
 
-    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
     if (ch < 0)
     {
         return false;
     }
 
-    DeviceControlResponse res(req);
-    guardType::EGuard guard = req.GuardCmd.getValue();
-    if (guard == guardType::SetGuard)
+    std::shared_ptr<DeviceControlResponse> res = m_agent->createCmdMessage<DeviceControlResponse>(m_agent, req);
+    if (!res)
     {
-        res.Result = m_control->setGuard(ch);
+        return false;
     }
-    else if (guard == guardType::ResetGuard)
+    int32_t guardCmd = req.GuardCmd.getInt();
+    if (guardCmd == guardType::SetGuard)
     {
-        res.Result = m_control->resetGuard(ch);
+        res->Result = m_devControl->setGuard(ch);
+    }
+    else if (guardCmd == guardType::ResetGuard)
+    {
+        res->Result = m_devControl->resetGuard(ch);
     }
     else
     {
-        res.Result = resultType::ERROR;
+        res->Result = resultType::ERROR;
     }
-
-    XMLDocument xmldocRes;
-    if (res.encode(&xmldocRes))
-    {
-        return m_agent->sendResponseCmd(xmldocRes);
-    }
-    return false;
+    return res->response();
 }
 
-AlarmControl::AlarmControl(MANSCDPAgent *agent, Control *control)
-    : CmdTypeSpecRequest(agent, control)
-{}
+AlarmControl::AlarmControl(MANSCDPAgent *agent, Control *devControl)
+    : CmdTypeSpecRequest(agent)
+    , m_devControl(devControl)
+{
+    printf("++++++ AlarmControl\n");
+}
 
 AlarmControl::~AlarmControl()
-{}
+{
+    printf("------ AlarmControl\n");
+}
 
 bool AlarmControl::parse(const XMLElement *xmlReq, Request& req)
 {
@@ -379,6 +421,7 @@ bool AlarmControl::parse(const XMLElement *xmlReq, Request& req)
         req.AlarmCmd = xmlAlarmCmd->GetText();
         if (req.AlarmCmd.getStr() != "ResetAlarm")
         {
+            printf("AlarmCmd not valid\n");
             return false;
         }
     }
@@ -409,42 +452,43 @@ bool AlarmControl::match(const XMLElement *xmlReq)
 
 bool AlarmControl::handle(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <AlarmCmd> request\n");
     Request req;
     if (!parse(xmlReq, req))
     {
         return false;
     }
 
-    int32_t ch = m_agent->getChNum(req.DeviceID.getStr());
+    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
     if (ch < 0)
     {
         return false;
     }
 
-    DeviceControlResponse res(req);
+    std::shared_ptr<DeviceControlResponse> res = m_agent->createCmdMessage<DeviceControlResponse>(m_agent, req);
+    if (!res)
+    {
+        return false;
+    }
     if (req.Info.AlarmType.isValid())
     {
-        res.Result = m_control->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
+        res->Result = m_devControl->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
     }
     else
     {
-        res.Result = resultType::ERROR;
+        res->Result = resultType::ERROR;
     }
-
-    XMLDocument xmldocRes;
-    if (res.encode(&xmldocRes))
-    {
-        return m_agent->sendResponseCmd(xmldocRes);
-    }
-    return false;
+    return res->response();
 }
 
-DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *control)
-{}
+DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *devControl)
+{
+    printf("++++++ DeviceConfigRequest\n");
+}
 
 DeviceConfigRequest::~DeviceConfigRequest()
 {
-    spec.clear();
+    printf("------ DeviceConfigRequest\n");
 }
 
 bool DeviceConfigRequest::match(const std::string& CmdType)
@@ -454,5 +498,6 @@ bool DeviceConfigRequest::match(const std::string& CmdType)
 
 bool DeviceConfigRequest::dispatch(const XMLElement *xmlReq)
 {
+    printf("MANSCDP <DeviceConfig> Request\n");
     return false;
 }
