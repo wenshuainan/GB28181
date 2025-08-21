@@ -84,6 +84,7 @@ private:
     bool m_bStarted;
     uint8_t *m_buffer; // 媒体源数据缓存
     int32_t m_size; // 缓存大小
+    std::string m_subject;
 
 protected:
     SessionAgent *m_agent; // 会话所属代理
@@ -92,9 +93,9 @@ protected:
     PES::ES_TYPE m_aType; // 会话源音频流格式
 
 public:
-    Session(SessionAgent *agent, const Attr& attr);
+    Session(SessionAgent *agent, const Attr& attr, const std::string& subject);
     virtual ~Session();
-    static std::unique_ptr<Session> create(SessionAgent *agent, const Attr& attr);
+    static std::unique_ptr<Session> create(SessionAgent *agent, const Attr& attr, const std::string& subject);
 
 private:
     void threadProc();
@@ -122,7 +123,7 @@ private:
     std::unique_ptr<Play> m_devPlay; // 设备实时视音频播放适配类
 
 public:
-    SessionPlay(SessionAgent *m_agent, const Attr& attr);
+    SessionPlay(SessionAgent *m_agent, const Attr& attr, const std::string& subject);
     virtual ~SessionPlay();
 
 public:
@@ -148,7 +149,7 @@ private:
     std::unique_ptr<MANSRTSPAgent> m_rtsp; // 回放控制协议代理
 
 public:
-    SessionPlayback(SessionAgent *m_agent, const Attr& attr);
+    SessionPlayback(SessionAgent *m_agent, const Attr& attr, const std::string& subject);
     virtual ~SessionPlayback();
 
 public:
@@ -179,7 +180,7 @@ private:
     std::unique_ptr<Download> m_devDownload; // 设备文件下载适配类
 
 public:
-    SessionDownload(SessionAgent *m_agent, const Attr& attr);
+    SessionDownload(SessionAgent *m_agent, const Attr& attr, const std::string& subject);
     virtual ~SessionDownload();
 
 public:
@@ -209,9 +210,12 @@ public:
     SessionAgent(UA *ua, int32_t ch);
     virtual ~SessionAgent();
 
+private:
+    std::string parseSubject(const std::string& subject) const;
+
 public:
     RtpNet::Type parseNetType(const std::string& str) const;
-    std::unique_ptr<Session> createSession(const SipUserMessage& req);
+    std::unique_ptr<Session> createSession(const SipUserMessage& req, const std::string& subject);
     bool dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req);
     bool dispatchACK(const SessionIdentifier& id);
     bool dispatchBYE(const SessionIdentifier& id);

@@ -36,6 +36,7 @@ public:
     const char* getReasonPhrase() const;
     const char* getRequestUser() const;
     const char* getHeaderDate() const;
+    const char* getHeaderSubject() const;
 
     int32_t getSdpSessionVersion() const;
     const char* getSdpSessionOwner() const;

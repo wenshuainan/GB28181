@@ -127,6 +127,24 @@ const char* SipUserMessage::getHeaderDate() const
     return hfvl->front()->getBuffer();
 }
 
+const char* SipUserMessage::getHeaderSubject() const
+{
+    if (m_adapter == nullptr || m_adapter->instance == nullptr)
+    {
+        return "";
+    }
+
+    const std::shared_ptr<resip::SipMessage>& instance = m_adapter->instance;
+    if (instance->exists(resip::h_Subject))
+    {
+        return instance->header(resip::h_Subject).value().c_str();
+    }
+    else
+    {
+        return "";
+    }
+}
+
 int32_t SipUserMessage::getSdpSessionVersion() const
 {
     if (m_adapter == nullptr || m_adapter->instance == nullptr)

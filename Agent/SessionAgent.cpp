@@ -169,11 +169,12 @@ void Media::finished()
     }
 }
 
-Session::Session(SessionAgent *agent, const Attr& attr)
+Session::Session(SessionAgent *agent, const Attr& attr, const std::string& subject)
     : m_attr(attr)
     , m_bStarted(false)
     , m_buffer(nullptr)
     , m_size(0)
+    , m_subject(subject)
     , m_agent(agent)
 {
     printf("++++++ Session\n");
@@ -185,21 +186,21 @@ Session::~Session()
     stop();
 }
 
-std::unique_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr)
+std::unique_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr, const std::string& subject)
 {
     printf("create session %s\n", attr.name.c_str());
     Session *session = nullptr;
     if (attr.name == "Play")
     {
-        session = new SessionPlay(agent, attr);
+        session = new SessionPlay(agent, attr, subject);
     }
     else if (attr.name == "Playback")
     {
-        session = new SessionPlayback(agent, attr);
+        session = new SessionPlayback(agent, attr, subject);
     }
     else if (attr.name == "Download")
     {
-        session = new SessionDownload(agent, attr);
+        session = new SessionDownload(agent, attr, subject);
     }
     else
     {
@@ -428,8 +429,8 @@ bool Session::addMedia(const Media::Attr& attr)
     return false;
 }
 
-SessionPlay::SessionPlay(SessionAgent *agent, const Attr& attr)
-    : Session(agent, attr)
+SessionPlay::SessionPlay(SessionAgent *agent, const Attr& attr, const std::string& subject)
+    : Session(agent, attr, subject)
 {
     printf("++++++ SessionPlay %d:%p\n", m_agent->getCh(), this);
     m_devPlay = std::move(std::unique_ptr<DevPlay>(new DevPlay(m_agent->getCh())));
@@ -499,8 +500,8 @@ int32_t SessionPlay::fetchAudio(uint8_t *data, int32_t size)
     return m_devPlay->getAudio(data, size);
 }
 
-SessionPlayback::SessionPlayback(SessionAgent *agent, const Attr& attr)
-    : Session(agent, attr)
+SessionPlayback::SessionPlayback(SessionAgent *agent, const Attr& attr, const std::string& subject)
+    : Session(agent, attr, subject)
     , m_rtsp(new MANSRTSPAgent(m_agent->getUA(), this))
 {
     printf("++++++ SessionPlayback %d:%p\n", m_agent->getCh(), this);
@@ -586,8 +587,8 @@ bool SessionPlayback::isFileEnd()
     return m_devPlayback->isFileEnd();
 }
 
-SessionDownload::SessionDownload(SessionAgent *agent, const Attr& attr)
-    : Session(agent, attr)
+SessionDownload::SessionDownload(SessionAgent *agent, const Attr& attr, const std::string& subject)
+    : Session(agent, attr, subject)
 {
     printf("++++++ SessionDownload %d:%p\n", m_agent->getCh(), this);
     m_devDownload = std::move(std::unique_ptr<DevDownload>(new DevDownload(m_agent->getCh())));
@@ -670,7 +671,27 @@ SessionAgent::~SessionAgent()
     printf("------ SessionAgent %d\n", m_ch);
 }
 
-std::unique_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
+std::string SessionAgent::parseSubject(const std::string& subject) const
+{
+    if (subject.empty())
+    {
+        return "";
+    }
+    
+    /* 附录 L
+     * Subject字段的格式如下:
+     * Subject:媒体流发送者ID:发送方媒体流序列号,媒体流接收者ID:接收方媒体流序列号o
+     */
+    std::size_t pos = subject.find(","); // 取媒体流发送者
+    if (pos == std::string::npos)
+    {
+        return "";
+    }
+    
+    return subject.substr(0, pos);
+}
+
+std::unique_ptr<Session> SessionAgent::createSession(const SipUserMessage& req, const std::string& subject)
 {
     Session::Attr attr = {
         .version = req.getSdpSessionVersion(),
@@ -690,7 +711,7 @@ std::unique_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
     printf("  start=%ld\n", attr.startTime);
     printf("  end=%ld\n", attr.endTime);
 
-    std::unique_ptr<Session> session = Session::create(this, attr);
+    std::unique_ptr<Session> session = Session::create(this, attr, subject);
     if (session == nullptr)
     {
         return nullptr;
@@ -751,23 +772,44 @@ std::unique_ptr<Session> SessionAgent::createSession(const SipUserMessage& req)
 bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req)
 {
     std::string name = req.getSdpSessionName();
+
     auto sip = m_ua->getSip();
     if (!sip)
     {
         return false;
     }
 
+    /* GB28181 附录 K
+     * 下级平台、设备在接收到呼叫请求后,应判断是否在发送以此媒体源标识的码流,
+     * 若已经在发送,则应释放现有媒体流发送链路并按照请求建立新的媒体流发送链路
+     */
+    std::string subject = parseSubject(req.getHeaderSubject());
+    printf("parsed subject source identifier: [%s]\n", subject.c_str());
+    if (!subject.empty())
+    {
+        for (auto& it : m_session)
+        {
+            if (it.second->m_subject == subject)
+            {
+                printf("session %d(%s):%s gonna destroy and recreate\n", m_ch, name.c_str(), subject.c_str());
+                it.second->stop();
+                m_session.erase(it.first);
+                break;
+            }
+        }
+    }
+
     /* 附录G 当设备不能满足更多的呼叫请求时,向发送的Invite请求方发送486错误响应消息 */
     if (isSessionExist(name))
     {
-        printf("session %d already has a call, name=%s\n", m_ch, name.c_str());
+        printf("ch %d session %s existed, response 486\n", m_ch, name.c_str());
         SipUserMessage res486;
         sip->makeSessionResponse(req, res486, 486);
         sip->sendSessionResponse(id, res486);
         return false;
     }
 
-    std::unique_ptr<Session> session = createSession(req);
+    std::unique_ptr<Session> session = createSession(req, subject);
     if (session != nullptr)
     {
         printf("session %d:%s create succeed\n", m_ch, name.c_str());
@@ -783,7 +825,7 @@ bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMess
     }
     
     /* 附录G 当设备收到无法满足的SDP时,向发送的Invite请求方发送488错误响应消息 */
-    printf("session %d failed to meet SDP, name=%s\n", m_ch, name.c_str());
+    printf("ch %d session failed to meet SDP, name=%s, response 488\n", m_ch, name.c_str());
     SipUserMessage res488;
     sip->makeSessionResponse(req, res488, 488);
     sip->sendSessionResponse(id, res488);

@@ -193,30 +193,40 @@ bool ResipUserAgent::sendSessionResponse(const SessionIdentifier& id, const SipU
         return false;
     }
 
-    const std::shared_ptr<resip::SipMessage> instance = adapter->instance;
-    const resip::Contents *contents = adapter->instance->getContents();
-    if (contents == nullptr)
+    int32_t code = res.getCode();
+    if (code == 200)
     {
-        return false;
-    }
+        const std::shared_ptr<resip::SipMessage> instance = adapter->instance;
+        const resip::Contents *contents = adapter->instance->getContents();
+        if (contents == nullptr)
+        {
+            return false;
+        }
 
-    const resip::SdpContents *sdp = dynamic_cast<const resip::SdpContents*>(contents);
-    if (sdp == nullptr)
-    {
-        return false;
-    }
+        const resip::SdpContents *sdp = dynamic_cast<const resip::SdpContents*>(contents);
+        if (sdp == nullptr)
+        {
+            return false;
+        }
 
-    resip::InviteSession *session = (resip::InviteSession *)id;
-    session->provideAnswer(*sdp);
-    resip::ServerInviteSession* uas = dynamic_cast<resip::ServerInviteSession*>(session);
-    if(uas && !uas->isAccepted())
-    {
-        uas->accept();
-        return true;
+        resip::InviteSession *session = (resip::InviteSession *)id;
+        session->provideAnswer(*sdp);
+        resip::ServerInviteSession* uas = dynamic_cast<resip::ServerInviteSession*>(session);
+        if(uas && !uas->isAccepted())
+        {
+            uas->accept();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     else
     {
-        return false;
+        resip::InviteSession *session = (resip::InviteSession *)id;
+        session->reject(code);
+        return true;
     }
 }
 
@@ -299,13 +309,16 @@ void ResipUserAgent::onTerminated(resip::InviteSessionHandle h, resip::InviteSes
 {
     std::cout << "terminated reason: " << reason << std::endl;
 
-    SipAdapterMessage adapter = {
-        .instance = std::make_shared<resip::SipMessage>(*msg)
-    };
+    if (msg)
+    {
+        SipAdapterMessage adapter = {
+            .instance = std::make_shared<resip::SipMessage>(*msg)
+        };
 
-    SipUserMessage user;
-    user.setAdapter(adapter);
-    postSessionRequest((SessionIdentifier)(h.get()), user);
+        SipUserMessage user;
+        user.setAdapter(adapter);
+        postSessionRequest((SessionIdentifier)(h.get()), user);
+    }
 }
 
 void ResipUserAgent::onOffer(resip::InviteSessionHandle handle, const resip::SipMessage& msg, const resip::SdpContents& offer)
