@@ -29,15 +29,15 @@ PSMux::~PSMux()
     }
 }
 
-void PSMux::sendPack(const std::unique_ptr<Pack>& pack)
+void PSMux::sendPack(Pack& pack)
 {
-    if (pack != nullptr && m_callback != nullptr)
+    if (m_callback != nullptr)
     {
-        pack->toBitStream();
-        const BitStream stream = pack->getBitStream();
+        pack.toBitStream();
+        const BitStream stream = pack.getBitStream();
         m_callback->onProgramStream(stream.getData(), stream.getLength());
 
-        auto PES_packet = pack->getPESPacket();
+        auto PES_packet = pack.getPESPacket();
         for (auto& it : PES_packet)
         {
             const BitStream pes = it->getBitStream();
@@ -48,10 +48,10 @@ void PSMux::sendPack(const std::unique_ptr<Pack>& pack)
 
 void PSMux::multiplexed()
 {
-    Pack *pack = nullptr;
+    Pack pack;
     std::shared_ptr<SystemHeader> systemheader = std::make_shared<SystemHeader>();
     std::shared_ptr<ProgramStreamMap> psm = std::make_shared<ProgramStreamMap>();
-    bool bVauFinished = true; // video access unit finished
+    bool bVauFinished = false; // video access unit finished
 
     if (systemheader == nullptr || psm == nullptr)
     {
@@ -74,29 +74,20 @@ void PSMux::multiplexed()
 
                 if (packet.bFirst)
                 {
-                    pack = new Pack();
-                    if (pack)
-                    {
-                        pack->getPackHeader().setSCR(packet.pes->getPresentation());
-                    }
-                    else
-                    {
-                        printf("pack new failed\n");
-                        break;
-                    }
+                    pack.getPackHeader().setSCR(packet.pes->getPresentation());
                     if (packet.bKeyFrame)
                     {
                         // printf("add systemheader and psm\n");
-                        pack->addSystemHeader(systemheader);
-                        pack->addPESPacket(psm);
+                        pack.addSystemHeader(systemheader);
+                        pack.addPESPacket(psm);
                     }
                 }
-                pack->addPESPacket(packet.pes);
+                pack.addPESPacket(packet.pes);
                 bVauFinished = packet.bFinished;
             }
         }
 
-        if (pack && bVauFinished)
+        if (bVauFinished)
         {
             /* PESA放到pack最后 */
             {
@@ -107,13 +98,13 @@ void PSMux::multiplexed()
                     m_audioStream.pop();
                     systemheader->addAudioStreamType(0xC0);
                     psm->addElementaryStream(packet.stream_type, 0xC0);
-                    pack->addPESPacket(packet.pes);
+                    pack.addPESPacket(packet.pes);
                 }
             }
 
             // printf("send pack\n");
-            sendPack(std::move(std::unique_ptr<Pack>(pack)));
-            pack = nullptr;
+            sendPack(pack);
+            pack.clear();
         }
 
         usleep(10000);

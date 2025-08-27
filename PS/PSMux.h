@@ -44,7 +44,7 @@ public:
     ~PSMux();
 
 private:
-    void sendPack(const std::unique_ptr<Pack>& pack);
+    void sendPack(Pack& pack);
     void multiplexed();
 
 public:

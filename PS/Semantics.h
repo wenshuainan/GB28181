@@ -98,6 +98,7 @@ public:
     void setSystemHeader(const std::shared_ptr<SystemHeader>& systemheader);
     void updateMuxRate(int32_t addedLength);
     void setSCR(uint64_t decoder_time);
+    void clear();
 };
 
 class Descriptor
@@ -245,6 +246,7 @@ public:
     void addPESPacket(const std::shared_ptr<PESPacket>& packet);
     const std::vector<std::shared_ptr<PESPacket>>& getPESPacket() const;
     PackHeader& getPackHeader();
+    void clear();
 };
 
 #endif

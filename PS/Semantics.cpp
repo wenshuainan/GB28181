@@ -442,6 +442,14 @@ void PackHeader::setSCR(uint64_t decoder_time)
     system_clock_reference_extension = (27000 * decoder_time) % 300;
 }
 
+void PackHeader::clear()
+{
+    program_mux_rate = 0;
+    system_header.reset();
+    pack_stuffing_length = 0;
+    pack_stuffing_bytes.clear();
+}
+
 PESPacket::PESPacket(uint8_t streamid, uint64_t presentation)
     : m_bitstream(32)
 {
@@ -854,4 +862,10 @@ const std::vector<std::shared_ptr<PESPacket>>& Pack::getPESPacket() const
 PackHeader& Pack::getPackHeader()
 {
     return pack_header;
+}
+
+void Pack::clear()
+{
+    pack_header.clear();
+    PES_packet.clear();
 }
