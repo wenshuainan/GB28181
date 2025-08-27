@@ -161,15 +161,6 @@ bool PTZCommand::parse()
     return true;
 }
 
-bool PTZCommand::handle(int32_t ch, Control* control)
-{
-    if (control)
-    {
-        return control->controlPTZ(ch, this);
-    }
-    return false;
-}
-
 FICommand::FICommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
@@ -215,15 +206,6 @@ bool FICommand::parse()
     return true;
 }
 
-bool FICommand::handle(int32_t ch, Control* control)
-{
-    if (control)
-    {
-        return control->controlFI(ch, this);
-    }
-    return false;
-}
-
 PresetCommand::PresetCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
@@ -252,11 +234,6 @@ bool PresetCommand::parse()
     return true;
 }
 
-bool PresetCommand::handle(int ch, Control* control)
-{
-    return false;
-}
-
 CruiseCommand::CruiseCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
@@ -269,11 +246,6 @@ CruiseCommand::~CruiseCommand()
 }
 
 bool CruiseCommand::parse()
-{
-    return false;
-}
-
-bool CruiseCommand::handle(int ch, Control* control)
 {
     return false;
 }
@@ -294,11 +266,6 @@ bool ScanCommand::parse()
     return false;
 }
 
-bool ScanCommand::handle(int ch, Control* control)
-{
-    return false;
-}
-
 AuxiliaryCommand::AuxiliaryCommand(const uint8_t* cmd)
     : CommandFormat(cmd)
 {
@@ -311,11 +278,6 @@ AuxiliaryCommand::~AuxiliaryCommand()
 }
 
 bool AuxiliaryCommand::parse()
-{
-    return false;
-}
-
-bool AuxiliaryCommand::handle(int ch, Control* control)
 {
     return false;
 }

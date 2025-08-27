@@ -79,6 +79,16 @@ public:
     {
         return bValid && this->value == value;
     }
+
+    bool operator!=(int32_t value) const
+    {
+        return bValid && this->value != value;
+    }
+
+    bool operator>(int32_t value) const
+    {
+        return bValid && this->value > value;
+    }
 };
 
 class stringType

@@ -2,6 +2,7 @@
 #include "Agent/MANSCDPAgent.h"
 #include "Agent/SessionAgent.h"
 #include "Interface/9.6Status.h"
+#include "MANSCDPDevice.h"
 
 bool NotifyRequest::encode(XMLDocument *xmldocNotify)
 {
@@ -38,7 +39,7 @@ KeepaliveNotify::KeepaliveNotify(MANSCDPAgent *agent, class Status *devStatus)
     printf("++++++ KeepaliveNotify\n");
     CmdType = "Keepalive";
     SN++;
-    DeviceID = m_agent->getMainDeviceId();
+    DeviceID = dynamic_cast<MANSCDPDevice*>(m_devStatus)->getId();
     Status = "OK";
 }
 
@@ -92,13 +93,17 @@ bool KeepaliveNotify::encode(XMLDocument *xmldocNotify)
 
 bool KeepaliveNotify::notify(std::shared_ptr<MessageResultHandler> handler)
 {
-    const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();
-    for (auto i : channels)
+    MANSCDPDevice *dev = dynamic_cast<MANSCDPDevice*>(m_devStatus);
+    if (!dev)
     {
-        if (!m_devStatus->getStatus(i.second))
-        {
-            Info.DeviceID.push_back(i.first);
-        }
+        return false;
+    }
+
+    std::vector<std::string> offDevices;
+    dev->getStatus(offDevices);
+    for (auto& i : offDevices)
+    {
+        Info.DeviceID.push_back(i);
     }
 
     XMLDocument xmldocNotify;
@@ -209,9 +214,9 @@ bool AlarmNotify::encode(XMLDocument *xmldocNotify)
     return true;
 }
 
-bool AlarmNotify::notify(int32_t ch, std::shared_ptr<MessageResultHandler> handler)
+bool AlarmNotify::notify(const std::string& deviceId, std::shared_ptr<MessageResultHandler> handler)
 {
-    DeviceID = m_agent->getDeviceId(ch);
+    DeviceID = deviceId;
 
     XMLDocument xmldocNotify;
     if (encode(&xmldocNotify))

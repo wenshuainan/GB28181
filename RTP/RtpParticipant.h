@@ -29,15 +29,15 @@ public:
     {
         bool bFirst;
         uint8_t marker;
-        uint32_t tms; //毫秒时间
+        uint64_t ms; //毫秒时间
         std::shared_ptr<std::vector<uint8_t>> payload;
     };
     
 private:
     std::unique_ptr<RtpNet> m_net;
     std::unique_ptr<RtpPayload> m_payloadFormat;
-    std::queue<Formated> m_formatedQue;
-    std::mutex m_queMutex;
+    std::queue<Formated> m_formated;
+    std::mutex m_mutex;
     std::unique_ptr<std::thread> m_thread;
     bool m_bConnected;
     RtpPayload::Type m_payloadType;

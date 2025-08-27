@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/prctl.h>
 #include <random>
 #include "RtpParticipant.h"
 
 RtpParticipant::RtpParticipant(Participant& participant)
+    : m_bConnected(false)
 {
     printf("++++++ RtpParticipant %p\n", this);
-    m_bConnected = false;
     m_payloadType = participant.payloadType;
     m_SSRC = participant.SSRC;
     m_destination = participant.destination;
@@ -14,7 +15,7 @@ RtpParticipant::RtpParticipant(Participant& participant)
     m_net = RtpNet::create(participant.netType, participant.destination.port);
     if (m_net != nullptr)
     {
-        m_payloadFormat = RtpPayload::create(this, m_payloadType, m_net->getEfficLen());
+        m_payloadFormat = RtpPayload::create(this, m_payloadType, m_net->getMTU());
     }
 }
 
@@ -42,27 +43,32 @@ void RtpParticipant::process()
         .pt = m_payloadType,
         .m = 0,
         .seq = makeRandom(),
-        .ts = 0,
+        .ts = makeRandom(),
         .ssrc = m_SSRC
     };
 
+    uint64_t lastms = 0;
+    prctl(PR_SET_NAME, "RTPParticipant");
+
     while (m_bConnected)
     {
-        std::lock_guard<std::mutex> guard(m_queMutex);
-        if (m_formatedQue.empty())
+        m_mutex.lock();
+        if (m_formated.empty())
         {
-            guard.~lock_guard();
+            m_mutex.unlock();
             usleep(10000);
             continue;
         }
 
-        Formated formated = m_formatedQue.front();
-        m_formatedQue.pop();
-        guard.~lock_guard();
+        Formated formated = m_formated.front();
+        m_formated.pop();
+        m_mutex.unlock();
 
         if (formated.bFirst)
         {
-            fixed.ts = formated.tms * 90;
+            uint32_t delta = formated.ms - lastms;
+            fixed.ts += (delta > 1000 ? 0 : delta) * 90;
+            lastms = formated.ms;
         }
         if (formated.marker)
         {
@@ -70,7 +76,11 @@ void RtpParticipant::process()
         }
         RtpPacket packet(fixed, formated.payload);
 
-        m_net->send(packet);
+        if (!m_net->send(packet))
+        {
+            printf("rtp %p network send data failed errno=%d\n", this, errno);
+            break;
+        }
 
         fixed.seq++;
         fixed.m = 0;
@@ -79,8 +89,8 @@ void RtpParticipant::process()
 
 bool RtpParticipant::pushPayload(const Formated& formated)
 {
-    std::lock_guard<std::mutex> guard(m_queMutex);
-    m_formatedQue.push(formated);
+    std::lock_guard<std::mutex> guard(m_mutex);
+    m_formated.push(formated);
     return true;
 }
 
@@ -88,7 +98,8 @@ int32_t RtpParticipant::transport(const uint8_t *data, int32_t len)
 {
     if (m_payloadFormat == nullptr)
     {
-        return 0;
+        printf("rtp %p payload format null\n", this);
+        return -1;
     }
 
     int32_t tlen = 0;

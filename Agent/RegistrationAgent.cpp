@@ -2,14 +2,12 @@
 #include <time.h>
 #include "UA.h"
 #include "RegistrationAgent.h"
-#include "DevRegistration.h"
 #include "DevDate.h"
 
 RegistrationAgent::RegistrationAgent(UA *ua)
     : Agent(ua)
 {
     printf("++++++ RegistrationAgent\n");
-    m_devRegistration = std::move(std::unique_ptr<DevRegistration>(new DevRegistration()));
     m_devDate = std::move(std::unique_ptr<DevDate>(new DevDate()));
     m_GBVerName = "X-GB-Ver";
     m_GBVerValue = "3.0";
@@ -19,6 +17,7 @@ RegistrationAgent::RegistrationAgent(UA *ua)
 RegistrationAgent::~RegistrationAgent()
 {
     printf("----- RegistrationAgent\n");
+    stop();
 }
 
 bool RegistrationAgent::start()
@@ -62,7 +61,7 @@ bool RegistrationAgent::stop()
         m_bStarted = false;
     }
 
-    if (m_devRegistration->getState() == Registration::REGISTERED)
+    if (m_ua->getState() == Registration::REGISTERED)
     {
         auto sip = m_ua->getSip();
         if (!sip)
@@ -89,10 +88,11 @@ bool RegistrationAgent::agent(const SipUserMessage& message)
 {
     printf("Registration agent:\n");
     message.print();
-    changeDevState(message.getCode(), message.getReasonPhrase());
+    int32_t code = message.getCode();
+    m_ua->onRegistrationStatus(code, message.getReasonPhrase());
 
     /* SIP方式校时 */
-    if (message.getCode() == 200)
+    if (code == 200)
     {
         const char *date = message.getHeaderDate();
         if (date && strlen(date) > 0)
@@ -107,36 +107,4 @@ bool RegistrationAgent::agent(const SipUserMessage& message)
         }
     }
     return true;
-}
-
-void RegistrationAgent::changeDevState(int code, const std::string& reasonPhrase)
-{
-    Registration::State newState;
-    Registration::State oldState = m_devRegistration->getState();
-
-    switch (code)
-    {
-    case 200:
-        if (oldState == Registration::REGISTERED)
-        {
-            newState = Registration::UNREGISTERED;
-        }
-        else
-        {
-            newState = Registration::REGISTERED;
-            m_ua->setOnline(true); //注册成功，设置在线状态
-        }
-        break;
-    case 403:
-        newState = Registration::REGISTER_FAILED;
-        break;
-    
-    default:
-        newState = Registration::REGISTER_FAILED;
-        break;
-    }
-
-    printf("Registration state %d -> %d(%s)\n", oldState, newState, reasonPhrase.c_str());
-    m_devRegistration->m_state = newState;
-    m_devRegistration->onState(newState, reasonPhrase);
 }

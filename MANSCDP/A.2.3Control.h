@@ -5,13 +5,10 @@
 #include <memory>
 #include "A.2.2CmdType.h"
 
-class Control;
-
 /* A.2.3 控制命令 */
 class ControlReuest : public CmdTypeRequest
 {
 private:
-    std::unique_ptr<Control> m_devControl;
     std::vector<std::unique_ptr<CmdTypeControl>> spec;
 
 public:
@@ -45,7 +42,7 @@ private:
     std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
 
 public:
-    DeviceControlRequest(MANSCDPAgent *agent, Control *devControl);
+    DeviceControlRequest(MANSCDPAgent *agent);
     virtual ~DeviceControlRequest();
 
 public:
@@ -74,11 +71,8 @@ public:
         } PTZCmdParams;
     };
 
-private:
-    Control *m_devControl;
-
 public:
-    PTZCmdControl(MANSCDPAgent *agent, Control *devControl);
+    PTZCmdControl(MANSCDPAgent *agent);
     virtual ~PTZCmdControl();
 
 private:
@@ -99,11 +93,8 @@ public:
         stringType TeleBoot;
     };
 
-private:
-    Control *m_devControl;
-
 public:
-    TeleBootControl(MANSCDPAgent *agent, Control *devControl);
+    TeleBootControl(MANSCDPAgent *agent);
     virtual ~TeleBootControl();
 
 private:
@@ -126,11 +117,8 @@ public:
         integerType StreamNumber;
     };
 
-private:
-    Control *m_devControl;
-
 public:
-    RecordControl(MANSCDPAgent *agent, Control *devControl);
+    RecordControl(MANSCDPAgent *agent);
     virtual ~RecordControl();
 
 private:
@@ -151,11 +139,8 @@ public:
         guardType GuardCmd;
     };
 
-private:
-    Control *m_devControl;
-    
 public:
-    GuardControl(MANSCDPAgent *agent, Control *devControl);
+    GuardControl(MANSCDPAgent *agent);
     virtual ~GuardControl();
     
 private:
@@ -195,11 +180,8 @@ public:
         } Info;
     };
 
-private:
-    Control *m_devControl;
-    
 public:
-    AlarmControl(MANSCDPAgent *agent, Control *devControl);
+    AlarmControl(MANSCDPAgent *agent);
     virtual ~AlarmControl();
     
 private:
@@ -246,7 +228,7 @@ private:
     std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
     
 public:
-    DeviceConfigRequest(MANSCDPAgent *agent, Control *devControl);
+    DeviceConfigRequest(MANSCDPAgent *agent);
     virtual ~DeviceConfigRequest();
     static bool parse(const XMLElement *xmlReq, Request& req);
 

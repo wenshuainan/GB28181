@@ -6,14 +6,14 @@
 class RtpOverUdp : public RtpNet
 {
 public:
-    RtpOverUdp(int localPort = 0);
+    RtpOverUdp(int localPort = 60000);
     virtual ~RtpOverUdp();
 
 public:
     virtual bool connect(const std::string& ipv4, int port);
     virtual bool disconnect();
     virtual bool send(RtpPacket& packet);
-    virtual uint16_t getEfficLen();
+    virtual uint16_t getMTU();
     virtual const char* getType() const;
 };
 

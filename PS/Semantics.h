@@ -97,6 +97,7 @@ public:
 public:
     void setSystemHeader(const std::shared_ptr<SystemHeader>& systemheader);
     void updateMuxRate(int32_t addedLength);
+    void setSCR(uint64_t decoder_time);
 };
 
 class Descriptor
@@ -170,7 +171,7 @@ private:
     std::vector<uint8_t> padding_byte;
 
 public:
-    PESPacket(uint8_t streamid);
+    PESPacket(uint8_t streamid, uint64_t presentation = 0);
     virtual ~PESPacket();
     virtual void toBitStream();
     virtual void toBitStream(BitStream& bitstream);
@@ -179,6 +180,7 @@ public:
 
 public:
     int32_t writeDataByte(const uint8_t* data, int32_t size);
+    uint64_t getPresentation() const;
 };
 
 class ProgramStreamMap : public PESPacket
@@ -242,6 +244,7 @@ public:
     void addSystemHeader(const std::shared_ptr<SystemHeader>& system_header);
     void addPESPacket(const std::shared_ptr<PESPacket>& packet);
     const std::vector<std::shared_ptr<PESPacket>>& getPESPacket() const;
+    PackHeader& getPackHeader();
 };
 
 #endif

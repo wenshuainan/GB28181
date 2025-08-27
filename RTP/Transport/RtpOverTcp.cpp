@@ -36,6 +36,7 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 
+    /*  设置非阻塞，超时时间内未连接成功，返回错误 */
     int flags = fcntl(m_sockfd, F_GETFL, 0);
     fcntl(m_sockfd, F_SETFL, flags | O_NONBLOCK);
 
@@ -68,6 +69,7 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
     printf("tcp nonblock connected=%d %p\n", err, this);
     if (err == 0)
     {
+        /* 连接成功，恢复阻塞模式 */
         fcntl(m_sockfd, F_SETFL, flags);
         return true;
     }
@@ -133,11 +135,14 @@ bool RtpOverTcp::send(RtpPacket& packet)
     iov[2].iov_base = (void *)packet.getPayload();
     iov[2].iov_len = payloadlen;
 
-    return writev(m_sockfd, iov, 3)
-            == (ssize_t)(sizeof(length) + headerlen + payloadlen);
+    if (writev(m_sockfd, iov, 3) < 0)
+    {
+        return errno == 0 || errno == EINTR; // EINTR不认为失败
+    }
+    return true;
 }
 
-uint16_t RtpOverTcp::getEfficLen()
+uint16_t RtpOverTcp::getMTU()
 {
     return 0xFFFF - 12;
 }

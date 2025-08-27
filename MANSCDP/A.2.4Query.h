@@ -5,15 +5,10 @@
 #include <memory>
 #include "A.2.2CmdType.h"
 
-class Query;
-class RecordQuery;
-
 /* A.2.4 查询命令 */
 class QueryRequest : public CmdTypeRequest
 {
 private:
-    std::unique_ptr<Query> m_devQuery;
-    std::unique_ptr<RecordQuery> m_devRecordQuery;
     std::vector<std::unique_ptr<CmdTypeSpecRequest>> spec;
 
 public:
@@ -28,6 +23,30 @@ public:
 /* A.2.4.1 查询命令消息体 */
 
 /* A.2.4.2 设备状态查询请求 */
+class DeviceStatusQuery : public CmdTypeSpecRequest
+{
+public:
+    struct Request
+    {
+        /* 〈! -- 命令类型:设备状态查询(必选)--〉 */
+        stringType CmdType;
+        /* 〈! -- 命令序列号(必选)--〉 */
+        SNType SN;
+        /* 〈! -- 目标设备编码(必选)--〉 */
+        deviceIDType DeviceID;
+    };
+
+public:
+    DeviceStatusQuery(MANSCDPAgent *agent);
+    virtual ~DeviceStatusQuery();
+
+private:
+    bool parse(const XMLElement *xmlReq, Request& req);
+
+public:
+    virtual bool match(const XMLElement *xmlReq);
+    virtual bool handle(const XMLElement *xmlReq);
+};
 
 /* A.2.4.3 设备目录查询或订阅请求 */
 class CatalogQuery : public CmdTypeSpecRequest
@@ -47,11 +66,8 @@ public:
         /* 〈elementname="EndTime"type="dateTime"minOccurS= "0"/〉 */
     };
 
-private:
-    Query *m_devQuery;
-
 public:
-    CatalogQuery(MANSCDPAgent *agent, Query *devQuery);
+    CatalogQuery(MANSCDPAgent *agent);
     virtual ~CatalogQuery();
 
 private:
@@ -76,11 +92,8 @@ public:
         deviceIDType DeviceID;
     };
 
-private:
-    Query *m_devQuery;
-    
 public:
-    DeviceInfoQuery(MANSCDPAgent *agent, Query *devQuery);
+    DeviceInfoQuery(MANSCDPAgent *agent);
     virtual ~DeviceInfoQuery();
 
 private:
@@ -140,11 +153,8 @@ public:
         stringType AlarmType;
     };
 
-private:
-    RecordQuery *m_devRecordQuery;
-
 public:
-    RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *devRecordQuery);
+    RecordInfoQuery(MANSCDPAgent *agent);
     virtual ~RecordInfoQuery();
 
 private:

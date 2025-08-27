@@ -17,6 +17,7 @@ bool DevPlay::start()
     // const char *name = "./assets/nature.h264";
     // const char *name = "./assets/352x288.h265";
     // const char *name = "./assets/640x360.h265";
+    // const char *name = "./assets/birds.h264";
     const char *audio = "./assets/alaw.raw";
     // const char *audio = "./assets/test.aac";
 
@@ -54,7 +55,13 @@ int32_t DevPlay::getVideo(uint8_t *data, int32_t size)
 {
     if (m_testVideo != nullptr)
     {
-        return fread(data, 1, 1024, m_testVideo);
+        int32_t len = fread(data, 1, size, m_testVideo);
+        if (len <= 0)
+        {
+            fseek(m_testVideo, 0, SEEK_SET);
+            len = fread(data, 1, size, m_testVideo);
+        }
+        return len;
     }
     else
     {

@@ -12,18 +12,14 @@ else ()
 endif ()
 
 include_directories(./)
-include_directories(./tinyxml2)
-include_directories(./SIP/Adapter)
 include_directories(${DEVICE_DIR})
-include_directories(./PS)
-include_directories(./RTP)
 
 aux_source_directory(. SRC_UA)
 aux_source_directory(./Agent SRC_AGENT)
 aux_source_directory(./MANSCDP SRC_MANSCDP)
 aux_source_directory(./MANSRTSP SRC_MANSRTSP)
 aux_source_directory(./Interface SRC_INTERFACE)
-aux_source_directory(${DEVICE_DIR} SRC_DEV)
+file(GLOB_RECURSE SRC_DEV "${DEVICE_DIR}/*.cpp")
 
 set(SRC_GB28181 ${SRC_MANSCDP} ${SRC_MANSRTSP} ${SRC_INTERFACE} ${SRC_AGENT} ${SRC_DEV} ${SRC_UA})
 
@@ -74,6 +70,11 @@ install(
 #	DESTINATION "include"
 #	FILES_MATCHING PATTERN "*.h"
 #)
+
+install(
+	FILES Device/Demo/Device.h Device/Demo/MANSCDPDevice.h
+	DESTINATION "include"
+)
 
 install(
 	DIRECTORY Interface

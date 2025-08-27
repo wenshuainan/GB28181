@@ -125,6 +125,65 @@ public:
 };
 
 /*  A.2.6.6 设备状态查询应答 */
+class DeviceStatusQueryResponse : public CmdTypeResponse, public MessageResultHandler
+{
+public:
+    /* 〈! -- 命令类型:设备状态查询(必选)--〉 */
+    stringType CmdType;
+    /* 〈!-- 命令序列号(必选)--〉 */
+    SNType SN;
+    /* 〈! -- 目标设备/区域/系统/业务分组/虚拟组织的编码,取值与目录查询请求相同(必选)--〉 */
+    deviceIDType DeviceID;
+    /* 〈! -- 查询结果(必选)--〉 */
+    resultType Result;
+    /* 〈! -- 是否在线(必选)--〉 */
+    enum
+    {
+        ONLINE,
+        OFFLINE,
+    } Online;
+    /* 〈! -- 是否正常工作(必选)--〉 */
+    resultType Status;
+    /* 〈! -- 不正常工作原因(可选)--〉 */
+    stringType Reason;
+    /* 〈! -- 是否编码(可选)--〉 */
+    statusType Encode;
+    /* 〈! -- 是否录像(可选)--〉 */
+    statusType Record;
+    /* 〈! -- 设备时间和日期(可选)--〉 */
+    dateTimeType DeviceTime;
+    /* 〈! --报警设备状态列表,num 表示列表项个数(可选)--〉 */
+    struct _AlarmStatus
+    {
+        struct _Item
+        {
+            deviceIDType DeviceID;
+            enum
+            {
+                ONDUTY,
+                OFFDUTY,
+                ALARM,
+            } DutyStatus;
+        };
+        std::vector<_Item> Item;
+        integerType Num; //attribute
+    } AlarmStatus;
+    /* 〈! -- 扩展信息,可多项--〉 */
+
+public:
+    DeviceStatusQueryResponse(MANSCDPAgent *agent, const DeviceStatusQuery::Request& req);
+    virtual ~DeviceStatusQueryResponse();
+
+private:
+    bool encode(XMLDocument *xmldocRes);
+
+public:
+    bool response(std::shared_ptr<MessageResultHandler> handler = nullptr);
+
+public:
+    virtual bool match(const XMLElement *cmd);
+    virtual bool handle(int32_t code);
+};
 
 /*  A.2.6.7 文件目录检索应答 */
 class RecordInfoQueryResponse : public CmdTypeResponse, public MessageResultHandler

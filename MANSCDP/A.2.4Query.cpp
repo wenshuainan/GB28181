@@ -1,18 +1,15 @@
 #include "A.2.4Query.h"
 #include "A.2.6Response.h"
 #include "Agent/MANSCDPAgent.h"
-#include "DevQuery.h"
-#include "DevRecordQuery.h"
+#include "MANSCDPDevice.h"
 
 QueryRequest::QueryRequest(MANSCDPAgent *agent)
 {
     printf("++++++ QueryRequest\n");
-    m_devQuery = std::move(std::unique_ptr<Query>(new DevQuery(agent)));
-    m_devRecordQuery = std::move(std::unique_ptr<DevRecordQuery>(new DevRecordQuery(agent)));
-
-    spec.push_back(std::move(std::unique_ptr<CatalogQuery>(new CatalogQuery(agent, m_devQuery.get()))));
-    spec.push_back(std::move(std::unique_ptr<DeviceInfoQuery>(new DeviceInfoQuery(agent, m_devQuery.get()))));
-    spec.push_back(std::move(std::unique_ptr<RecordInfoQuery>(new RecordInfoQuery(agent, m_devRecordQuery.get()))));
+    spec.push_back(std::move(std::unique_ptr<DeviceStatusQuery>(new DeviceStatusQuery(agent))));
+    spec.push_back(std::move(std::unique_ptr<CatalogQuery>(new CatalogQuery(agent))));
+    spec.push_back(std::move(std::unique_ptr<DeviceInfoQuery>(new DeviceInfoQuery(agent))));
+    spec.push_back(std::move(std::unique_ptr<RecordInfoQuery>(new RecordInfoQuery(agent))));
 }
 
 QueryRequest::~QueryRequest()
@@ -40,9 +37,96 @@ bool QueryRequest::dispatch(const XMLElement *xmlReq)
     return false;
 }
 
-CatalogQuery::CatalogQuery(MANSCDPAgent *agent, Query *devQuery)
+DeviceStatusQuery::DeviceStatusQuery(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devQuery(devQuery)
+{
+    printf("++++++ DeviceStatusQuery\n");
+}
+
+DeviceStatusQuery::~DeviceStatusQuery()
+{
+    printf("----- DeviceStatusQuery\n");
+}
+
+bool DeviceStatusQuery::parse(const XMLElement *xmlReq, Request& req)
+{
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
+    if (xmlCmdType)
+    {
+        req.CmdType = xmlCmdType->GetText();
+    }
+    else
+    {
+        printf("CmdType not found\n");
+        return false;
+    }
+
+    const XMLElement *xmlSN = xmlReq->FirstChildElement("SN");
+    if (xmlSN)
+    {
+        req.SN = xmlSN->GetText();
+    }
+    else
+    {
+        printf("SN not found\n");
+        return false;
+    }
+
+    const XMLElement *xmlDeviceID = xmlReq->FirstChildElement("DeviceID");
+    if (xmlDeviceID)
+    {
+        req.DeviceID = xmlDeviceID->GetText();
+    }
+    else
+    {
+        printf("DeviceID not found\n");
+        return false;
+    }
+    
+    return true;
+}
+
+bool DeviceStatusQuery::match(const XMLElement *xmlReq)
+{
+    const XMLElement *xmlCmdType = xmlReq->FirstChildElement("CmdType");
+    if (xmlCmdType)
+    {
+        return std::string(xmlCmdType->GetText()) == "DeviceStatus";
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool DeviceStatusQuery::handle(const XMLElement *xmlReq)
+{
+    printf("MANSCDP <DeviceStatus> Request\n");
+    Request req;
+    if (!parse(xmlReq, req))
+    {
+        printf("parse failed\n");
+        return false;
+    }
+    
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
+    {
+        printf("device not found\n");
+        return false;
+    }
+
+    std::shared_ptr<DeviceStatusQueryResponse> res = m_agent->createCmdMessage<DeviceStatusQueryResponse>(m_agent, req);
+    if (res)
+    {
+        res->Result = dev->queryDeviceStatus(*res);
+        return res->response();
+    }
+    return false;
+}
+
+CatalogQuery::CatalogQuery(MANSCDPAgent *agent)
+    : CmdTypeSpecRequest(agent)
 {
     printf("++++++ CatalogQuery\n");
 }
@@ -109,6 +193,22 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
     Request req;
     if (!parse(xmlReq, req))
     {
+        printf("parse failed\n");
+        return false;
+    }
+
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
+    {
+        printf("device not found\n");
+        return false;
+    }
+
+    std::vector<itemType> items;
+    dev->queryCatalog(items);
+    if (items.empty())
+    {
+        printf("queryCatalog failed\n");
         return false;
     }
 
@@ -118,20 +218,19 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
         printf("Create first CatalogQueryResponse failed\n");
         return false;
     }
-    const std::unordered_map<std::string, int32_t>& channels = m_agent->getChannels();
-    int sumNum = channels.size();
+    int sumNum = items.size();
     int num = 0;
     std::shared_ptr<CatalogQueryResponse> next = first;
     while (num < sumNum)
     {
         next->SumNum = sumNum;
-        int size = (sumNum - num) > 4 ? 4 : (sumNum - num); // 一次传输4条记录，< MTU
+        int size = (sumNum - num) > 2 ? 2 : (sumNum - num); // 一次传输2条记录，< MTU
         next->DeviceList.Num = size;
         next->DeviceList.Item.resize(size);
         int i;
         for (i = 0; i < size; i++)
         {
-            m_devQuery->queryCatalog(num++, next->DeviceList.Item[i]);
+            next->DeviceList.Item[i] = items[num++];
         }
         if (num >= sumNum)
         {
@@ -148,9 +247,8 @@ bool CatalogQuery::handle(const XMLElement *xmlReq)
     return first->response(first);
 }
 
-DeviceInfoQuery::DeviceInfoQuery(MANSCDPAgent *agent, Query *devQuery)
+DeviceInfoQuery::DeviceInfoQuery(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devQuery(devQuery)
 {
     printf("++++++ DeviceInfoQuery\n");
 }
@@ -217,6 +315,14 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     Request req;
     if (!parse(xmlReq, req))
     {
+        printf("parse failed\n");
+        return false;
+    }
+
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
+    {
+        printf("device not found\n");
         return false;
     }
 
@@ -225,13 +331,12 @@ bool DeviceInfoQuery::handle(const XMLElement *xmlReq)
     {
         return false;
     }
-    res->Result = m_devQuery->queryDeviceInfo(*res);
+    res->Result = dev->queryDeviceInfo(*res);
     return res->response();
 }
 
-RecordInfoQuery::RecordInfoQuery(MANSCDPAgent *agent, RecordQuery *devRecordQuery)
+RecordInfoQuery::RecordInfoQuery(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devRecordQuery(devRecordQuery)
 {
     printf("++++++ RecordInfoQuery\n");
 }
@@ -320,16 +425,18 @@ bool RecordInfoQuery::handle(const XMLElement *xmlReq)
     Request req;
     if (!parse(xmlReq, req))
     {
+        printf("parse failed\n");
         return false;
     }
 
-    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
-    if (ch < 0)
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
     {
+        printf("device not found\n");
         return false;
     }
 
-    std::unique_ptr<RecordQuery::Handle> handle = m_devRecordQuery->create(ch, req);
+    std::unique_ptr<RecordQuery::Handle> handle = dev->createHandle(req);
     if (!handle)
     {
         printf("RecordQuery handle create failed\n");
@@ -348,7 +455,7 @@ bool RecordInfoQuery::handle(const XMLElement *xmlReq)
     while (num < sumNum)
     {
         next->SumNum = sumNum;
-        handle->queryRecordInfo(4, next->RecordList.Item); // 一次传输4条记录，< MTU
+        handle->queryRecordInfo(2, next->RecordList.Item); // 一次传输2条记录，< MTU
         next->RecordList.Num = next->RecordList.Item.size();
         num += next->RecordList.Num.getInt();
         if (next->RecordList.Item.size() == 0 || num >= sumNum)

@@ -10,6 +10,7 @@ private:
     uint8_t m_cache[5];
     int32_t m_cacheLen;
     PSMux::Packet m_packet;
+    uint64_t m_sysms;
 
 public:
     PacketizedHEVC(PSMux *mux);
@@ -19,6 +20,7 @@ private:
     uint8_t calcNaluType(const uint8_t nalHeader[2]);
     void pushPacket(uint8_t naluType);
     int32_t packetizeFrame(const uint8_t *data, int32_t size);
+    uint64_t getSystemMs();
 
 public:
     int32_t packetized(const uint8_t *data, int32_t size);

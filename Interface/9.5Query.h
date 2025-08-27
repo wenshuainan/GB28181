@@ -4,20 +4,14 @@
 #include "MANSCDP/A.2.4Query.h"
 #include "MANSCDP/A.2.6Response.h"
 
-class MANSCDPAgent;
-
 class Query
 {
-protected:
-    MANSCDPAgent *m_agent;
-
 public:
-    Query(MANSCDPAgent *agent) : m_agent(agent) {}
-    virtual ~Query() {}
-
-public:
-    virtual bool queryCatalog(int32_t ch, itemType& item) = 0;
-    virtual bool queryDeviceInfo(DeviceInfoQueryResponse& res) = 0;
+    virtual bool queryDeviceStatus(DeviceStatusQueryResponse& res) = 0; // 主设备/前端外围设备查询
+    virtual bool queryAlarmStatus(DeviceStatusQueryResponse::_AlarmStatus::_Item& item) = 0; // 前端外围设备查询
+    virtual bool queryCatalog(std::vector<itemType>& items) = 0; // 主设备查询
+    virtual bool queryCatalog(itemType& item) = 0; // 前端外围设备查询
+    virtual bool queryDeviceInfo(DeviceInfoQueryResponse& res) = 0; // 主设备/前端外围设备查询
 };
 
 #endif

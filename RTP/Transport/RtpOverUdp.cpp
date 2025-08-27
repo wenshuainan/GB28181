@@ -86,11 +86,14 @@ bool RtpOverUdp::send(RtpPacket& packet)
     iov[1].iov_base = (void *)payload;
     iov[1].iov_len = payloadlen;
 
-    return writev(m_sockfd, iov, 2)
-        == (ssize_t)(headerlen + payloadlen);
+    if (writev(m_sockfd, iov, 2) < 0)
+    {
+        return errno == 0 || errno == EINTR; // EINTR不认为失败
+    }
+    return true;
 }
 
-uint16_t RtpOverUdp::getEfficLen()
+uint16_t RtpOverUdp::getMTU()
 {
     return 1460;
 }

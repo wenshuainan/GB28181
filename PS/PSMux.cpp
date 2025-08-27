@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <sys/prctl.h>
 #include "PSMux.h"
 
 PSMux::PSMux(PSCallback *callback)
@@ -58,6 +59,8 @@ void PSMux::multiplexed()
         return;
     }
 
+    prctl(PR_SET_NAME, "PSMux");
+
     while (m_bRunning || (m_bFinishFlag && !m_videoStream.empty()))
     {
         {
@@ -71,7 +74,12 @@ void PSMux::multiplexed()
 
                 if (packet.bFirst)
                 {
-                    if ((pack = new Pack()) == nullptr)
+                    pack = new Pack();
+                    if (pack)
+                    {
+                        pack->getPackHeader().setSCR(packet.pes->getPresentation());
+                    }
+                    else
                     {
                         printf("pack new failed\n");
                         break;

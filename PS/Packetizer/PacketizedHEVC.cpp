@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/time.h>
 #include "PacketizedHEVC.h"
 
 PacketizedHEVC::PacketizedHEVC(PSMux *mux)
@@ -7,11 +8,11 @@ PacketizedHEVC::PacketizedHEVC(PSMux *mux)
     printf("++++++ PacketizedHEVC\n");
     m_naluHeader[0] = m_naluHeader[1] = 0;
     m_cacheLen = 0;
+    m_sysms = getSystemMs();
     m_packet.bFirst = true;
     m_packet.bFinished = false;
     m_packet.bKeyFrame = false;
     m_packet.stream_type = 0x24; // H265 PSM.stream_type = 0x24
-    m_packet.pes = std::make_shared<PESPacket>(0xE0); // H265 PSM.stream_id = 0xE0
 }
 
 PacketizedHEVC::~PacketizedHEVC()
@@ -50,6 +51,7 @@ void PacketizedHEVC::pushPacket(uint8_t naluType)
     m_packet.bFirst = false;
     m_packet.bFinished = false;
     m_packet.bKeyFrame = false;
+    m_packet.pes = nullptr;
 }
 
 int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
@@ -99,7 +101,7 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
                     m_packet.bFinished = true;
                     pushPacket(calcNaluType(m_naluHeader));
                     m_packet.bFirst = true;
-                    m_packet.pes = std::make_shared<PESPacket>(0xE0);
+                    m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
                 }
                 m_naluHeader[0] = assemble[i+4];
                 m_naluHeader[1] = assemble[i+5];
@@ -115,7 +117,7 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
         if (len < m_cacheLen)
         {
             pushPacket(calcNaluType(m_naluHeader));
-            m_packet.pes = std::make_shared<PESPacket>(0xE0);
+            m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
             m_packet.pes->writeDataByte(m_cache + len, m_cacheLen - len);
         }
         m_cacheLen = 0;
@@ -150,11 +152,14 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
     int len = 0;
     while (len < parsed)
     {
+        if (!m_packet.pes)
+        {
+            m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
+        }
         int w = m_packet.pes->writeDataByte(data + len, parsed - len);
         if (w < parsed - len)
         {
             pushPacket(calcNaluType(m_naluHeader));
-            m_packet.pes = std::make_shared<PESPacket>(0xE0);
         }
         len += w;
     }
@@ -167,12 +172,15 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
     }
     else
     {
-        m_packet.bFinished = true;
-        pushPacket(calcNaluType(m_naluHeader));
+        if (m_packet.pes)
+        {
+            m_packet.bFinished = true;
+            pushPacket(calcNaluType(m_naluHeader));
+        }
         m_naluHeader[0] = data[parsed+4];
         m_naluHeader[1] = data[parsed+5];
         m_packet.bFirst = true;
-        m_packet.pes = std::make_shared<PESPacket>(0xE0);
+        m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
         m_packet.pes->writeDataByte(data + parsed, 6);
 
         m_cacheLen = 0;
@@ -180,6 +188,13 @@ int32_t PacketizedHEVC::packetizeFrame(const uint8_t *data, int32_t size)
     }
 
     return parsed;
+}
+
+uint64_t PacketizedHEVC::getSystemMs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
 int32_t PacketizedHEVC::packetized(const uint8_t *data, int32_t size)
@@ -205,6 +220,11 @@ int32_t PacketizedHEVC::packetized(const uint8_t *data, int32_t size)
 
 void PacketizedHEVC::finished()
 {
+    if (!m_packet.pes)
+    {
+        return;
+    }
+
     if (m_cacheLen > 0)
     {
         m_packet.pes->writeDataByte(m_cache, m_cacheLen);

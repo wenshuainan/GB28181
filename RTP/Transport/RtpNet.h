@@ -20,14 +20,14 @@ protected:
     int32_t m_localPort;
 
 public:
-    RtpNet(int localPort = 0);
+    RtpNet(int localPort = 60000);
     virtual ~RtpNet();
 
 public:
     virtual bool connect(const std::string& ipv4, int port) = 0;
     virtual bool disconnect() = 0;
     virtual bool send(RtpPacket& packet) = 0;
-    virtual uint16_t getEfficLen() = 0;
+    virtual uint16_t getMTU() = 0;
     virtual const char* getType() const = 0;
 
 public:

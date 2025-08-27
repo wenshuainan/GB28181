@@ -310,6 +310,135 @@ bool DeviceInfoQueryResponse::handle(int32_t code)
     return true;
 }
 
+DeviceStatusQueryResponse::DeviceStatusQueryResponse(MANSCDPAgent *agent, const DeviceStatusQuery::Request& req)
+    : MessageResultHandler(agent)
+{
+    printf("++++++ DeviceStatusQueryResponse\n");
+    CmdType = req.CmdType;
+    SN = req.SN;
+    DeviceID = req.DeviceID;
+    AlarmStatus.Num = 0;
+}
+
+DeviceStatusQueryResponse::~DeviceStatusQueryResponse()
+{
+    printf("------ DeviceStatusQueryResponse\n");
+}
+
+bool DeviceStatusQueryResponse::encode(XMLDocument *xmldocRes)
+{
+    if (!CmdTypeResponse::encode(xmldocRes))
+    {
+        return false;
+    }
+    
+    XMLElement *rootElement = xmldocRes->LastChildElement();
+    if (rootElement == nullptr)
+    {
+        return false;
+    }
+    
+    XMLElement *xmlCmdType = xmldocRes->NewElement("CmdType");
+    xmlCmdType->SetText("DeviceStatus");
+    rootElement->InsertEndChild(xmlCmdType);
+
+    XMLElement *xmlSN = xmldocRes->NewElement("SN");
+    xmlSN->SetText(SN.getInt());
+    rootElement->InsertEndChild(xmlSN);
+
+    XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
+    xmlDeviceID->SetText(DeviceID.getStr().c_str());
+    rootElement->InsertEndChild(xmlDeviceID);
+
+    XMLElement *xmlResult = xmldocRes->NewElement("Result");
+    xmlResult->SetText(Result.getStr().c_str());
+    rootElement->InsertEndChild(xmlResult);
+
+    XMLElement *xmlOnline = xmldocRes->NewElement("Online");
+    switch (Online)
+    {
+    case ONLINE:
+        xmlOnline->SetText("ONLINE");
+        break;
+    case OFFLINE:
+        xmlOnline->SetText("OFFLINE");
+        break;
+    
+    default:
+        xmlOnline->SetText("OFFLINE");
+        break;
+    }
+    rootElement->InsertEndChild(xmlOnline);
+
+    XMLElement *xmlStatus = xmldocRes->NewElement("Status");
+    xmlStatus->SetText(Status.getStr().c_str());
+    rootElement->InsertEndChild(xmlStatus);
+
+    if (AlarmStatus.Num > 0)
+    {
+        XMLElement *xmlAlarmStatus = xmldocRes->NewElement("AlarmStatus");
+        xmlAlarmStatus->SetAttribute("Num", AlarmStatus.Num.getInt());
+        rootElement->InsertEndChild(xmlAlarmStatus);
+
+        for (auto& i : AlarmStatus.Item)
+        {
+            XMLElement *xmlItem = xmldocRes->NewElement("Item");
+            xmlAlarmStatus->InsertEndChild(xmlItem);
+            XMLElement *xmlDeviceID = xmldocRes->NewElement("DeviceID");
+            xmlDeviceID->SetText(i.DeviceID.getStr().c_str());
+            xmlItem->InsertEndChild(xmlDeviceID);
+            XMLElement *xmlDutyStatus = xmldocRes->NewElement("DutyStatus");
+            switch (i.DutyStatus)
+            {
+            case _AlarmStatus::_Item::ONDUTY:
+                xmlDutyStatus->SetText("ONDUTY");
+                break;
+            case _AlarmStatus::_Item::OFFDUTY:
+                xmlDutyStatus->SetText("OFFDUTY");
+                break;
+            case _AlarmStatus::_Item::ALARM:
+                xmlDutyStatus->SetText("ALARM");
+                break;
+            
+            default:
+                xmlDutyStatus->SetText("OFFDUTY");
+                break;
+            }
+            xmlItem->InsertEndChild(xmlDutyStatus);
+        }
+    }
+    
+    return true;
+}
+
+bool DeviceStatusQueryResponse::response(std::shared_ptr<MessageResultHandler> handler)
+{
+    XMLDocument res;
+    if (!encode(&res))
+    {
+        return false;
+    }
+    return m_agent->sendCmd(res, handler);
+}
+
+bool DeviceStatusQueryResponse::match(const XMLElement *cmd)
+{
+    if (!CmdTypeResponse::match(cmd))
+    {
+        return false;
+    }
+    
+    const XMLElement *xmlCmdType = cmd->FirstChildElement("CmdType");
+    const XMLElement *xmlSN = cmd->FirstChildElement("SN");
+    return xmlCmdType && this->CmdType == xmlCmdType->GetText()
+        && xmlSN && this->SN == xmlSN->IntText();
+}
+
+bool DeviceStatusQueryResponse::handle(int32_t code)
+{
+    return true;
+}
+
 RecordInfoQueryResponse::RecordInfoQueryResponse(MANSCDPAgent *agent, const RecordInfoQuery::Request& req)
     : MessageResultHandler(agent)
 {
@@ -359,7 +488,7 @@ bool RecordInfoQueryResponse::encode(XMLDocument *xmldocRes)
     xmlSumNum->SetText(SumNum.getInt());
     rootElement->InsertEndChild(xmlSumNum);
 
-    if (SumNum.getInt() > 0)
+    if (SumNum > 0)
     {
         XMLElement *xmlRecordList = xmldocRes->NewElement("RecordList");
         rootElement->InsertEndChild(xmlRecordList);

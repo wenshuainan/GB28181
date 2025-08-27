@@ -111,7 +111,7 @@ private:
     bool encode(XMLDocument *xmldocNotify);
 
 public:
-    virtual bool notify(int32_t ch, std::shared_ptr<MessageResultHandler> handler = nullptr);
+    virtual bool notify(const std::string& deviceId, std::shared_ptr<MessageResultHandler> handler = nullptr);
 
 public:
     virtual bool match(const XMLElement *cmd);

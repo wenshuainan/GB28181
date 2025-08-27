@@ -3,12 +3,8 @@
 
 #include "MANSCDP/A.2.1GlobalTypes.h"
 
-class RegistrationAgent;
-
 class Registration
 {
-    friend RegistrationAgent;
-    
 public:
     enum State
     {
@@ -23,9 +19,8 @@ protected:
 
 public:
     Registration() : m_state(UNREGISTERED) {}
-    ~Registration() {}
 
-    virtual void onState(State state, const std::string& sipReasonPhrase) = 0;
+    virtual void onRegistrationStatus(int32_t code, const std::string& sipReasonPhrase) = 0;
     virtual State getState() { return m_state; }
 };
 

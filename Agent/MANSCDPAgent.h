@@ -1,16 +1,16 @@
 #ifndef MANSCDP_AGENT_H
 #define MANSCDP_AGENT_H
 
+#include <vector>
 #include <memory>
 #include <list>
-#include "UA.h"
 #include "Agent.h"
 #include "MANSCDP/A.2.2CmdType.h"
 
+class MANSCDPDevice;
+
 class MANSCDPAgent : public Agent
 {
-    friend UA;
-
 private:
      /* MANSCDP规定的所有请求命令
      * Control、Query、Notify
@@ -38,11 +38,8 @@ public:
     bool agent(const SipUserMessage& message);
     bool agent(const XMLDocument &cmdReq);
     bool agent(int32_t code, const XMLDocument& cmd);
-    const std::unordered_map<std::string, int32_t>& getChannels() const;
-    const char* getMainDeviceId() const;
-    const char* getDeviceId(int32_t ch) const;
-    int32_t getChannel(const std::string& deviceId) const;
     bool sendCmd(const XMLDocument& cmd, std::shared_ptr<MessageResultHandler> handler = nullptr);
+    MANSCDPDevice* getDevice(const std::string& id);
 };
 
 #endif

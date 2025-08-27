@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/time.h>
 #include "PacketizedAVC.h"
 
 PacketizedAVC::PacketizedAVC(PSMux *mux)
@@ -7,11 +8,11 @@ PacketizedAVC::PacketizedAVC(PSMux *mux)
     printf("++++++ PacketizedAVC\n");
     m_naluHeader = 0;
     m_cacheLen = 0;
+    m_sysms = getSystemMs();
     m_packet.bFirst = true;
     m_packet.bFinished = false;
     m_packet.bKeyFrame = false;
     m_packet.stream_type = 0x1B; // H264 PSM.stream_type = 0x1B
-    m_packet.pes = std::make_shared<PESPacket>(0xE0); // H264 PSM.stream_id = 0xE0
 }
 
 PacketizedAVC::~PacketizedAVC()
@@ -45,6 +46,7 @@ void PacketizedAVC::pushPacket(uint8_t naluType)
     m_packet.bFirst = false;
     m_packet.bFinished = false;
     m_packet.bKeyFrame = false;
+    m_packet.pes = nullptr;
 }
 
 int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
@@ -94,7 +96,7 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
                     m_packet.bFinished = true;
                     pushPacket(m_naluHeader & 0x1F);
                     m_packet.bFirst = true;
-                    m_packet.pes = std::make_shared<PESPacket>(0xE0);
+                    m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
                 }
                 m_naluHeader = assemble[i+4];
                 m_packet.pes->writeDataByte(assemble + i, assembleLen - i);
@@ -109,7 +111,7 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
         if (len < m_cacheLen)
         {
             pushPacket(m_naluHeader & 0x1F);
-            m_packet.pes = std::make_shared<PESPacket>(0xE0);
+            m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
             m_packet.pes->writeDataByte(m_cache + len, m_cacheLen - len);
         }
         m_cacheLen = 0;
@@ -143,11 +145,14 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
     int len = 0;
     while (len < parsed)
     {
+        if (!m_packet.pes)
+        {
+            m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
+        }
         int w = m_packet.pes->writeDataByte(data + len, parsed - len);
         if (w < parsed - len)
         {
             pushPacket(m_naluHeader & 0x1F);
-            m_packet.pes = std::make_shared<PESPacket>(0xE0);
         }
         len += w;
     }
@@ -160,11 +165,14 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
     }
     else
     {
-        m_packet.bFinished = true;
-        pushPacket(m_naluHeader & 0x1F);
+        if (m_packet.pes)
+        {
+            m_packet.bFinished = true;
+            pushPacket(m_naluHeader & 0x1F);
+        }
         m_naluHeader = data[parsed+4];
         m_packet.bFirst = true;
-        m_packet.pes = std::make_shared<PESPacket>(0xE0);
+        m_packet.pes = std::make_shared<PESPacket>(0xE0, getSystemMs() - m_sysms);
         m_packet.pes->writeDataByte(data + parsed, 5);
 
         m_cacheLen = 0;
@@ -172,6 +180,13 @@ int32_t PacketizedAVC::packetizeFrame(const uint8_t *data, int32_t size)
     }
 
     return parsed;
+}
+
+uint64_t PacketizedAVC::getSystemMs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
 int32_t PacketizedAVC::packetized(const uint8_t *data, int32_t size)
@@ -197,6 +212,11 @@ int32_t PacketizedAVC::packetized(const uint8_t *data, int32_t size)
 
 void PacketizedAVC::finished()
 {
+    if (!m_packet.pes)
+    {
+        return;
+    }
+    
     if (m_cacheLen > 0)
     {
         m_packet.pes->writeDataByte(m_cache, m_cacheLen);

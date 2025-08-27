@@ -17,8 +17,8 @@ void DevPlayback::setTime(time_t start, time_t end)
 
 bool DevPlayback::start()
 {
-    const char *name = "./assets/128x128.h264";
-    // const char *name = "./assets/nature.h264";
+    // const char *name = "./assets/128x128.h264";
+    const char *name = "./assets/nature.h264";
 
     m_testVideo = fopen(name, "rb");
     if (m_testVideo == nullptr)

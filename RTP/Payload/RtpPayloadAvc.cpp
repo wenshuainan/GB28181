@@ -7,9 +7,10 @@ RtpPayloadAvc::RtpPayloadAvc(RtpParticipant *participant, int32_t maxLen)
     : RtpPayload(participant, maxLen)
 {
     printf("++++++ RtpPayloadAvc %p\n", this);
+    m_cacheLen = 0;
     m_formated.marker = 0;
-    m_formated.bFirst = false;
-    m_formated.payload = nullptr;
+    m_formated.bFirst = true;
+    m_formated.ms = getSystemMs();
 }
 
 RtpPayloadAvc::~RtpPayloadAvc()
@@ -48,13 +49,17 @@ void RtpPayloadAvc::pushFomated()
     m_formated.payload->at(0) = makeFUAIndicator(m_naluHeader);
     m_formated.payload->at(1) = makeFUAHeader(m_formated.bFirst ? 1 : 0, m_formated.marker, m_naluHeader & 0x1f);
 
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    m_formated.tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
     m_participant->pushPayload(m_formated);
-
     m_formated.bFirst = false;
     m_formated.marker = 0;
+    m_formated.payload = nullptr;
+}
+
+uint64_t RtpPayloadAvc::getSystemMs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
 int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
@@ -106,6 +111,7 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
                 pushFomated();
                 m_naluHeader = assemble[i+4];
                 m_formated.bFirst = true;
+                m_formated.ms = getSystemMs();
                 m_formated.payload = std::make_shared<std::vector<uint8_t>>();
                 m_formated.payload->resize(2); //FUA indicator and header
 
@@ -156,6 +162,11 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
     int32_t cpyed = 0;
     while (cpyed < parsed)
     {
+        if (!m_formated.payload)
+        {
+            m_formated.payload = std::make_shared<std::vector<uint8_t>>();
+            m_formated.payload->resize(2); //FUA indicator and header
+        }
         int32_t ori = m_formated.payload->size();
         int wr = parsed - cpyed;
         if (wr > m_maxLen - ori)
@@ -168,8 +179,6 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
         if (cpyed < parsed)
         {
             pushFomated();
-            m_formated.payload = std::make_shared<std::vector<uint8_t>>();
-            m_formated.payload->resize(2); //FUA indicator and header
         }
     }
 
@@ -181,14 +190,17 @@ int32_t RtpPayloadAvc::format(const uint8_t *data, int32_t len)
     }
     else
     {
-        m_formated.marker = 1;
-        pushFomated();
+        if (m_formated.payload)
+        {
+            m_formated.marker = 1;
+            pushFomated();
+        }
         m_naluHeader = data[parsed+4];
         m_formated.bFirst = true;
+        m_formated.ms = getSystemMs();
         m_formated.payload = std::make_shared<std::vector<uint8_t>>();
         m_formated.payload->resize(2); //FUA indicator and header
 
-        // m_formated.payload->push_back(data[parsed+4]);
         m_cacheLen = 0;
         parsed += 5;
     }

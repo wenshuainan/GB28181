@@ -153,24 +153,20 @@ int main()
     keepalive.interval = 60;
     keepalive.timeoutCount = 3;
 
-    std::vector<std::string> catalogIds;
-    catalogIds.push_back("34020000001310000001");
+    UA::FrontDevice frontDevice;
+    frontDevice.camera.push_back("34020000001310000001");
+    frontDevice.alarmIn.push_back("34020000001340000001");
+    frontDevice.alarmOut.push_back("34020000001350000001");
 
     // int i = 2;
     // while (i-- > 0)
     {
-        ua.start(client, server, keepalive, catalogIds);
+        ua.start(client, server, keepalive, frontDevice);
         getchar();
         ua.stop();
         getchar();
     }
     return 1;
-
-    // ua.start(client, server, keepalive, catalogIds);
-    // getchar();
-    // ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
-    // getchar();
-    // ua.getAlarm()->postVideoAlarm(0, 13); //图像遮挡报警
 #elif TEST_XML
     const char *str = "<?xml version=\"1.0\"?> \
                     <Response> \

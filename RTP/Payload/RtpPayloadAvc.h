@@ -20,6 +20,7 @@ private:
     uint8_t makeFUAIndicator(uint8_t naluHeader);
     uint8_t makeFUAHeader(uint8_t start, uint8_t end, uint8_t naluType);
     void pushFomated();
+    uint64_t getSystemMs();
 
 public:
     virtual int32_t format(const uint8_t *data, int32_t len);

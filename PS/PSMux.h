@@ -1,10 +1,8 @@
 #ifndef PS_MUX_H
 #define PS_MUX_H
 
-#include <vector>
 #include <queue>
 #include <memory>
-#include <functional>
 #include <thread>
 #include <mutex>
 #include "Semantics.h"

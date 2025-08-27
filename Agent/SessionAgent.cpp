@@ -1,19 +1,18 @@
 #include <unistd.h>
-#include <sys/time.h>
+#include <sys/prctl.h>
 #include <iostream>
 #include <algorithm>
-#include "UA.h"
 #include "SessionAgent.h"
+#include "UA.h"
 #include "DevPlay.h"
 #include "DevPlayback.h"
 #include "DevDownload.h"
-#include "MANSCDPAgent.h"
 #include "MANSCDP/A.2.5Notify.h"
 #include "MANSRTSPAgent.h"
 
 Media::Media(const Attr& attr, RtpPayload::Type payloadType)
 {
-    printf("++++++ Media\n");
+    printf("++++++ Media %d\n", payloadType);
     m_rtpPayloadType = payloadType;
     if (m_rtpPayloadType == RtpPayload::PS)
     {
@@ -31,7 +30,7 @@ Media::Media(const Attr& attr, RtpPayload::Type payloadType)
 
 Media::~Media()
 {
-    printf("------ Media\n");
+    printf("------ Media %d\n", m_rtpPayloadType);
     disconnect();
 }
 
@@ -75,6 +74,7 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
 {
     if (!m_rtpParticipant)
     {
+        printf("rtp participant null\n");
         return false;
     }
 
@@ -107,7 +107,7 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
             }
             
             default:
-                printf("not implement RTP payload type %d\n", m_rtpPayloadType);
+                printf("payload type %d not handled %d\n", m_rtpPayloadType, type);
                 break;
         }
         break;
@@ -139,7 +139,7 @@ bool Media::input(PES::ES_TYPE type, const uint8_t *data, int32_t size)
             }
             
             default:
-                printf("not implement RTP payload type %d\n", m_rtpPayloadType);
+                printf("payload type %d not handled %d\n", m_rtpPayloadType, type);
                 break;
         }
         break;
@@ -204,7 +204,7 @@ std::unique_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr, 
     }
     else
     {
-        printf("unkownd session name\n");
+        printf("unknown session name\n");
         return nullptr;
     }
     return std::unique_ptr<Session>(session);
@@ -212,6 +212,8 @@ std::unique_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr, 
 
 void Session::threadProc()
 {
+    prctl(PR_SET_NAME, "Session");
+    
     while (m_bStarted)
     {
         int32_t len = fetchAudio(m_buffer, m_size);
@@ -771,6 +773,7 @@ std::unique_ptr<Session> SessionAgent::createSession(const SipUserMessage& req, 
 
 bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMessage& req)
 {
+    printf("session %d INVITE\n", m_ch);
     std::string name = req.getSdpSessionName();
 
     auto sip = m_ua->getSip();
@@ -835,10 +838,10 @@ bool SessionAgent::dispatchINVITE(const SessionIdentifier& id, const SipUserMess
 bool SessionAgent::dispatchACK(const SessionIdentifier& id)
 {
     printf("session %d ACK\n", m_ch);
-    auto session = m_session.find(id);
-    if (session != m_session.end())
+    auto it = m_session.find(id);
+    if (it != m_session.end())
     {
-        return session->second->start();
+        return it->second->start();
     }
     return false;
 }
@@ -846,11 +849,11 @@ bool SessionAgent::dispatchACK(const SessionIdentifier& id)
 bool SessionAgent::dispatchBYE(const SessionIdentifier& id)
 {
     printf("session %d BYE\n", m_ch);
-    auto session = m_session.find(id);
-    if (session != m_session.end())
+    auto it = m_session.find(id);
+    if (it != m_session.end())
     {
-        session->second->stop();
-        m_session.erase(session);
+        it->second->stop();
+        m_session.erase(it->first);
         return true;
     }
     return false;

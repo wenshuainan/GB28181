@@ -73,39 +73,6 @@ bool MANSCDPAgent::agent(int32_t code, const XMLDocument& cmd)
     return false;
 }
 
-const std::unordered_map<std::string, int32_t>& MANSCDPAgent::getChannels() const
-{
-    return m_ua->getChannels();
-}
-
-const char* MANSCDPAgent::getMainDeviceId() const
-{
-    auto sip = m_ua->getSip();
-    if (sip)
-    {
-        return sip->getSipUser();
-    }
-    return "";
-}
-
-const char* MANSCDPAgent::getDeviceId(int32_t ch) const
-{
-    auto& channels = m_ua->getChannels();
-    for (auto& c : channels)
-    {
-        if (ch == c.second)
-        {
-            return c.first.c_str();
-        }
-    }
-    return "";
-}
-
-int32_t MANSCDPAgent::getChannel(const std::string& deviceId) const
-{
-    return m_ua->getChannel(deviceId);
-}
-
 bool MANSCDPAgent::sendCmd(const XMLDocument& cmd, std::shared_ptr<MessageResultHandler> handler)
 {
     auto sip = m_ua->getSip();
@@ -124,4 +91,9 @@ bool MANSCDPAgent::sendCmd(const XMLDocument& cmd, std::shared_ptr<MessageResult
         return true;
     }
     return false;
+}
+
+MANSCDPDevice* MANSCDPAgent::getDevice(const std::string& id)
+{
+    return dynamic_cast<MANSCDPDevice*>(m_ua->getDevice(id));
 }

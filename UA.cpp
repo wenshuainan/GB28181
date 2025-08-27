@@ -1,19 +1,19 @@
 #include <unistd.h>
-#include <sys/time.h>
 #include <time.h>
+#include <sys/prctl.h>
 #include "UA.h"
-#include "Agent/Agent.h"
 #include "Agent/RegistrationAgent.h"
 #include "Agent/MANSCDPAgent.h"
-#include "Agent/SessionAgent.h"
-#include "Agent/MANSRTSPAgent.h"
 #include "MANSCDP/A.2.5Notify.h"
 #include "MANSRTSP/B.1Message.h"
-#include "DevStatus.h"
+#include "FrontType/Camera.h"
+#include "FrontType/AlarmIn.h"
+#include "FrontType/AlarmOut.h"
 
 UA::UA()
-    : m_bStarted(false)
-    , m_bOnline(false)
+    : Device("", -1)
+    , MANSCDPDevice(nullptr)
+    , m_bStarted(false)
 {}
 
 UA::~UA()
@@ -23,13 +23,15 @@ UA::~UA()
 
 void UA::threadProc()
 {
-    std::unique_ptr<DevStatus> devStatus; // 状态信息报送
-    struct timespec keepaliveTime = {0, 0}; // 保活信息发送时间
+    prctl(PR_SET_NAME, "UA");
+    
+    struct timespec keepaliveTime = {-m_keepaliveInfo.interval, 0}; // 保活信息发送时间
+                                                                    // 使用负数初始化，使得程序刚启动就上线后可以立即发送
 
     while (m_bStarted)
     {
         /* 如果提前创建Agent，离线后需要清理许多状态。所以在线后重新创建新的，离线时直接销毁 */
-        if (m_bOnline)
+        if (m_state == REGISTERED)
         {
             /* 创建MANSCDP协议代理 */
             if (!m_cdpAgent)
@@ -40,39 +42,23 @@ void UA::threadProc()
                     continue;
                 }
             }
-            /* 创建每个通道的INVITE会话代理 */
-            if (m_sessionAgent.empty())
+            /* 创建前端外围设备 */
+            if (m_devices.empty())
             {
-                for (auto& i : m_channels)
+                if (!createDevices())
                 {
-                    std::unique_ptr<SessionAgent> sessionAgent(new SessionAgent(this, i.second));
-                    if (!sessionAgent)
-                    {
-                        printf("SessionAgent create failed\n");
-                        m_sessionAgent.clear();
-                        continue;
-                    }
-                    m_sessionAgent.push_back(std::move(sessionAgent));
-                }
-            }
-            /* 创建心跳保活 */
-            if (!devStatus)
-            {
-                if (!(devStatus = std::move(std::unique_ptr<DevStatus>(new DevStatus(m_cdpAgent.get())))))
-                {
-                    printf("DevStatus create failed\n");
+                    printf("create devices failed\n");
                     continue;
                 }
             }
             /* 判断保活超时次数是否超出用户的配置，超出后认为离线 */
-            auto count = devStatus->getTimeoutCount();
-            if (count >= m_keepaliveInfo.timeoutCount)
+            if (m_timeoutCount >= m_keepaliveInfo.timeoutCount)
             {
-                printf("UA offline, keepalive too many timeouts(%d)\n", count);
-                m_bOnline = false;
+                printf("UA offline, keepalive too many timeouts(%d)\n", m_timeoutCount);
+                m_state = UNREGISTERED;
                 keepaliveTime.tv_sec = 0;
-                devStatus.reset();
-                m_sessionAgent.clear();
+                m_timeoutCount = 0;
+                m_devices.clear();
                 m_cdpAgent.reset();
                 m_regAgent.reset();
                 continue;
@@ -84,7 +70,7 @@ void UA::threadProc()
             {
                 printf("UA send keepalive\n");
                 keepaliveTime = nowTime;
-                devStatus->sendKeepalive();
+                sendKeepalive();
             }
         }
         else
@@ -106,13 +92,33 @@ void UA::threadProc()
         }
 
         m_sip->threadFunc(1000);
-        printf("UA online: %s\n", m_bOnline ? "true" : "false");
+        printf("UA online: %s\n", m_state == REGISTERED ? "true" : "false");
     }
 
-    if (m_bOnline)
+    if (m_regAgent)
     {
         m_regAgent->stop();
     }
+}
+
+bool UA::createDevices()
+{
+    for (std::size_t i = 0; i < m_frontDevice.camera.size(); i++)
+    {
+        auto& id = m_frontDevice.camera[i];
+        m_devices[id] = std::move(std::unique_ptr<Device>(new Camera(id, i, this, m_cdpAgent.get())));
+    }
+    for (std::size_t i = 0; i < m_frontDevice.alarmIn.size(); i++)
+    {
+        auto& id = m_frontDevice.alarmIn[i];
+        m_devices[id] = std::move(std::unique_ptr<Device>(new AlarmIn(id, i, this, m_cdpAgent.get())));
+    }
+    for (std::size_t i = 0; i < m_frontDevice.alarmOut.size(); i++)
+    {
+        auto& id = m_frontDevice.alarmOut[i];
+        m_devices[id] = std::move(std::unique_ptr<Device>(new AlarmOut(id, i, this, m_cdpAgent.get())));
+    }
+    return true;
 }
 
 bool UA::dispatchRegistrationResponse(const SipUserMessage& res)
@@ -148,15 +154,21 @@ bool UA::dispatchMANSCDPResult(int32_t code, const XMLDocument &cmd)
 bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessage& req)
 {
     printf("diapatch session request\n");
-    int32_t ch = getChannel(req.getRequestUser());
-    if (ch < 0)
+    Device *device = getDevice(req.getRequestUser());
+    if (!device)
     {
         return false;
     }
 
-    if (!m_sessionAgent.empty())
+    SessionDevice *sessionDevice = dynamic_cast<SessionDevice*>(device);
+    if (sessionDevice)
     {
-        return m_sessionAgent[ch]->agent(id, req);
+        SessionAgent *session = sessionDevice->getSessionAgent();
+        if (!session)
+        {
+            return false;
+        }
+        return session->agent(id, req);
     }
     return false;
 }
@@ -164,46 +176,29 @@ bool UA::dispatchSessionRequest(const SessionIdentifier& id, const SipUserMessag
 bool UA::dispatchMANSRTSPRequest(const SipUserMessage& req)
 {
     printf("diapatch MANSRTSP request\n");
-    int32_t ch = getChannel(req.getRequestUser());
-    if (ch < 0)
+    Device *device = getDevice(req.getRequestUser());
+    if (!device)
     {
         return false;
     }
-    
+
     const MANSRTSP::Message* message = req.getMANSRTSP();
-    if (message != nullptr)
+    if (!message)
     {
-        if (!m_sessionAgent.empty())
+        return false;
+    }
+
+    SessionDevice *sessionDevice = dynamic_cast<SessionDevice*>(device);
+    if (sessionDevice)
+    {
+        SessionAgent *session = sessionDevice->getSessionAgent();
+        if (!session)
         {
-            return m_sessionAgent[ch]->dispatchMANSRTSP(*message);
+            return false;
         }
+        return session->dispatchMANSRTSP(*message);
     }
     return false;
-}
-
-void UA::setOnline(bool online)
-{
-    printf("UA ======================> %s\n", online ? "online" : "offline");
-    m_bOnline = online;
-}
-
-const std::unordered_map<std::string, int32_t>& UA::getChannels() const
-{
-    return m_channels;
-}
-
-int32_t UA::getChannel(const std::string& id) const
-{
-    auto it = m_channels.find(id);
-    if (it != m_channels.end())
-    {
-        return it->second;
-    }
-    else
-    {
-        printf("get channel error: invalid id:%s\n", id.c_str());
-        return -1;
-    }
 }
 
 std::shared_ptr<SipUserAgent> UA::getSip() const
@@ -211,10 +206,132 @@ std::shared_ptr<SipUserAgent> UA::getSip() const
     return m_sip;
 }
 
+Device* UA::getDevice(const std::string& id)
+{
+    if (id == m_id)
+    {
+        return this;
+    }
+
+    auto it = m_devices.find(id);
+    if (it != m_devices.end())
+    {
+        return it->second.get();
+    }
+    return nullptr;
+}
+
+void UA::onRegistrationStatus(int32_t code, const std::string& sipReasonPhrase)
+{
+    printf("Registration sip status %d(%s) last state=%d\n", code, sipReasonPhrase.c_str(), m_state);
+    switch (code)
+    {
+    case 200:
+        if (m_state == REGISTERED) // 注销
+        {
+            m_state = UNREGISTERED;
+        }
+        else
+        {
+            m_state = REGISTERED;
+        }
+        break;
+    case 400:
+    case 401:
+    case 403:
+        m_state = REGISTER_FAILED;
+        break;
+    
+    default:
+        m_state = UNREGISTERED;
+        break;
+    }
+    printf("Registration new state=%d\n", m_state);
+}
+
+bool UA::queryDeviceStatus(DeviceStatusQueryResponse& res)
+{
+    res.Online = DeviceStatusQueryResponse::ONLINE;
+    res.Status = statusType::ON;
+
+    res.AlarmStatus.Item.resize(m_devices.size());
+    for (auto& device : m_devices)
+    {
+        MANSCDPDevice *dev = dynamic_cast<MANSCDPDevice*>(device.second.get());
+        if (dev)
+        {
+            int32_t num = res.AlarmStatus.Num.getInt();
+            if (dev->queryAlarmStatus(res.AlarmStatus.Item[num]))
+            {
+                res.AlarmStatus.Num++;
+            }
+        }
+    }
+    if (res.AlarmStatus.Num != m_devices.size())
+    {
+        res.AlarmStatus.Item.resize(res.AlarmStatus.Num.getInt());
+    }
+    return true;
+}
+
+bool UA::queryCatalog(std::vector<itemType>& items)
+{
+    items.resize(m_devices.size());
+    int i = 0;
+    for (auto& device : m_devices)
+    {
+        MANSCDPDevice *dev = dynamic_cast<MANSCDPDevice*>(device.second.get());
+        if (dev)
+        {
+            dev->queryCatalog(items[i]);
+        }
+        i++;
+    }
+    return true;
+}
+
+bool UA::queryDeviceInfo(DeviceInfoQueryResponse& res)
+{
+    res.DeviceName = "IPC";
+    res.Manufacturer = "Manufacturer";
+    res.Model = "Model";
+    res.Firmware = "Firmware 1.0";
+
+    return true;
+}
+
+bool UA::getStatus(std::vector<std::string>& offDevices)
+{
+    for (auto& device : m_devices)
+    {
+        MANSCDPDevice *dev = dynamic_cast<MANSCDPDevice*>(device.second.get());
+        if (dev)
+        {
+            if (!dev->getStatus())
+            {
+                offDevices.push_back(device.first);
+            }
+        }
+    }
+    return true;
+}
+
+bool UA::sendKeepalive()
+{
+    MANSCDPAgent *agent = m_cdpAgent.get();
+    std::shared_ptr<KeepaliveNotify> keepalive = agent->createCmdMessage<KeepaliveNotify>(agent, this);
+    if (keepalive && keepalive->notify(keepalive))
+    {
+        addSentCount();
+        return true;
+    }
+    return false;
+}
+
 bool UA::start(const SipUserAgent::ClientInfo& client,
                const SipUserAgent::ServerInfo& server,
-               const KeepaliveInfo &keepalive,
-               const std::vector<std::string>& catalogIds)
+               const KeepaliveInfo& keepalive,
+               const FrontDevice& frontDevice)
 {
     printf("UA starting...\n");
     if (m_bStarted)
@@ -223,20 +340,10 @@ bool UA::start(const SipUserAgent::ClientInfo& client,
         return false;
     }
 
+    this->m_id = client.id;
     m_keepaliveInfo = keepalive;
+    m_frontDevice = frontDevice;
 
-    auto size = catalogIds.size();
-    if (size == 0)
-    {
-        printf("UA start error: size of catalogIds\n");
-        return false;
-    }
-    /* 将目录Id与通道号关联 */
-    int i;
-    for (i = 0; (std::size_t)i < size; i++)
-    {
-        m_channels[catalogIds[i]] = i;
-    }
     /* 创建sip用户代理 */
     m_sip = SipUserAgent::create(this, client, server);
     if (m_sip)
@@ -282,18 +389,12 @@ bool UA::stop()
     m_thread.reset();
 
     printf("release resources...\n");
-    m_sessionAgent.clear();
     m_regAgent.reset();
     m_cdpAgent.reset();
-    m_channels.clear();
+    m_devices.clear();
     m_sip.reset();
 
     printf("UA stopped\n");
-    m_bOnline = false;
+    m_state = UNREGISTERED;
     return true;
-}
-
-bool UA::getOnline() const
-{
-    return m_bOnline;
 }

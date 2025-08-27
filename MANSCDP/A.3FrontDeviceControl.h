@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include <memory>
 
-class Control;
-
 /* A.3 前端设备控制协议 */
 
 /* A.3.1 指令格式 */
@@ -27,7 +25,6 @@ protected:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control) = 0;
 };
 
 /* A.3.2 PTZ指令 */
@@ -62,7 +59,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 /* A.3.3 FI指令 */
@@ -90,7 +86,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 /* A.3.4 预置位指令 */
@@ -105,7 +100,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 /* A.3.5 巡航指令 */
@@ -120,7 +114,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 /* A.3.6 扫描指令 */
@@ -132,7 +125,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 /* A.3.7 辅助开关控制指令 */
@@ -144,7 +136,6 @@ public:
 
 public:
     virtual bool parse();
-    virtual bool handle(int ch, Control* control);
 };
 
 #endif

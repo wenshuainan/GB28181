@@ -2,7 +2,6 @@
 #define MANSRTSP_CMD_TYPE_H
 
 #include <string.h>
-#include <memory>
 #include "B.1Message.h"
 #include "Agent/SessionAgent.h"
 

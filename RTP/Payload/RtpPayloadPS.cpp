@@ -1,5 +1,5 @@
 #include <string.h>
-#include <sys/time.h>
+#include <arpa/inet.h>
 #include "RtpPayloadPS.h"
 
 RtpPayloadPS::RtpPayloadPS(RtpParticipant *participant, int32_t maxLen)
@@ -33,10 +33,28 @@ int32_t RtpPayloadPS::format(const uint8_t *data, int32_t len)
         return 0;
     }
 
-    m_formated.bFirst = true;
-    struct timeval tv;
-    gettimeofday(&tv, nullptr);
-    m_formated.tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+    if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0xBA)
+    {
+        m_formated.bFirst = true;
+
+        /* 时间同步Pack header SCR */
+        if (len > 8)
+        {
+            uint64_t SCR_base = 0;
+            uint8_t bit3 = (data[4] & 0x38) >> 3;
+            SCR_base |= bit3 << 30;
+            uint16_t bit15 = (data[4] & 0x03) << 13;
+            bit15 |= data[5] << 5;
+            bit15 |= (data[6] & 0xF8) >> 3;
+            SCR_base |= bit15 << 15;
+            bit15 = 0;
+            bit15 |= (data[6] & 0x03) << 13;
+            bit15 |= data[7] << 5;
+            bit15 |= (data[8] & 0xF8) >> 3;
+            SCR_base |= bit15;
+            m_formated.ms = SCR_base * 300 / 27000;
+        }
+    }
 
     int pushedlen = 0;
     while (pushedlen < len)
@@ -57,7 +75,6 @@ int32_t RtpPayloadPS::format(const uint8_t *data, int32_t len)
 
     if (m_formated.payload != nullptr)
     {
-        m_formated.marker = 1;
         pushFormated();
     }
 

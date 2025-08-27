@@ -1,7 +1,6 @@
 #ifndef RTP_PAYLOAD_H
 #define RTP_PAYLOAD_H
 
-#include <vector>
 #include <memory>
 
 class RtpParticipant;

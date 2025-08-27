@@ -2,15 +2,13 @@
 #include "Agent/MANSCDPAgent.h"
 #include "A.2.6Response.h"
 #include "A.3FrontDeviceControl.h"
-#include "DevControl.h"
+#include "MANSCDPDevice.h"
 
 ControlReuest::ControlReuest(MANSCDPAgent *agent)
 {
     printf("++++++ ControlReuest\n");
-    m_devControl = std::move(std::unique_ptr<Control>(new DevControl(agent)));
-
-    spec.push_back(std::move(std::unique_ptr<DeviceControlRequest>(new DeviceControlRequest(agent, m_devControl.get()))));
-    spec.push_back(std::move(std::unique_ptr<DeviceConfigRequest>(new DeviceConfigRequest(agent, m_devControl.get()))));
+    spec.push_back(std::move(std::unique_ptr<DeviceControlRequest>(new DeviceControlRequest(agent))));
+    spec.push_back(std::move(std::unique_ptr<DeviceConfigRequest>(new DeviceConfigRequest(agent))));
 }
 
 ControlReuest::~ControlReuest()
@@ -46,14 +44,14 @@ bool ControlReuest::dispatch(const XMLElement *xmlReq)
     return false;
 }
 
-DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent, Control *devControl)
+DeviceControlRequest::DeviceControlRequest(MANSCDPAgent *agent)
 {
     printf("++++++ DeviceControlRequest\n");
-    spec.push_back(std::move(std::unique_ptr<PTZCmdControl>(new PTZCmdControl(agent, devControl))));
-    spec.push_back(std::move(std::unique_ptr<TeleBootControl>(new TeleBootControl(agent, devControl))));
-    spec.push_back(std::move(std::unique_ptr<RecordControl>(new RecordControl(agent, devControl))));
-    spec.push_back(std::move(std::unique_ptr<GuardControl>(new GuardControl(agent, devControl))));
-    spec.push_back(std::move(std::unique_ptr<AlarmControl>(new AlarmControl(agent, devControl))));
+    spec.push_back(std::move(std::unique_ptr<PTZCmdControl>(new PTZCmdControl(agent))));
+    spec.push_back(std::move(std::unique_ptr<TeleBootControl>(new TeleBootControl(agent))));
+    spec.push_back(std::move(std::unique_ptr<RecordControl>(new RecordControl(agent))));
+    spec.push_back(std::move(std::unique_ptr<GuardControl>(new GuardControl(agent))));
+    spec.push_back(std::move(std::unique_ptr<AlarmControl>(new AlarmControl(agent))));
 }
 
 DeviceControlRequest::~DeviceControlRequest()
@@ -111,9 +109,8 @@ bool DeviceControlRequest::dispatch(const XMLElement *xmlReq)
     return false;
 }
 
-PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent, Control *devControl)
+PTZCmdControl::PTZCmdControl(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devControl(devControl)
 {
     printf("++++++ PTZCmdControl\n");
 }
@@ -175,8 +172,8 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
-    if (ch < 0)
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
     {
         return false;
     }
@@ -186,15 +183,14 @@ bool PTZCmdControl::handle(const XMLElement *xmlReq)
     {
         if (cmd->parse())
         {
-            return cmd->handle(ch, m_devControl);
+            return dev->controlPTZ(dynamic_cast<PTZCommand*>(cmd.get()));
         }
     }
     return false;
 }
 
-TeleBootControl::TeleBootControl(MANSCDPAgent *agent, Control *devControl)
+TeleBootControl::TeleBootControl(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devControl(devControl)
 {
     printf("++++++ TeleBootControl\n");
 }
@@ -239,12 +235,16 @@ bool TeleBootControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    return m_devControl->reboot();
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (dev)
+    {
+        return dev->reboot();
+    }
+    return false;
 }
 
-RecordControl::RecordControl(MANSCDPAgent *agent, Control *devControl)
+RecordControl::RecordControl(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devControl(devControl)
 {
     printf("++++++ RecordControl\n");
 }
@@ -295,8 +295,8 @@ bool RecordControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
-    if (ch < 0)
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
     {
         return false;
     }
@@ -309,11 +309,11 @@ bool RecordControl::handle(const XMLElement *xmlReq)
     int32_t recCmd = req.RecordCmd.getInt();
     if (recCmd == recordType::Record)
     {
-        res->Result = m_devControl->startRecord(ch);
+        res->Result = dev->startRecord();
     }
     else if (recCmd == recordType::StopRecord)
     {
-        res->Result = m_devControl->stopRecord(ch);
+        res->Result = dev->stopRecord();
     }
     else
     {
@@ -322,9 +322,8 @@ bool RecordControl::handle(const XMLElement *xmlReq)
     return res->response();
 }
 
-GuardControl::GuardControl(MANSCDPAgent *agent, Control *devControl)
+GuardControl::GuardControl(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devControl(devControl)
 {
     printf("++++++ GuardControl\n");
 }
@@ -369,8 +368,8 @@ bool GuardControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
-    if (ch < 0)
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
     {
         return false;
     }
@@ -383,11 +382,11 @@ bool GuardControl::handle(const XMLElement *xmlReq)
     int32_t guardCmd = req.GuardCmd.getInt();
     if (guardCmd == guardType::SetGuard)
     {
-        res->Result = m_devControl->setGuard(ch);
+        res->Result = dev->setGuard();
     }
     else if (guardCmd == guardType::ResetGuard)
     {
-        res->Result = m_devControl->resetGuard(ch);
+        res->Result = dev->resetGuard();
     }
     else
     {
@@ -396,9 +395,8 @@ bool GuardControl::handle(const XMLElement *xmlReq)
     return res->response();
 }
 
-AlarmControl::AlarmControl(MANSCDPAgent *agent, Control *devControl)
+AlarmControl::AlarmControl(MANSCDPAgent *agent)
     : CmdTypeSpecRequest(agent)
-    , m_devControl(devControl)
 {
     printf("++++++ AlarmControl\n");
 }
@@ -459,8 +457,8 @@ bool AlarmControl::handle(const XMLElement *xmlReq)
         return false;
     }
 
-    int32_t ch = m_agent->getChannel(req.DeviceID.getStr());
-    if (ch < 0)
+    MANSCDPDevice *dev = m_agent->getDevice(req.DeviceID.getStr());
+    if (!dev)
     {
         return false;
     }
@@ -472,7 +470,7 @@ bool AlarmControl::handle(const XMLElement *xmlReq)
     }
     if (req.Info.AlarmType.isValid())
     {
-        res->Result = m_devControl->resetAlarm(ch, 0, req.Info.AlarmType.getInt());
+        res->Result = dev->resetAlarm(0, req.Info.AlarmType.getInt());
     }
     else
     {
@@ -481,7 +479,7 @@ bool AlarmControl::handle(const XMLElement *xmlReq)
     return res->response();
 }
 
-DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent, Control *devControl)
+DeviceConfigRequest::DeviceConfigRequest(MANSCDPAgent *agent)
 {
     printf("++++++ DeviceConfigRequest\n");
 }

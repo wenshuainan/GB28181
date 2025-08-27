@@ -1,6 +1,5 @@
 #include <arpa/inet.h>
 #include <string.h>
-#include <sys/time.h>
 #include "Semantics.h"
 
 BitStream::BitStream(int32_t lengthFiledOffset)
@@ -372,11 +371,8 @@ PackHeader::PackHeader()
     system_header = nullptr;
     pack_start_code = 0x000001BA;
 
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    system_clock_reference_base = ((27000 * tms) / 300) % (1ULL << 33);
-    system_clock_reference_extension = (27000 * tms) % 300;
+    system_clock_reference_base = 0;
+    system_clock_reference_extension = 0;
 
     program_mux_rate = 0;
 
@@ -440,7 +436,13 @@ void PackHeader::updateMuxRate(int32_t addedLength)
     program_mux_rate += addedLength;
 }
 
-PESPacket::PESPacket(uint8_t streamid)
+void PackHeader::setSCR(uint64_t decoder_time)
+{
+    system_clock_reference_base = ((27000 * decoder_time) / 300) % (1ULL << 33);
+    system_clock_reference_extension = (27000 * decoder_time) % 300;
+}
+
+PESPacket::PESPacket(uint8_t streamid, uint64_t presentation)
     : m_bitstream(32)
 {
     packet_start_code_prefix = 0x000001;
@@ -493,10 +495,7 @@ PESPacket::PESPacket(uint8_t streamid)
     }
 
     //PTS_DTS_flags = 0x02;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    uint64_t tms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    PTS = ((27000 * tms) / 300) % (1ULL << 33);
+    PTS = ((27000 * presentation) / 300) % (1ULL << 33);
 
     //PTS_DTS_flags = 0x03;
     //DTS if have video B frame ...
@@ -710,6 +709,11 @@ int32_t PESPacket::writeDataByte(const uint8_t* data, int32_t size)
     return input;
 }
 
+uint64_t PESPacket::getPresentation() const
+{
+    return PTS * 300 / 27000;
+}
+
 ProgramStreamMap::ProgramStreamMap()
     : PESPacket(0), m_bitstream(32)
 {
@@ -845,4 +849,9 @@ void Pack::addPESPacket(const std::shared_ptr<PESPacket>& packet)
 const std::vector<std::shared_ptr<PESPacket>>& Pack::getPESPacket() const
 {
     return PES_packet;
+}
+
+PackHeader& Pack::getPackHeader()
+{
+    return pack_header;
 }
