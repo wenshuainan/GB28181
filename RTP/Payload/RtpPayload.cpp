@@ -11,7 +11,7 @@ RtpPayload::~RtpPayload()
 
 std::unique_ptr<RtpPayload> RtpPayload::create(RtpParticipant *participant, Type type, int32_t maxLen)
 {
-    RtpPayload *payload = nullptr;
+    std::unique_ptr<RtpPayload> payload;
 
     if (participant == nullptr)
     {
@@ -21,15 +21,15 @@ std::unique_ptr<RtpPayload> RtpPayload::create(RtpParticipant *participant, Type
     switch (type)
     {
     case H264:
-        payload = new RtpPayloadAvc(participant, maxLen);
+        payload = std::move(std::unique_ptr<RtpPayload>(new RtpPayloadAvc(participant, maxLen)));
         break;
     case PS:
-        payload = new RtpPayloadPS(participant, maxLen);
+        payload = std::move(std::unique_ptr<RtpPayload>(new RtpPayloadPS(participant, maxLen)));
         break;
     
     default:
         break;
     }
 
-    return std::unique_ptr<RtpPayload>(payload);
+    return payload;
 }

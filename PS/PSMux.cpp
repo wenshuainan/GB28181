@@ -24,8 +24,9 @@ PSMux::~PSMux()
     m_bRunning = false;
     if (m_thread != nullptr)
     {
+        printf("PS wait thread join\n");
         m_thread->join();
-        printf("thread joined\n");
+        printf("PS thread joined\n");
     }
 }
 

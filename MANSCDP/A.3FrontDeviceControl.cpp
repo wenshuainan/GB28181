@@ -15,38 +15,38 @@ CommandFormat::~CommandFormat()
 std::unique_ptr<CommandFormat> CommandFormat::create(const uint8_t* cmd)
 {
     printf("FrontDeviceControl create Command\n");
-    CommandFormat *command = nullptr;
+    std::unique_ptr<CommandFormat> command;
     if ((cmd[3] & 0xC0) == 0)
     {
-        command = new PTZCommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new PTZCommand(cmd)));
     }
     else if ((cmd[3] & 0xF0) == 0x40)
     {
-        command = new FICommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new FICommand(cmd)));
     }
     else if (cmd[3] == 0x81 || cmd[3] == 0x82 || cmd[3] == 0x83)
     {
-        command = new PresetCommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new PresetCommand(cmd)));
     }
     else if (cmd[3] == 0x84 || cmd[3] == 0x85 || cmd[3] == 0x86
         || cmd[3] == 0x87 || cmd[3] == 0x88)
     {
-        command = new CruiseCommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new CruiseCommand(cmd)));
     }
     else if (cmd[3] == 0x89 || cmd[3] == 0x8A)
     {
-        command = new ScanCommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new ScanCommand(cmd)));
     }
     else if (cmd[3] == 0x8C || cmd[3] == 0x8D)
     {
-        command = new AuxiliaryCommand(cmd);
+        command = std::move(std::unique_ptr<CommandFormat>(new AuxiliaryCommand(cmd)));
     }
     else
     {
         printf("unknown front device control command %02X\n", cmd[3]);
         return nullptr;
     }
-    return std::unique_ptr<CommandFormat>(command);
+    return command;
 }
 
 bool CommandFormat::readBit(int32_t byte, int32_t bit) const

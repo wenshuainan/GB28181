@@ -165,58 +165,51 @@ index c4d5e3ff9..19ef22d2a 100644
  if(BUILD_TESTING)
      add_subdirectory(test)
 diff --git a/resip/dum/DialogUsageManager.cxx b/resip/dum/DialogUsageManager.cxx
-index e905fc28e..54df1e50b 100644
+old mode 100644
+new mode 100755
+index e905fc28e..6561a34af
 --- a/resip/dum/DialogUsageManager.cxx
 +++ b/resip/dum/DialogUsageManager.cxx
-@@ -1676,10 +1676,45 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
+@@ -1674,6 +1674,39 @@ DialogUsageManager::incomingProcess(std::unique_ptr<Message> msg)
+                   return;
+                }
              }
-             if (sipMsg->header(h_From).exists(p_tag))
-             {
--               if (mergeRequest(*sipMsg) )
-+               // if (mergeRequest(*sipMsg) )
-+               // {
-+               //    InfoLog (<< "Merged request: " << *sipMsg);
-+               //    return;
-+               // }
-+            }
 +            if (sipMsg->header(h_RequestLine).method() == ACK
 +               && ((!sipMsg->header(h_To).exists(p_tag))
 +                     || (sipMsg->header(h_To).exists(p_tag) && sipMsg->header(h_To).param(p_tag) == "1533684873")
 +                  )
 +               )
 +            {
++               WarningLog (<< "JUST FOR GB28181TestTool!!! ACK without To tag" << *sipMsg);
 +               auto it = mDialogSetMap.begin();
 +               for (; it != mDialogSetMap.end(); it++)
-                {
--                  InfoLog (<< "Merged request: " << *sipMsg);
--                  return;
++               {
 +                  if (it->first.getCallId() == sipMsg->header(h_CallId).value())
 +                  {
++                     WarningLog (<< "JUST FOR GB28181TestTool!!! add To tag" << *sipMsg);
++                     sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
 +                     break;
 +                  }
-+               }
-+               if (it != mDialogSetMap.end())
-+               {
-+                  sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
 +               }
 +            }
 +            if (sipMsg->header(h_RequestLine).method() == INFO
 +               && !sipMsg->header(h_To).exists(p_tag))
 +            {
++               WarningLog (<< "JUST FOR GB28181TestTool!!! INFO without To tag" << *sipMsg);
 +               auto it = mDialogSetMap.begin();
 +               for (; it != mDialogSetMap.end(); it++)
 +               {
 +                  if (it->first.getCallId() == sipMsg->header(h_CallId).value())
 +                  {
++                     WarningLog (<< "JUST FOR GB28181TestTool!!! add To tag" << *sipMsg);
++                     sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
 +                     break;
 +                  }
 +               }
-+               if (it != mDialogSetMap.end())
-+               {
-+                  sipMsg->header(h_To).param(p_tag) = it->first.getLocalTag();
-                }
-             }
-             processRequest(*sipMsg);
++            }
+             if (sipMsg->header(h_From).exists(p_tag))
+             {
+                if (mergeRequest(*sipMsg) )
 diff --git a/resip/stack/CMakeLists.txt b/resip/stack/CMakeLists.txt
 index d7c2f4c46..b0eeabedb 100644
 --- a/resip/stack/CMakeLists.txt

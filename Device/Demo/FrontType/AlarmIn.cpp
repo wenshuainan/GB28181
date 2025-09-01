@@ -15,7 +15,7 @@ AlarmIn::~AlarmIn()
 bool AlarmIn::queryDeviceStatus(DeviceStatusQueryResponse& res)
 {
     res.Online = DeviceStatusQueryResponse::ONLINE;
-    res.Status = statusType::ON;
+    res.Status = resultType::OK;
     res.AlarmStatus.Num = 1;
     res.AlarmStatus.Item.resize(1);
     queryAlarmStatus(res.AlarmStatus.Item[0]);

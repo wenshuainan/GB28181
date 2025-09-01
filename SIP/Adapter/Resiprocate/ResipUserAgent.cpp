@@ -193,6 +193,12 @@ bool ResipUserAgent::sendSessionResponse(const SessionIdentifier& id, const SipU
         return false;
     }
 
+    resip::InviteSessionHandle handle(*mDum, id);
+    if (!handle.isValid())
+    {
+        return false;
+    }
+
     int32_t code = res.getCode();
     if (code == 200)
     {
@@ -209,9 +215,8 @@ bool ResipUserAgent::sendSessionResponse(const SessionIdentifier& id, const SipU
             return false;
         }
 
-        resip::InviteSession *session = (resip::InviteSession *)id;
-        session->provideAnswer(*sdp);
-        resip::ServerInviteSession* uas = dynamic_cast<resip::ServerInviteSession*>(session);
+        handle->provideAnswer(*sdp);
+        resip::ServerInviteSession* uas = dynamic_cast<resip::ServerInviteSession*>(handle.get());
         if(uas && !uas->isAccepted())
         {
             uas->accept();
@@ -224,14 +229,19 @@ bool ResipUserAgent::sendSessionResponse(const SessionIdentifier& id, const SipU
     }
     else
     {
-        resip::InviteSession *session = (resip::InviteSession *)id;
-        session->reject(code);
+        handle->reject(code);
         return true;
     }
 }
 
 bool ResipUserAgent::sendSessionMessage(const SessionIdentifier& id, const XMLDocument& cmd)
 {
+    resip::InviteSessionHandle handle(*mDum, id);
+    if (!handle.isValid())
+    {
+        return false;
+    }
+
     MANSCDPContents contents(cmd);
     resip::Data debug;
     {
@@ -239,13 +249,18 @@ bool ResipUserAgent::sendSessionMessage(const SessionIdentifier& id, const XMLDo
         contents.encodeParsed(s);
     }
     printf("send session Notify:\n%s\n", debug.c_str());
-    resip::InviteSession *session = (resip::InviteSession *)id;
-    session->message(contents);
+    handle->message(contents);
     return true;
 }
 
 bool ResipUserAgent::sendMANSRTSP(const SessionIdentifier& id, const MANSRTSP::Message& cmd)
 {
+    resip::InviteSessionHandle handle(*mDum, id);
+    if (!handle.isValid())
+    {
+        return false;
+    }
+
     MANSRTSPContents contents(cmd);
     resip::Data debug;
     {
@@ -253,8 +268,21 @@ bool ResipUserAgent::sendMANSRTSP(const SessionIdentifier& id, const MANSRTSP::M
         contents.encodeParsed(s);
     }
     printf("send MANSRTSP Response:\n%s\n", debug.c_str());
-    resip::InviteSession *session = (resip::InviteSession *)id;
-    session->acceptNIT(200, &contents);
+    handle->acceptNIT(200, &contents);
+    return true;
+}
+
+bool ResipUserAgent::removeSession(const SessionIdentifier& id)
+{
+    printf("remove session\n");
+    resip::InviteSessionHandle handle(*mDum, id);
+    if (!handle.isValid())
+    {
+        return false;
+    }
+
+    printf("session end %lu\n", handle.getId());
+    handle->end();
     return true;
 }
 
@@ -302,7 +330,7 @@ void ResipUserAgent::onConnectedConfirmed(resip::InviteSessionHandle h, const re
 
     SipUserMessage user;
     user.setAdapter(adapter);
-    postSessionRequest((SessionIdentifier)(h.get()), user);
+    postSessionRequest(h.getId(), user);
 }
 
 void ResipUserAgent::onTerminated(resip::InviteSessionHandle h, resip::InviteSessionHandler::TerminatedReason reason, const resip::SipMessage* msg)
@@ -317,7 +345,7 @@ void ResipUserAgent::onTerminated(resip::InviteSessionHandle h, resip::InviteSes
 
         SipUserMessage user;
         user.setAdapter(adapter);
-        postSessionRequest((SessionIdentifier)(h.get()), user);
+        postSessionRequest(h.getId(), user);
     }
 }
 
@@ -329,7 +357,7 @@ void ResipUserAgent::onOffer(resip::InviteSessionHandle handle, const resip::Sip
 
     SipUserMessage user;
     user.setAdapter(adapter);
-    postSessionRequest((SessionIdentifier)(handle.get()), user);
+    postSessionRequest(handle.getId(), user);
 }
 
 void ResipUserAgent::onInfo(resip::InviteSessionHandle, const resip::SipMessage& msg)

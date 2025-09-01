@@ -1,6 +1,7 @@
 #include <stdio.h>
-#include <iostream>
 #include <unistd.h>
+#include <signal.h>
+#include <iostream>
 #include "UA.h"
 
 #define TEST_GB28181 1
@@ -132,6 +133,8 @@ public:
 
 int main()
 {
+    signal(SIGPIPE, SIG_IGN);
+
 #if TEST_GB28181
     UA ua;
 

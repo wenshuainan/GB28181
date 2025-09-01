@@ -15,6 +15,7 @@ public:
     virtual bool send(RtpPacket& packet);
     virtual uint16_t getMTU();
     virtual const char* getType() const;
+    virtual bool isConnected();
 };
 
 #endif

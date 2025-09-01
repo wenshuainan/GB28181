@@ -153,6 +153,10 @@ public:
     /// @param cmd 回放控制命令应答
     /// @return 
     virtual bool sendMANSRTSP(const SessionIdentifier& id, const MANSRTSP::Message& res) = 0;
+    /// @brief 移除会话，离线等不正常情况下调用进行资源释放
+    /// @param id session标识
+    /// @return 
+    virtual bool removeSession(const SessionIdentifier& id) = 0;
 
 protected:
     /// @brief 向UA投递注册回复

@@ -21,10 +21,18 @@ RtpOverUdp::~RtpOverUdp()
 bool RtpOverUdp::connect(const std::string& ipv4, int port)
 {
     printf("udp connect %p [%s:%d]\n", this, ipv4.c_str(), port);
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (m_sockfd < 0)
     {
-        printf("failed socket %p\n", this);
+        printf("create socket failed %p\n", this);
+        return false;
+    }
+
+    if (!bind())
+    {
+        close(m_sockfd);
+        m_sockfd = -1;
         return false;
     }
 
@@ -34,20 +42,24 @@ bool RtpOverUdp::connect(const std::string& ipv4, int port)
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = inet_addr(ipv4.c_str());
 
-    if (::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0)
+    if (::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == 0)
     {
-        printf("failed connect %p\n", this);
+        printf("udp connected %p:%d\n", this, m_sockfd);
+        return true;
+    }
+    else
+    {
+        printf("failed connect %d:%d\n", m_sockfd, errno);
         close(m_sockfd);
         m_sockfd = -1;
         return false;
     }
-
-    return true;
 }
 
 bool RtpOverUdp::disconnect()
 {
-    printf("udp disconnect %p\n", this);
+    printf("udp disconnect %p:%d\n", this, m_sockfd);
+    std::lock_guard<std::mutex> guard(m_mutex);
     if (m_sockfd > 0)
     {
         close(m_sockfd);
@@ -69,6 +81,7 @@ bool RtpOverUdp::send(RtpPacket& packet)
     }
 #endif
 
+    std::lock_guard<std::mutex> guard(m_mutex);
     if (m_sockfd < 0)
     {
         printf("socket not connected\n");
@@ -101,4 +114,10 @@ uint16_t RtpOverUdp::getMTU()
 const char* RtpOverUdp::getType() const
 {
     return "RTP/AVP";
+}
+
+bool RtpOverUdp::isConnected()
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    return m_sockfd >= 0;
 }

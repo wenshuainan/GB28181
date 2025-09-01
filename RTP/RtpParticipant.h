@@ -39,7 +39,7 @@ private:
     std::queue<Formated> m_formated;
     std::mutex m_mutex;
     std::unique_ptr<std::thread> m_thread;
-    bool m_bConnected;
+    bool m_bProc;
     RtpPayload::Type m_payloadType;
     Participant::Destination m_destination;
     uint32_t m_SSRC;
@@ -50,7 +50,7 @@ public:
 
 private:
     uint16_t makeRandom();
-    void process();
+    void threadProc();
 
 public:
     bool pushPayload(const Formated& formated);
@@ -63,6 +63,7 @@ public:
     int32_t getLocalPort() const;
     uint32_t getSSRC() const;
     const char* getTransportType() const;
+    bool isConnected();
 };
 
 #endif

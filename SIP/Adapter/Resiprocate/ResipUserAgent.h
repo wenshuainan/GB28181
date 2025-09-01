@@ -5,6 +5,8 @@
 #include "../SipAdapter.h"
 #include "basicClientUserAgent.hxx"
 
+class ResipUserAgent;
+
 struct SipAdapterMessage
 {
     std::shared_ptr<resip::SipMessage> instance;
@@ -31,6 +33,7 @@ public:
     virtual bool sendSessionResponse(const SessionIdentifier& id, const SipUserMessage& res);
     virtual bool sendSessionMessage(const SessionIdentifier& id, const XMLDocument& cmd);
     virtual bool sendMANSRTSP(const SessionIdentifier& id, const MANSRTSP::Message& cmd);
+    virtual bool removeSession(const SessionIdentifier& id);
 
 protected:
     // Registration Handler ////////////////////////////////////////////////////////

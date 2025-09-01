@@ -30,7 +30,6 @@ void UA::threadProc()
 
     while (m_bStarted)
     {
-        /* 如果提前创建Agent，离线后需要清理许多状态。所以在线后重新创建新的，离线时直接销毁 */
         if (m_state == REGISTERED)
         {
             /* 创建MANSCDP协议代理 */
@@ -58,9 +57,7 @@ void UA::threadProc()
                 m_state = UNREGISTERED;
                 keepaliveTime.tv_sec = 0;
                 m_timeoutCount = 0;
-                m_devices.clear();
-                m_cdpAgent.reset();
-                m_regAgent.reset();
+                m_regAgent.reset(); // 重新发起注册
                 continue;
             }
             /* 配置的保活间隔时间到，提前3s发送保活包 */
@@ -75,6 +72,10 @@ void UA::threadProc()
         }
         else
         {
+            /* 离线状态，清理资源 */
+            m_devices.clear();
+            m_cdpAgent.reset();
+
             /* 创建注册协议代理 */
             if (!m_regAgent)
             {
@@ -208,6 +209,11 @@ std::shared_ptr<SipUserAgent> UA::getSip() const
 
 Device* UA::getDevice(const std::string& id)
 {
+    if (m_state != REGISTERED)
+    {
+        return nullptr;
+    }
+    
     if (id == m_id)
     {
         return this;
@@ -239,6 +245,7 @@ void UA::onRegistrationStatus(int32_t code, const std::string& sipReasonPhrase)
     case 400:
     case 401:
     case 403:
+    case 408:
         m_state = REGISTER_FAILED;
         break;
     
@@ -252,7 +259,8 @@ void UA::onRegistrationStatus(int32_t code, const std::string& sipReasonPhrase)
 bool UA::queryDeviceStatus(DeviceStatusQueryResponse& res)
 {
     res.Online = DeviceStatusQueryResponse::ONLINE;
-    res.Status = statusType::ON;
+    res.Status = resultType::OK;
+    res.DeviceTime = time(NULL);
 
     res.AlarmStatus.Item.resize(m_devices.size());
     for (auto& device : m_devices)
@@ -387,6 +395,7 @@ bool UA::stop()
     m_bStarted = false;
     m_thread->join();
     m_thread.reset();
+    m_state = UNREGISTERED;
 
     printf("release resources...\n");
     m_regAgent.reset();
@@ -395,6 +404,5 @@ bool UA::stop()
     m_sip.reset();
 
     printf("UA stopped\n");
-    m_state = UNREGISTERED;
     return true;
 }

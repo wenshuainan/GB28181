@@ -45,10 +45,15 @@ private:
     std::unique_ptr<PSMux> m_psmux; // PS复用器
     std::unique_ptr<RtpParticipant> m_rtpParticipant; // RTP流发布
     RtpPayload::Type m_rtpPayloadType;
+    std::unique_ptr<std::thread> m_thread; // 连接线程
+    bool m_bConnect; // 连接线程运行标志
 
 public:
     Media(const Attr& attr, RtpPayload::Type payloadType);
     virtual ~Media();
+
+private:
+    void connectProc();
 
 public:
     virtual void onProgramStream(const uint8_t *data, int32_t size);

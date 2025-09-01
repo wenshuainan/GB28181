@@ -147,7 +147,7 @@ bool CatalogQueryResponse::encode(XMLDocument *xmldocRes)
     xmlSumNum->SetText(SumNum.getInt());
     rootElement->InsertEndChild(xmlSumNum);
 
-    if (SumNum.getInt() > 0)
+    if (SumNum > 0)
     {
         XMLElement *xmlDeviceList = xmldocRes->NewElement("DeviceList");
         rootElement->InsertEndChild(xmlDeviceList);
@@ -373,6 +373,34 @@ bool DeviceStatusQueryResponse::encode(XMLDocument *xmldocRes)
     XMLElement *xmlStatus = xmldocRes->NewElement("Status");
     xmlStatus->SetText(Status.getStr().c_str());
     rootElement->InsertEndChild(xmlStatus);
+
+    if (Reason.isValid())
+    {
+        XMLElement *xmlReason = xmldocRes->NewElement("Reason");
+        xmlReason->SetText(Reason.getStr().c_str());
+        rootElement->InsertEndChild(xmlReason);
+    }
+
+    if (Encode.isValid())
+    {
+        XMLElement *xmlEncode = xmldocRes->NewElement("Encode");
+        xmlEncode->SetText(Encode.getStr().c_str());
+        rootElement->InsertEndChild(xmlEncode);
+    }
+
+    if (Record.isValid())
+    {
+        XMLElement *xmlRecord = xmldocRes->NewElement("Record");
+        xmlRecord->SetText(Record.getStr().c_str());
+        rootElement->InsertEndChild(xmlRecord);
+    }
+
+    if (DeviceTime.isValid())
+    {
+        XMLElement *xmlDeviceTime = xmldocRes->NewElement("DeviceTime");
+        xmlDeviceTime->SetText(DeviceTime.getStr().c_str());
+        rootElement->InsertEndChild(xmlDeviceTime);
+    }
 
     if (AlarmStatus.Num > 0)
     {

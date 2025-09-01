@@ -61,7 +61,7 @@ bool Camera::resetGuard()
 bool Camera::queryDeviceStatus(DeviceStatusQueryResponse& res)
 {
     res.Online = DeviceStatusQueryResponse::ONLINE;
-    res.Status = statusType::ON;
+    res.Status = resultType::OK;
     return true;
 }
 

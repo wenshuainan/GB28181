@@ -13,7 +13,7 @@ PES::~PES()
 
 std::unique_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
 {
-    PES *pes = nullptr;
+    std::unique_ptr<PES> pes;
 
     if (mux == nullptr)
     {
@@ -24,16 +24,16 @@ std::unique_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
     switch (type)
     {
     case AVC:
-        pes = new PacketizedAVC(mux);
+        pes = std::move(std::unique_ptr<PES>(new PacketizedAVC(mux)));
         break;
     case HEVC:
-        pes = new PacketizedHEVC(mux);
+        pes = std::move(std::unique_ptr<PES>(new PacketizedHEVC(mux)));
         break;
     case G711A:
-        pes = new PacketizedG711A(mux);
+        pes = std::move(std::unique_ptr<PES>(new PacketizedG711A(mux)));
         break;
     case AAC:
-        pes = new PacketizedAAC(mux);
+        pes = std::move(std::unique_ptr<PES>(new PacketizedAAC(mux)));
         break;
     
     default:
@@ -41,5 +41,5 @@ std::unique_ptr<PES> PES::create(ES_TYPE type, PSMux *mux)
         return nullptr;
     }
 
-    return std::unique_ptr<PES>(pes);
+    return pes;
 }

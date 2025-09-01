@@ -5,24 +5,32 @@
 #include "RtpParticipant.h"
 
 RtpParticipant::RtpParticipant(Participant& participant)
-    : m_bConnected(false)
 {
     printf("++++++ RtpParticipant %p\n", this);
     m_payloadType = participant.payloadType;
     m_SSRC = participant.SSRC;
     m_destination = participant.destination;
 
-    m_net = RtpNet::create(participant.netType, participant.destination.port);
+    m_net = RtpNet::create(participant.netType);
     if (m_net != nullptr)
     {
         m_payloadFormat = RtpPayload::create(this, m_payloadType, m_net->getMTU());
     }
+
+    m_bProc = true;
+    m_thread = std::move(std::unique_ptr<std::thread>(new std::thread(&RtpParticipant::threadProc, this)));
 }
 
 RtpParticipant::~RtpParticipant()
 {
     printf("------ RtpParticipant %p\n", this);
-    disconnect();
+    m_bProc = false;
+    if (m_thread)
+    {
+        printf("rtp participant wait thread join %p\n", this);
+        m_thread->join();
+        printf("rtp participant thread joined %p\n", this);
+    }
 }
 
 uint16_t RtpParticipant::makeRandom()
@@ -33,7 +41,7 @@ uint16_t RtpParticipant::makeRandom()
     return distrib(gen); // 生成随机数
 }
 
-void RtpParticipant::process()
+void RtpParticipant::threadProc()
 {
     RtpHeader::Fixed fixed = {
         .cc = 0,
@@ -50,7 +58,7 @@ void RtpParticipant::process()
     uint64_t lastms = 0;
     prctl(PR_SET_NAME, "RTPParticipant");
 
-    while (m_bConnected)
+    while (m_bProc)
     {
         m_mutex.lock();
         if (m_formated.empty())
@@ -64,22 +72,24 @@ void RtpParticipant::process()
         m_formated.pop();
         m_mutex.unlock();
 
-        if (formated.bFirst)
+        if (m_net && m_net->isConnected())
         {
-            uint32_t delta = formated.ms - lastms;
-            fixed.ts += (delta > 1000 ? 0 : delta) * 90;
-            lastms = formated.ms;
-        }
-        if (formated.marker)
-        {
-            fixed.m = 1;
-        }
-        RtpPacket packet(fixed, formated.payload);
-
-        if (!m_net->send(packet))
-        {
-            printf("rtp %p network send data failed errno=%d\n", this, errno);
-            break;
+            if (formated.bFirst)
+            {
+                uint32_t delta = formated.ms - lastms;
+                fixed.ts += (delta > 1000 ? 0 : delta) * 90;
+                lastms = formated.ms;
+            }
+            if (formated.marker)
+            {
+                fixed.m = 1;
+            }
+            RtpPacket packet(fixed, formated.payload);
+            if (!m_net->send(packet))
+            {
+                printf("rtp %p network send data failed errno=%d\n", this, errno);
+                m_net->disconnect();
+            }
         }
 
         fixed.seq++;
@@ -121,7 +131,7 @@ bool RtpParticipant::connect()
     printf("rtp connect %p\n", this);
     if (m_net == nullptr || m_net->isConnected())
     {
-        printf("failed %p:%p\n", this, m_net.get());
+        printf("connect failed %p:%p\n", this, m_net.get());
         return false;
     }
     if (m_destination.ipv4.empty() || m_destination.port <= 0)
@@ -130,15 +140,7 @@ bool RtpParticipant::connect()
         return false;
     }
 
-    bool connected = m_net->connect(m_destination.ipv4, m_destination.port);
-    if (connected)
-    {
-        printf("connect success %p\n", this);
-        m_bConnected = true;
-        m_thread = std::move(std::unique_ptr<std::thread>(new std::thread(&RtpParticipant::process, this)));
-    }
-
-    return connected;
+    return m_net->connect(m_destination.ipv4, m_destination.port);
 }
 
 bool RtpParticipant::disconnect()
@@ -148,14 +150,6 @@ bool RtpParticipant::disconnect()
     {
         printf("failed %p:%p\n", this, m_net.get());
         return false;
-    }
-
-    printf("wait thread join %p\n", this);
-    m_bConnected = false;
-    if (m_thread && m_thread->joinable())
-    {
-        m_thread->join();
-        printf("thread joined %p\n", this);
     }
 
     return m_net->disconnect();
@@ -195,5 +189,17 @@ const char* RtpParticipant::getTransportType() const
     else
     {
         return "";
+    }
+}
+
+bool RtpParticipant::isConnected()
+{
+    if (m_net)
+    {
+        return m_net->isConnected();
+    }
+    else
+    {
+        return false;
     }
 }

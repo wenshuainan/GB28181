@@ -2,6 +2,7 @@
 #define RTP_NET_H
 
 #include <string>
+#include <mutex>
 #include "../RtpPacket.h"
 
 class RtpNet
@@ -11,17 +12,21 @@ public:
     {
         UDP,
         TCP_ACTIVE,
-        // TCP_PASSIVE, // 附录L 只对流媒体服务器之间要求
+        // TCP_PASSIVE, // 附录D 只对流媒体服务器之间要求
     };
 
 protected:
     int32_t m_sockfd;
     std::string m_localIpv4;
     int32_t m_localPort;
+    std::mutex m_mutex;
 
 public:
     RtpNet(int localPort = 60000);
     virtual ~RtpNet();
+
+protected:
+    virtual bool bind();
 
 public:
     virtual bool connect(const std::string& ipv4, int port) = 0;
@@ -29,10 +34,10 @@ public:
     virtual bool send(RtpPacket& packet) = 0;
     virtual uint16_t getMTU() = 0;
     virtual const char* getType() const = 0;
+    virtual bool isConnected() = 0;
 
 public:
-    static std::unique_ptr<RtpNet> create(Type type, int localPort = 0);
-    virtual bool isConnected();
+    static std::unique_ptr<RtpNet> create(Type type, int localPort = 60000);
     virtual const std::string& getLocalIpv4();
     virtual int32_t getLocalPort();
 };

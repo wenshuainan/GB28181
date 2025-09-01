@@ -11,6 +11,7 @@
 #include "MANSRTSPAgent.h"
 
 Media::Media(const Attr& attr, RtpPayload::Type payloadType)
+    : m_bConnect(false)
 {
     printf("++++++ Media %d\n", payloadType);
     m_rtpPayloadType = payloadType;
@@ -31,7 +32,37 @@ Media::Media(const Attr& attr, RtpPayload::Type payloadType)
 Media::~Media()
 {
     printf("------ Media %d\n", m_rtpPayloadType);
+    m_vpes.reset();
+    m_apes.reset();
+    m_psmux.reset();
     disconnect();
+}
+
+/* 连接线程
+ * GB28181 附录 D
+ * 实时视频点播、历史视频回放与下载的 TCP媒体传输在建立 TCP连接时应支持重连机制。首次
+ * TCP连接失败,TCP媒体流传输客户端应间隔一段时间进行重连,重连间隔应不小于1s,重连次数应
+ * 不小于3次。
+ */
+void Media::connectProc()
+{
+    if (!m_rtpParticipant)
+    {
+        printf("rtp participant null\n");
+        return;
+    }
+
+    prctl(PR_SET_NAME, "media connect");
+
+    while (m_bConnect)
+    {
+        if (!m_rtpParticipant->isConnected())
+        {
+            m_rtpParticipant->connect();
+        }
+
+        sleep(1); // 不小于1s
+    }
 }
 
 void Media::onProgramStream(const uint8_t *data, int32_t size)
@@ -52,19 +83,36 @@ void Media::onProgramStream(const uint8_t *data, int32_t size)
 
 bool Media::connect()
 {
-    if (m_rtpParticipant)
+    printf("media connect\n");
+    if (m_bConnect)
     {
-        printf("session media connect\n");
-        return m_rtpParticipant->connect();
+        printf("media connect started\n");
+        return false;
     }
-    return false;
+    m_bConnect = true;
+    m_thread = std::move(std::unique_ptr<std::thread>(new std::thread(&Media::connectProc, this)));
+    return m_thread != nullptr;
 }
 
 bool Media::disconnect()
 {
+    printf("media disconnect\n");
+    if (!m_bConnect)
+    {
+        printf("media not connect\n");
+        return false;
+    }
+    m_bConnect = false;
+    if (m_thread)
+    {
+        printf("media wait thread join\n");
+        m_thread->join();
+        m_thread.reset();
+        printf("media thread joined\n");
+    }
+
     if (m_rtpParticipant)
     {
-        printf("session media disconnect\n");
         return m_rtpParticipant->disconnect();
     }
     return false;
@@ -189,25 +237,25 @@ Session::~Session()
 std::unique_ptr<Session> Session::create(SessionAgent *agent, const Attr& attr, const std::string& subject)
 {
     printf("create session %s\n", attr.name.c_str());
-    Session *session = nullptr;
+    std::unique_ptr<Session> session;
     if (attr.name == "Play")
     {
-        session = new SessionPlay(agent, attr, subject);
+        session = std::move(std::unique_ptr<Session>(new SessionPlay(agent, attr, subject)));
     }
     else if (attr.name == "Playback")
     {
-        session = new SessionPlayback(agent, attr, subject);
+        session = std::move(std::unique_ptr<Session>(new SessionPlayback(agent, attr, subject)));
     }
     else if (attr.name == "Download")
     {
-        session = new SessionDownload(agent, attr, subject);
+        session = std::move(std::unique_ptr<Session>(new SessionDownload(agent, attr, subject)));
     }
     else
     {
         printf("unknown session name\n");
         return nullptr;
     }
-    return std::unique_ptr<Session>(session);
+    return session;
 }
 
 void Session::threadProc()
@@ -351,21 +399,24 @@ bool Session::stop()
         return false;
     }
 
-    printf("session wait thread join\n");
     m_bStarted = false;
     if (m_thread != nullptr)
     {
+        printf("session wait thread join\n");
         m_thread->join();
         printf("session thread joined\n");
         m_thread = nullptr;
     }
     delete []m_buffer;
+
+    m_media.clear();
+
     return true;
 }
 
 bool Session::addMedia(const Media::Attr& attr)
 {
-    Media *media = nullptr;
+    std::unique_ptr<Media> media;
 
     if (attr.type == "video")
     {
@@ -373,7 +424,7 @@ bool Session::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), RtpPayload::PS);
         if (it != attr.payloadType.end())
         {
-            media = new Media(attr, RtpPayload::PS);
+            media = std::move(std::unique_ptr<Media>(new Media(attr, RtpPayload::PS)));
         }
         else
         {
@@ -389,7 +440,7 @@ bool Session::addMedia(const Media::Attr& attr)
             auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
             if (it != attr.payloadType.end())
             {
-                media = new Media(attr, payloadType);
+                media = std::move(std::unique_ptr<Media>(new Media(attr, payloadType)));
             }
             else // 不支持这个类型
             {
@@ -412,7 +463,7 @@ bool Session::addMedia(const Media::Attr& attr)
         auto it = std::find(attr.payloadType.begin(), attr.payloadType.end(), payloadType);
         if (it != attr.payloadType.end())
         {
-            media = new Media(attr, payloadType);
+            media = std::move(std::unique_ptr<Media>(new Media(attr, payloadType)));
         }
         else // 不支持这个类型
         {
@@ -424,7 +475,7 @@ bool Session::addMedia(const Media::Attr& attr)
     if (media != nullptr)
     {
         printf("add media success: payloadType=%d\n", media->m_rtpPayloadType);
-        m_media.push_back(std::move(std::unique_ptr<Media>(media)));
+        m_media.push_back(std::move(media));
         m_media.back()->connect();
         return true;
     }
@@ -671,6 +722,14 @@ SessionAgent::SessionAgent(UA *ua, int32_t ch)
 SessionAgent::~SessionAgent()
 {
     printf("------ SessionAgent %d\n", m_ch);
+    for (auto it = m_session.begin(); it != m_session.end(); ++it)
+    {
+        auto sip = m_ua->getSip();
+        if (sip)
+        {
+            sip->removeSession(it->first);
+        }
+    }
 }
 
 std::string SessionAgent::parseSubject(const std::string& subject) const

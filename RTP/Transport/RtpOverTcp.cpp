@@ -23,10 +23,18 @@ RtpOverTcp::~RtpOverTcp()
 bool RtpOverTcp::connect(const std::string& ipv4, int port)
 {
     printf("tcp connect %p [%s:%d]\n", this, ipv4.c_str(), port);
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (m_sockfd < 0)
     {
-        printf("failed socket %p\n", this);
+        printf("create socket failed %p\n", this);
+        return false;
+    }
+
+    if (!bind())
+    {
+        close(m_sockfd);
+        m_sockfd = -1;
         return false;
     }
 
@@ -43,17 +51,19 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
     int err = ::connect(m_sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
     if (err < 0)
     {
+        printf("tcp connect %d:%d\n", m_sockfd, errno);
         if (errno == EINPROGRESS)
         {
             struct timeval tval = {
-                .tv_sec = 3,
+                .tv_sec = 2,
                 .tv_usec = 0
             };
             fd_set wset;
             FD_ZERO(&wset);
             FD_SET(m_sockfd, &wset);
-            err = select(m_sockfd + 1, NULL, &wset, NULL, &tval);
-            if (err > 0)
+            int serr = select(m_sockfd + 1, NULL, &wset, NULL, &tval);
+            printf("tcp connect select %d:%d\n", m_sockfd, serr);
+            if (serr > 0 && FD_ISSET(m_sockfd, &wset))
             {
                 int optval = -1;
                 socklen_t optlen = sizeof(optval);
@@ -62,28 +72,35 @@ bool RtpOverTcp::connect(const std::string& ipv4, int port)
                 {
                     err = 0;
                 }
+                printf("tcp connect getsockopt %d:%d\n", m_sockfd, optval);
             }
         }
     }
 
-    printf("tcp nonblock connected=%d %p\n", err, this);
+    printf("tcp nonblock connected %d:%d\n", m_sockfd, err);
     if (err == 0)
     {
         /* 连接成功，恢复阻塞模式 */
         fcntl(m_sockfd, F_SETFL, flags);
-        return true;
+
+        /* 设置发送超时 */
+        struct timeval tv = {.tv_sec = 2, .tv_usec = 0};
+        if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == 0)
+        {
+            return true;
+        }
+        printf("tcp set socket opt SO_SNDTIMEO failed errno=%d\n", errno);
     }
-    else
-    {
-        close(m_sockfd);
-        m_sockfd = -1;
-        return false;
-    }
+
+    close(m_sockfd);
+    m_sockfd = -1;
+    return false;
 }
 
 bool RtpOverTcp::disconnect()
 {
-    printf("tcp disconnect %p\n", this);
+    printf("tcp disconnect %p:%d\n", this, m_sockfd);
+    std::lock_guard<std::mutex> guard(m_mutex);
     if (m_sockfd > 0)
     {
         close(m_sockfd);
@@ -105,6 +122,7 @@ bool RtpOverTcp::send(RtpPacket& packet)
     }
 #endif
 
+    std::lock_guard<std::mutex> guard(m_mutex);
     if (m_sockfd < 0)
     {
         return false;
@@ -137,17 +155,35 @@ bool RtpOverTcp::send(RtpPacket& packet)
 
     if (writev(m_sockfd, iov, 3) < 0)
     {
-        return errno == 0 || errno == EINTR; // EINTR不认为失败
+        printf("tcp writev failed errno=%d\n", errno);
+        if (errno == 0 || errno == EINTR) // EINTR不认为失败
+        {
+            return true;
+        }
+        else
+        {
+            /* 设置LINGER，防止长时间处于FIN_WAIT影响后续重连 */
+            printf("something bad happened, gonna setsockopt SO_LINGER\n");
+            struct linger opt = {.l_onoff = 1, .l_linger = 0};
+            setsockopt(m_sockfd, SOL_SOCKET, SO_LINGER, &opt, sizeof(opt));
+            return false;
+        }
     }
     return true;
 }
 
 uint16_t RtpOverTcp::getMTU()
 {
-    return 0xFFFF - 12;
+    return (uint16_t)0xFFFF - 12;
 }
 
 const char* RtpOverTcp::getType() const
 {
     return "TCP/RTP/AVP";
+}
+
+bool RtpOverTcp::isConnected()
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    return m_sockfd >= 0;
 }
