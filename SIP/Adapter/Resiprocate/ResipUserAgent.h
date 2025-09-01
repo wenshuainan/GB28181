@@ -5,8 +5,6 @@
 #include "../SipAdapter.h"
 #include "basicClientUserAgent.hxx"
 
-class ResipUserAgent;
-
 struct SipAdapterMessage
 {
     std::shared_ptr<resip::SipMessage> instance;
